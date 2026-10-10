@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#173d2c">\n<link rel="manifest" href="./manifest.json">\n<link rel="icon" href="./icon-192.png">
+<meta name="theme-color" content="#173d2c">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
 <title>Nongki — Catat Pemasukan</title>
 <style>
 :root{--green:#173d2c;--green2:#24563e;--gold:#d5b36a;--cream:#f7f5ef;--ink:#1e2923;--muted:#758078;--line:#e5e8e1;--white:#fff;--red:#b94b40}
@@ -129,7 +131,8 @@ $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
 $('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}deleteTx(tx[0].id)});
-$('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
+$('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r
+');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
 $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
 $('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
@@ -145,5 +148,6 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   });
 }
 </script>
-\n</body>
+
+</body>
 </html>
