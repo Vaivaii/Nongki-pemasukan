@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#173d2c">\n<link rel="manifest" href="./manifest.json">\n<link rel="icon" href="./icons/icon-192.png">
+<title>Nongki — Catat Pemasukan</title>
+<style>
+:root{--green:#173d2c;--green2:#24563e;--gold:#d5b36a;--cream:#f7f5ef;--ink:#1e2923;--muted:#758078;--line:#e5e8e1;--white:#fff;--red:#b94b40}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
+header{background:var(--green);color:white;padding:22px 18px 26px;border-radius:0 0 25px 25px}
+.brand{display:flex;align-items:center;gap:11px}.logo{height:42px;width:42px;border:1.5px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:21px}
+.brand h1{font-size:19px;letter-spacing:1px;margin:0}.brand p{margin:2px 0 0;color:#d5e0d8;font-size:11px;letter-spacing:.5px}
+.date{margin-top:22px;color:#dbe5de;font-size:12px}.total-label{margin-top:5px;font-size:12px;color:#dbe5de}.total{font-size:32px;line-height:1.2;font-weight:750;letter-spacing:-.7px;margin-top:2px}.stats{display:flex;gap:9px;margin-top:17px}.stat{flex:1;border:1px solid #ffffff2b;background:#ffffff0b;border-radius:13px;padding:10px 12px}.stat span{display:block;font-size:11px;color:#dbe5de}.stat b{display:block;font-size:16px;margin-top:3px}
+main{padding:16px 14px 94px;max-width:680px;margin:auto}.section-head{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 11px}.section-head h2{font-size:16px;margin:0}.sub{color:var(--muted);font-size:11px}
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product{background:white;border:1px solid var(--line);border-radius:16px;padding:14px 13px;text-align:left;min-height:104px;box-shadow:0 2px 7px #152c1c06;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;transition:transform .08s,border-color .08s}.product:active{transform:scale(.975);border-color:var(--green)}.product .emoji{font-size:19px;margin-bottom:8px}.product .name{font-weight:650;font-size:13px;line-height:1.35}.product .price{color:var(--green2);font-size:14px;font-weight:750;margin-top:9px}.product .hint{font-size:10px;color:#89938c;margin-top:3px}
+.toolbar{display:flex;gap:8px;margin:14px 0 22px}.btn{border:1px solid var(--line);background:white;color:var(--green);border-radius:11px;padding:10px 12px;font-weight:650;font-size:12px;cursor:pointer}.btn.primary{background:var(--green);color:white;border-color:var(--green)}.btn.gold{border-color:#eadcb8;background:#fffaf0;color:#73561b}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:12px}.history-row{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}.history-row:last-child{border-bottom:0}.history-icon{width:36px;height:36px;border-radius:11px;background:#eef3ed;display:grid;place-items:center;font-size:16px;flex-shrink:0}.history-info{flex:1;min-width:0}.history-info b{font-size:13px;display:block}.history-info small{font-size:11px;color:var(--muted);display:block;margin-top:3px}.history-price{text-align:right;font-weight:750;color:var(--green);white-space:nowrap}.history-price button{display:block;margin:6px 0 0 auto;border:1px solid #f0d7d3;background:#fff6f5;color:var(--red);font-size:11px;font-weight:700;padding:5px 8px;border-radius:8px;cursor:pointer}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:8px max(10px,calc((100vw - 650px)/2)) calc(8px + env(safe-area-inset-bottom));z-index:5}.tab{flex:1;max-width:220px;border:0;background:transparent;color:#849087;padding:8px 4px;border-radius:12px;font-size:11px;font-weight:650;cursor:pointer}.tab .ico{display:block;font-size:18px;margin-bottom:2px}.tab.active{color:var(--green);background:#edf3ec}
+.view{display:none}.view.active{display:block}
+input,select{font:inherit;border:1px solid #dfe5dc;background:white;border-radius:10px;padding:10px;width:100%;color:var(--ink)}label{font-size:12px;color:var(--muted);display:block;margin:10px 0 5px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-actions{display:flex;gap:8px;margin-top:12px}.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:13px}.date-filter{max-width:190px}
+.toast{position:fixed;bottom:83px;left:50%;transform:translateX(-50%);background:#203b2b;color:white;padding:11px 16px;border-radius:30px;font-size:12px;box-shadow:0 6px 25px #0002;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}
+.note{font-size:11px;line-height:1.5;color:var(--muted);margin:10px 2px}.danger{color:var(--red)}.separator{height:1px;background:var(--line);margin:13px 0}
+@media(min-width:520px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="logo">N</div><div><h1>NONGKI</h1><p>PENCATAT PEMASUKAN</p></div></div>
+ <div class="date" id="todayLabel">Hari ini</div>
+ <div class="total-label">Total pemasukan hari ini</div><div class="total" id="todayTotal">Rp0</div>
+ <div class="stats"><div class="stat"><span>Transaksi hari ini</span><b id="todayCount">0</b></div><div class="stat"><span>Produk terjual</span><b id="todayItems">0</b></div></div>
+</header>
+<main>
+ <section id="salesView" class="view active">
+  <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
+  <div class="products" id="productGrid"></div>
+  <div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><button class="btn gold" id="manageBtn">⚙ Atur produk</button></div>
+  <div class="section-head"><h2>Transaksi terbaru</h2><button class="btn" id="seeHistory">Lihat semua</button></div>
+  <div class="panel" id="recentList"></div><p class="note">Salah ketuk produk? Tekan tombol <b>Hapus transaksi</b> pada catatan yang keliru. Total pemasukan otomatis dikurangi.</p>
+ </section>
+ <section id="historyView" class="view">
+  <div class="section-head"><h2>Riwayat transaksi</h2><span class="sub">Rincian per ketukan</span></div>
+  <label for="historyDate">Pilih tanggal</label><input class="date-filter" type="date" id="historyDate">
+  <div class="panel" id="historySummary"></div>
+  <div class="panel" id="historyList"></div>
+  <div class="toolbar"><button class="btn" id="exportCsv">Ekspor CSV</button><button class="btn" id="backupBtn">Backup data</button><button class="btn" id="restoreBtn">Pulihkan</button><input type="file" id="restoreFile" accept="application/json,.json" hidden></div>
+  <p class="note">Data tersimpan di perangkat ini dan tetap bisa digunakan tanpa internet. Ekspor/backup secara berkala agar data aman saat ganti perangkat atau aplikasi dihapus.</p>
+ </section>
+ <section id="productsView" class="view">
+  <div class="section-head"><h2>Daftar produk</h2><span class="sub">Nama dan harga jual</span></div>
+  <div class="panel">
+   <div class="form-grid"><div><label for="productName">Nama produk</label><input id="productName" placeholder="Contoh: Es Teh"></div><div><label for="productPrice">Harga (Rp)</label><input id="productPrice" type="number" min="0" inputmode="numeric" placeholder="3000"></div></div>
+   <div class="form-grid"><div><label for="productIcon">Ikon</label><select id="productIcon"><option value="🥤">🥤 Minuman</option><option value="☕">☕ Kopi</option><option value="🍌">🍌 Pisang/snack</option><option value="🍟">🍟 Makanan</option><option value="🍊">🍊 Buah/squash</option><option value="🍜">🍜 Mie</option><option value="🧋">🧋 Minuman susu</option><option value="🍢">🍢 Bakaran</option></select></div><div><label for="productCategory">Kategori</label><select id="productCategory"><option>Minuman</option><option>Makanan</option><option>Snack</option><option>Topping</option><option>Extra Topping</option><option>Lainnya</option></select></div></div>
+   <div class="form-actions"><button class="btn primary" id="saveProduct">Tambah produk</button><button class="btn" id="cancelEdit" style="display:none">Batal edit</button></div>
+  </div>
+  <div class="panel" id="productList"></div>
+  <p class="note">Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.</p>
+ </section>
+</main>
+<nav class="tabs"><button class="tab active" data-view="salesView"><span class="ico">＋</span>Catat</button><button class="tab" data-view="historyView"><span class="ico">▤</span>Riwayat</button><button class="tab" data-view="productsView"><span class="ico">☷</span>Produk</button></nav>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+const KEY='nongki_income_v1';
+const defaults=[
+['Es Kopi Susu Gula Aren',10000,'☕','Minuman'],
+['Es Kopi Susu Nongki',10000,'☕','Minuman'],
+['Americano',7000,'☕','Minuman'],
+['Lemon Fruity',10000,'🍋','Minuman'],
+['Orange Squash',7000,'🍊','Minuman'],
+['Melon Squash',7000,'🍈','Minuman'],
+['Es Jeruk',7000,'🍊','Minuman'],
+['Es Teh Susu',7000,'🧋','Minuman'],
+['Es Teh Krampul',5000,'🍋','Minuman'],
+['Es Teh',3000,'🥤','Minuman'],
+['Pop Ice Dan Lainnya (mulai)',4000,'🧋','Minuman'],
+['Piscok Isi 5',10000,'🍌','Snack'],
+['Piscok Isi 2',5000,'🍌','Snack'],
+['Banana/Cheese Roll Isi 8',10000,'🍌','Snack'],
+['Banana/Cheese Roll Isi 5',5000,'🍌','Snack'],
+['Kentang Goreng',6000,'🍟','Snack'],
+['Aneka Bakaran',2000,'🍢','Snack'],
+['Tempura Goreng',2000,'🍢','Snack'],
+['Topping Coklat',2000,'🍫','Topping'],
+['Topping Tiramisu',2000,'🍫','Topping'],
+['Topping Matcha',2000,'🍵','Topping'],
+['Topping Strawberry',2000,'🍓','Topping'],
+['Extra Topping Oreo',1000,'🍪','Extra Topping'],
+['Extra Topping Choco Chips',1000,'🍫','Extra Topping'],
+['Extra Topping Keju',1000,'🧀','Extra Topping'],
+['Extra Topping Sprinkle',1000,'🌈','Extra Topping']
+].map((p,i)=>({id:'p'+(i+1),name:p[0],price:p[1],icon:p[2],category:p[3],active:true}));
+let data={products:defaults,transactions:[]}, editingId=null;
+const $=id=>document.getElementById(id);
+const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
+function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions))data=parsed;}}catch(e){}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+function dayTx(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
+function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
+function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayCount').textContent=tx.length;$('todayItems').textContent=itemCount(tx)}
+function renderGrid(){$('productGrid').innerHTML=data.products.filter(p=>p.active!==false).map(p=>`<button class="product" data-sell="${p.id}"><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`).join('')||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>'}
+function txHtml(t,canDelete=true){return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small></div><div class="history-price">${rupiah(t.total)}${canDelete?`<button data-delete-tx="${t.id}">✕ Hapus transaksi</button>`:''}</div></div>`}
+function renderRecent(){$('recentList').innerHTML=dayTx().slice(0,5).map(t=>txHtml(t)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
+function renderHistory(){let date=$('historyDate').value||today();let tx=dayTx(date);$('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)}</span><h2>${rupiah(total(tx))}</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>${tx.length}</h2></div></div><div class="sub">${itemCount(tx)} produk terjual</div>`;$('historyList').innerHTML=tx.map(t=>txHtml(t)).join('')||'<div class="empty">Tidak ada transaksi pada tanggal ini.</div>'}
+function renderProducts(){$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button></div></div>`).join('')||'<div class="empty">Belum ada produk.</div>'}
+function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function record(id){let p=data.products.find(x=>x.id===id);if(!p||p.active===false)return;let d=new Date();data.transactions.push({id:'t'+d.getTime()+'_'+Math.random().toString(36).slice(2,7),productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:today(),time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})});save();render();toast(p.name+' · '+rupiah(p.price)+' tercatat')}
+function deleteTx(id){let t=data.transactions.find(x=>x.id===id);if(!t)return;if(confirm('Yakin hapus transaksi '+t.name+' sebesar '+rupiah(t.total)+'? Pemasukan akan dikurangi sebesar nilai transaksi ini.')){data.transactions=data.transactions.filter(x=>x.id!==id);save();render();toast('Transaksi dihapus')}}
+function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
+function editProduct(id){let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts()}
+document.addEventListener('click',e=>{
+let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
+let del=e.target.closest('[data-delete-tx]');if(del){deleteTx(del.dataset.deleteTx);return}
+let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
+let tog=e.target.closest('[data-toggle-product]');if(tog){let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan')}return}
+let rem=e.target.closest('[data-remove-product]');if(rem){let p=data.products.find(x=>x.id===rem.dataset.removeProduct);if(p&&confirm('Hapus produk '+p.name+' dari daftar? Riwayat lama tidak ikut terhapus.')){data.products=data.products.filter(x=>x.id!==p.id);save();render();toast('Produk dihapus')}return}
+let tab=e.target.closest('[data-view]');if(tab){showView(tab.dataset.view);return}
+});
+$('saveProduct').addEventListener('click',()=>{let name=$('productName').value.trim(),price=Number($('productPrice').value);if(!name){toast('Nama produk harus diisi');return}if(!Number.isFinite(price)||price<0||$('productPrice').value===''){toast('Masukkan harga yang valid');return}if(editingId){let p=data.products.find(x=>x.id===editingId);if(p){p.name=name;p.price=price;p.icon=$('productIcon').value;p.category=$('productCategory').value}toast('Produk diperbarui')}else{data.products.push({id:'p'+Date.now(),name,price,icon:$('productIcon').value,category:$('productCategory').value,active:true});toast('Produk ditambahkan')}save();resetForm();render()});
+$('cancelEdit').addEventListener('click',resetForm);
+$('manageBtn').addEventListener('click',()=>showView('productsView'));
+$('seeHistory').addEventListener('click',()=>showView('historyView'));
+$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);
+$('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}deleteTx(tx[0].id)});
+$('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
+$('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
+$('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
+$('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
+function download(content,name,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+load();$('historyDate').value=today();render();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker belum aktif:', err));
+  });
+}
+</script>
+\n</body>
+</html>
