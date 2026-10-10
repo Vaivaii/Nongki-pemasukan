@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v4';
+const CACHE_NAME = 'nongki-income-v5';
 const CORE_FILES = [
   './',
   './index.html',
