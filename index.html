@@ -98,7 +98,7 @@ const $=id=>document.getElementById(id);
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
 const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
-function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions))data=parsed;}}catch(e){}}
+function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
 function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
