@@ -104,29 +104,73 @@ const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth
 const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
 function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+let sheetsSyncRunning = false;
+
 function queueDailySync(date){
- try{
-  const pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'{}');
-  pending[date]=total(dayTx(date));
-  localStorage.setItem(PENDING_KEY,JSON.stringify(pending));
- }catch(e){console.warn('Antrean sinkronisasi gagal disimpan',e)}
- syncPending();
+  try {
+    const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+    // Satu nilai terbaru per tanggal; transaksi hapus juga dapat mengirim total 0.
+    pending[date] = total(dayTx(date));
+    localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+  } catch (e) {
+    console.warn('Antrean sinkronisasi gagal disimpan', e);
+    return;
+  }
+  syncPending();
 }
-function syncPending(){
- if(!navigator.onLine)return;
- if(!SHEETS_API_URL.startsWith('https://script.google.com/macros/s/')||SHEETS_API_URL.includes('TEMPEL_URL_'))return;
- if(!SHEETS_API_TOKEN||SHEETS_API_TOKEN.includes('SAMAKAN_DENGAN'))return;
- let pending={};
- try{pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'{}')}catch(e){return}
- Object.entries(pending).forEach(([date,amount])=>{
-  const payload={token:SHEETS_API_TOKEN,action:'upsertDaily',date,amount:Number(amount)||0};
-  // text/plain menghindari preflight CORS. Mode no-cors tidak memberi konfirmasi server; antrean akan dicoba lagi.
-  fetch(SHEETS_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload)})
-   .then(()=>{console.info('Permintaan sinkronisasi dikirim untuk',date,'(status penyimpanan belum dapat diverifikasi dari browser).')})
-   .catch(err=>console.warn('Sinkronisasi Nongki akan dicoba lagi saat online',err));
- });
+
+async function syncPending(){
+  if (sheetsSyncRunning || !navigator.onLine) return;
+  if (!SHEETS_API_URL.startsWith('https://script.google.com/macros/s/') || SHEETS_API_URL.includes('TEMPEL_URL_')) return;
+  if (!SHEETS_API_TOKEN || SHEETS_API_TOKEN.includes('SAMAKAN_DENGAN')) return;
+
+  sheetsSyncRunning = true;
+  try {
+    let pending = {};
+    try {
+      pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+    } catch (e) {
+      console.warn('Antrean sinkronisasi tidak terbaca', e);
+      return;
+    }
+
+    for (const [date, amount] of Object.entries(pending)) {
+      if (!navigator.onLine) break;
+
+      const payload = {
+        token: SHEETS_API_TOKEN,
+        action: 'upsertDaily',
+        date,
+        amount: Number(amount) || 0
+      };
+
+      try {
+        await fetch(SHEETS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify(payload)
+        });
+
+        // no-cors hanya mengonfirmasi permintaan dikirim, bukan isi sheet diverifikasi.
+        // Hapus antrean hanya jika nilainya belum berubah selama permintaan berjalan.
+        const latest = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+        if (Object.prototype.hasOwnProperty.call(latest, date) && Number(latest[date]) === (Number(amount) || 0)) {
+          delete latest[date];
+          localStorage.setItem(PENDING_KEY, JSON.stringify(latest));
+        }
+        console.info('Permintaan sinkronisasi dikirim untuk', date);
+      } catch (err) {
+        console.warn('Sinkronisasi gagal; antrean dipertahankan untuk dicoba lagi', date, err);
+        break;
+      }
+    }
+  } finally {
+    sheetsSyncRunning = false;
+  }
 }
-window.addEventListener('online',syncPending);
+
+window.addEventListener('online', syncPending);
 function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
@@ -178,10 +222,9 @@ $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
 $('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
 function download(content,name,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 load();$('historyDate').value=today();render();
-// Antrekan ulang total harian dari data lokal agar perubahan saat offline ikut disinkronkan.
-const dates=[...new Set(data.transactions.map(t=>t.date).filter(Boolean))];
-if(!dates.includes(today()))dates.push(today());
-dates.forEach(queueDailySync);
+// Saat aplikasi dibuka, kirim hanya tanggal yang memang sudah berada di antrean.
+// Jangan membuat antrean ulang untuk seluruh riwayat setiap kali aplikasi dimulai.
+syncPending();
 })();
 </script>
 
