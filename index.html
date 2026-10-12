@@ -105,43 +105,57 @@ const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLoca
 function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
 let sheetsSyncRunning = false;
+let sheetsSyncTimer = null;
 
-function queueDailySync(date){
+function queueDailySync(date) {
   try {
     const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
-    // Satu nilai terbaru per tanggal; transaksi hapus juga dapat mengirim total 0.
+    // Simpan total terbaru untuk tanggal ini. Satu antrean per tanggal.
     pending[date] = total(dayTx(date));
     localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-  } catch (e) {
-    console.warn('Antrean sinkronisasi gagal disimpan', e);
+  } catch (error) {
+    console.error('Antrean sinkronisasi gagal disimpan:', error);
     return;
   }
-  syncPending();
+
+  // Gabungkan beberapa perubahan berdekatan agar tidak membanjiri Apps Script.
+  clearTimeout(sheetsSyncTimer);
+  sheetsSyncTimer = setTimeout(() => syncPending(), 700);
 }
 
-async function syncPending(){
+async function syncPending() {
   if (sheetsSyncRunning || !navigator.onLine) return;
-  if (!SHEETS_API_URL.startsWith('https://script.google.com/macros/s/') || SHEETS_API_URL.includes('TEMPEL_URL_')) return;
-  if (!SHEETS_API_TOKEN || SHEETS_API_TOKEN.includes('SAMAKAN_DENGAN')) return;
+  if (
+    !SHEETS_API_URL.startsWith('https://script.google.com/macros/s/') ||
+    SHEETS_API_URL.includes('TEMPEL_URL_') ||
+    !SHEETS_API_TOKEN ||
+    SHEETS_API_TOKEN.includes('SAMAKAN_DENGAN')
+  ) return;
 
   sheetsSyncRunning = true;
+
   try {
-    let pending = {};
-    try {
-      pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
-    } catch (e) {
-      console.warn('Antrean sinkronisasi tidak terbaca', e);
-      return;
-    }
+    // Selalu baca ulang antrean setiap putaran. Jika nilainya berubah saat
+    // permintaan berjalan, nilai baru akan dikirim sebelum proses berhenti.
+    while (navigator.onLine) {
+      let pending;
+      try {
+        pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+      } catch (error) {
+        console.error('Antrean sinkronisasi tidak dapat dibaca:', error);
+        break;
+      }
 
-    for (const [date, amount] of Object.entries(pending)) {
-      if (!navigator.onLine) break;
+      const dates = Object.keys(pending);
+      if (dates.length === 0) break;
 
+      const date = dates[0];
+      const amount = Number(pending[date]) || 0;
       const payload = {
         token: SHEETS_API_TOKEN,
         action: 'upsertDaily',
         date,
-        amount: Number(amount) || 0
+        amount
       };
 
       try {
@@ -152,21 +166,38 @@ async function syncPending(){
           body: JSON.stringify(payload)
         });
 
-        // no-cors hanya mengonfirmasi permintaan dikirim, bukan isi sheet diverifikasi.
-        // Hapus antrean hanya jika nilainya belum berubah selama permintaan berjalan.
+        // no-cors tidak memberi akses ke jawaban server. Ini hanya memastikan
+        // antrean lokal tidak menghapus nilai yang berubah saat pengiriman.
         const latest = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
-        if (Object.prototype.hasOwnProperty.call(latest, date) && Number(latest[date]) === (Number(amount) || 0)) {
+        if (
+          Object.prototype.hasOwnProperty.call(latest, date) &&
+          (Number(latest[date]) || 0) === amount
+        ) {
           delete latest[date];
           localStorage.setItem(PENDING_KEY, JSON.stringify(latest));
         }
-        console.info('Permintaan sinkronisasi dikirim untuk', date);
-      } catch (err) {
-        console.warn('Sinkronisasi gagal; antrean dipertahankan untuk dicoba lagi', date, err);
+        // Putaran berikutnya membaca antrean terbaru; tanggal yang berubah
+        // selama fetch tidak dihapus dan akan dikirim lagi.
+      } catch (error) {
+        console.error('Sinkronisasi gagal; antrean dipertahankan:', date, error);
         break;
       }
     }
   } finally {
     sheetsSyncRunning = false;
+
+    // Menangani perubahan yang masuk tepat ketika proses hampir selesai.
+    let remaining = {};
+    try {
+      remaining = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+    } catch (error) {
+      console.error('Antrean sinkronisasi gagal diperiksa:', error);
+    }
+
+    if (navigator.onLine && Object.keys(remaining).length > 0) {
+      clearTimeout(sheetsSyncTimer);
+      sheetsSyncTimer = setTimeout(() => syncPending(), 1000);
+    }
   }
 }
 
