@@ -65,6 +65,10 @@ input,select{font:inherit;border:1px solid #dfe5dc;background:white;border-radiu
 <script>
 (function(){
 const KEY='nongki_income_v1';
+// Isi URL Web App dan token yang sama dengan Code.gs.
+const SHEETS_API_URL='https://script.google.com/macros/s/AKfycbwI1iljZk48cwbUzCBdImBjJkVR8h99IwS-7FkVtdybQZUi9AMJjp-zVymci8wpomo/exec';
+const SHEETS_API_TOKEN='nongki.12071992-23111996';
+const PENDING_KEY='nongki_sheets_pending_v1';
 const defaults=[
 ['Es Kopi Susu Gula Aren',10000,'☕','Minuman'],
 ['Es Kopi Susu Nongki',10000,'☕','Minuman'],
@@ -100,6 +104,29 @@ const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth
 const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
 function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+function queueDailySync(date){
+ try{
+  const pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'{}');
+  pending[date]=total(dayTx(date));
+  localStorage.setItem(PENDING_KEY,JSON.stringify(pending));
+ }catch(e){console.warn('Antrean sinkronisasi gagal disimpan',e)}
+ syncPending();
+}
+function syncPending(){
+ if(!navigator.onLine)return;
+ if(!SHEETS_API_URL.startsWith('https://script.google.com/macros/s/')||SHEETS_API_URL.includes('TEMPEL_URL_'))return;
+ if(!SHEETS_API_TOKEN||SHEETS_API_TOKEN.includes('SAMAKAN_DENGAN'))return;
+ let pending={};
+ try{pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'{}')}catch(e){return}
+ Object.entries(pending).forEach(([date,amount])=>{
+  const payload={token:SHEETS_API_TOKEN,action:'upsertDaily',date,amount:Number(amount)||0};
+  // text/plain menghindari preflight CORS. Mode no-cors tidak memberi konfirmasi server; antrean akan dicoba lagi.
+  fetch(SHEETS_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload)})
+   .then(()=>{console.info('Permintaan sinkronisasi dikirim untuk',date,'(status penyimpanan belum dapat diverifikasi dari browser).')})
+   .catch(err=>console.warn('Sinkronisasi Nongki akan dicoba lagi saat online',err));
+ });
+}
+window.addEventListener('online',syncPending);
 function toast(msg){let t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
@@ -126,8 +153,8 @@ function renderHistory(){let date=$('historyDate').value||today();let tx=dayTx(d
 function renderProducts(){$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button></div></div>`).join('')||'<div class="empty">Belum ada produk.</div>'}
 function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function record(id){let p=data.products.find(x=>x.id===id);if(!p||p.active===false)return;let d=new Date();data.transactions.push({id:'t'+d.getTime()+'_'+Math.random().toString(36).slice(2,7),productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:today(),time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})});save();render();toast(p.name+' · '+rupiah(p.price)+' tercatat')}
-function deleteTx(id){let t=data.transactions.find(x=>x.id===id);if(!t)return;if(confirm('Yakin hapus transaksi '+t.name+' sebesar '+rupiah(t.total)+'? Pemasukan akan dikurangi sebesar nilai transaksi ini.')){data.transactions=data.transactions.filter(x=>x.id!==id);save();render();toast('Transaksi dihapus')}}
+function record(id){let p=data.products.find(x=>x.id===id);if(!p||p.active===false)return;let d=new Date();data.transactions.push({id:'t'+d.getTime()+'_'+Math.random().toString(36).slice(2,7),productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:today(),time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})});save();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat')}
+function deleteTx(id){let t=data.transactions.find(x=>x.id===id);if(!t)return;if(confirm('Yakin hapus transaksi '+t.name+' sebesar '+rupiah(t.total)+'? Pemasukan akan dikurangi sebesar nilai transaksi ini.')){data.transactions=data.transactions.filter(x=>x.id!==id);save();queueDailySync(t.date||today());render();toast('Transaksi dihapus')}}
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts()}
@@ -151,6 +178,10 @@ $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
 $('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
 function download(content,name,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 load();$('historyDate').value=today();render();
+// Antrekan ulang total harian dari data lokal agar perubahan saat offline ikut disinkronkan.
+const dates=[...new Set(data.transactions.map(t=>t.date).filter(Boolean))];
+if(!dates.includes(today()))dates.push(today());
+dates.forEach(queueDailySync);
 })();
 </script>
 
