@@ -427,6 +427,18 @@ function outboxToPayload(item){
  const user=String(row.userId||source.canceledBy||source.userId||'Kasir / Admin');
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
  const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
+ const detailItems=items.map(i=>{
+  const qty=Math.max(0,Number(i.quantity??i.qty)||1);
+  const unitPrice=Number(i.unitPrice??i.harga_satuan??i.price)||0;
+  const subtotal=Number(i.lineTotal??i.subtotal??(qty*unitPrice))||0;
+  return {
+   nama_produk:String(i.productName||i.name||i.nama_produk||'Produk'),
+   kategori:String(i.category||i.kategori||'Lainnya'),
+   qty,
+   harga_satuan:unitPrice,
+   subtotal
+  };
+ });
  const transaction={
   id_event:eventId,
   id_transaksi:txId,
@@ -438,9 +450,11 @@ function outboxToPayload(item){
   pengguna:user,
   perangkat:device,
   status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
-  tanggal:date
+  tanggal:date,
+  ...(event==='newTransaction'?{items:detailItems}:{})
  };
  const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction};
+ if(event==='newTransaction')payload.items=detailItems;
  if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
  return payload;
 }
