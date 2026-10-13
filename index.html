@@ -935,7 +935,7 @@ async function connectSheets(){
  if(!resp.ok){sheetsToken=null;throw new Error('Tidak dapat memverifikasi akun Google.');}
  const profile=await resp.json();sheetsEmail=String(profile.email||'').toLowerCase();
  if(!profile.email_verified||sheetsEmail!==NONGKI_SHEETS.allowedEmail.toLowerCase()){sheetsToken=null;sheetsEmail=null;throw new Error('Gunakan akun Google pemilik yang diizinkan: '+NONGKI_SHEETS.allowedEmail);}
- $('sheetsConnectionStatus').textContent='Terhubung: '+sheetsEmail;
+ const connectionStatus=$('sheetsConnectionStatus');if(connectionStatus)connectionStatus.textContent='Terhubung: '+sheetsEmail;
  $('connectGoogleSheetsBtn').textContent='Putuskan koneksi';
  $('syncGoogleSheetsBtn').disabled=false;
  $('refreshServerHistoryBtn').disabled=false;
@@ -946,7 +946,7 @@ async function sheetsFetch(url,opts={}){
  if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
  const r=await fetch(url,{...opts,headers:{Authorization:'Bearer '+sheetsToken,'Content-Type':'application/json',...(opts.headers||{})}});
  const body=await r.json().catch(()=>({}));
- if(!r.ok){if(r.status===401){sheetsToken=null;sheetsEmail=null;$('syncGoogleSheetsBtn').disabled=true;$('sheetsConnectionStatus').textContent='Sesi habis; hubungkan kembali.';}throw new Error(body?.error?.message||('Google Sheets API gagal (HTTP '+r.status+').'));}
+ if(!r.ok){if(r.status===401){sheetsToken=null;sheetsEmail=null;$('syncGoogleSheetsBtn').disabled=true;const connectionStatus=$('sheetsConnectionStatus');if(connectionStatus)connectionStatus.textContent='Sesi habis; hubungkan kembali.';}throw new Error(body?.error?.message||('Google Sheets API gagal (HTTP '+r.status+').'));}
  return body;
 }
 async function loadServerHistory(){
@@ -1028,7 +1028,7 @@ async function syncSelectedDailyTotal(){
  }else{
   await sheetsFetch(base+'/values/'+range+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});
  }
- $('sheetsConnectionStatus').textContent='Terakhir sinkron: '+date+' · '+rupiah(amount);
+ const connectionStatus=$('sheetsConnectionStatus');if(connectionStatus)connectionStatus.textContent='Terakhir sinkron: '+date+' · '+rupiah(amount);
  showToast('Total '+date+' ('+rupiah(amount)+') berhasil dikirim ke INCOME LOG.');
 }
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',()=>{
