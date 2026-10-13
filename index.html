@@ -469,8 +469,61 @@ async function cancelTx(id){
  } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
-function syncPending(){
- // Sengaja tidak mengubah status sinkronisasi tanpa konfirmasi backend.
+async function syncPending(){
+ // Sinkronisasi transaksi ke spreadsheet kedua. ID event deterministik mencegah duplikasi saat retry.
+ if(!sheetsToken||!data?.transactions?.length)return;
+ if(window.__nongkiHistorySyncRunning)return;
+ window.__nongkiHistorySyncRunning=true;
+ const id=NONGKI_SHEETS.historySpreadsheetId;
+ const base='https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(id);
+ const quote=name=>"'"+name.replace(/'/g,"''")+"'";
+ const readRange=async(name,cols)=>{const r=await sheetsFetch(base+'/values/'+encodeURIComponent(quote(name)+'!A:'+cols)+'?majorDimension=ROWS');return Array.isArray(r.values)?r.values:[];};
+ const appendRows=async(name,cols,values)=>{if(!values.length)return;const range=quote(name)+'!A:'+cols;await sheetsFetch(base+'/values/'+encodeURIComponent(range)+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});};
+ try{
+  const [detailRows,eventRows]=await Promise.all([readRange('DETAIL PRODUK','O'),readRange('RIWAYAT TRANSAKSI','L')]);
+  const detailIndex=new Map();
+  for(let i=1;i<detailRows.length;i++){const key=String(detailRows[i][0]||'')+'|'+String(detailRows[i][1]||'');if(key!=='|')detailIndex.set(key,i+1);}
+  const eventIds=new Set(eventRows.slice(1).map(row=>String(row[0]||'')));
+  const staffName=()=>String(currentUser?.name||currentUser?.username||currentUser?.id||'STAFF001');
+  const device=()=>String(localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
+  for(const t of data.transactions.filter(x=>x.syncStatus!=='synced')){
+   const txId=String(t.id||'');if(!txId)continue;
+   const canceled=t.status==='cancelled'||t.status==='canceled';
+   const eventTime=t.cancelledAt||new Date().toISOString();
+   const itemId=txId+':ITEM:1';
+   const key=txId+'|'+itemId;
+   const detailValues=[txId,itemId,String(t.date||today()),String(t.time||''),String(t.name||'Produk'),String(t.category||'Produk'),Number(t.qty)||1,Number(t.unitPrice)||0,Number(t.total)||0,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','MENUNGGU SINKRONISASI',canceled?txId+':CANCELED':txId+':CREATED',canceled?'Dibatalkan dari riwayat Nongki':''];
+   if(detailIndex.has(key)){
+    const rowNo=detailIndex.get(key);
+    const range=quote('DETAIL PRODUK')+'!A'+rowNo+':O'+rowNo;
+    await sheetsFetch(base+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values:[detailValues]})});
+   }else{
+    await appendRows('DETAIL PRODUK','O',[detailValues]);
+    detailIndex.set(key,-1);
+   }
+   const createdEventId=txId+':CREATED';
+   if(!eventIds.has(createdEventId)){
+    await appendRows('RIWAYAT TRANSAKSI','L',[[createdEventId,txId,String(t.date||today())+' '+String(t.time||''),'DIBUAT',String(t.name||'Transaksi'),Number(t.qty)||1,Number(t.total)||0,staffName(),device(),'AKTIF','Transaksi dicatat dari aplikasi Nongki','APLIKASI']]);
+    eventIds.add(createdEventId);
+   }
+   if(canceled){
+    const canceledEventId=txId+':CANCELED';
+    if(!eventIds.has(canceledEventId)){
+     await appendRows('RIWAYAT TRANSAKSI','L',[[canceledEventId,txId,eventTime,'DIBATALKAN',String(t.name||'Transaksi'),Number(t.qty)||1,Number(t.total)||0,staffName(),device(),'DIBATALKAN',String(t.cancelReason||'Dibatalkan dari riwayat Nongki'),'APLIKASI']]);
+     eventIds.add(canceledEventId);
+    }
+   }
+   t.syncStatus='synced';
+   save();
+  }
+  $('sheetsConnectionStatus').textContent='Riwayat transaksi tersinkron ke spreadsheet kedua.';
+  render();
+ }catch(error){
+  console.error('Sinkronisasi riwayat Nongki gagal:',error);
+  data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});
+  save();render();
+  $('sheetsConnectionStatus').textContent='Sinkronisasi riwayat gagal: '+(error.message||'periksa akses spreadsheet');
+ }finally{window.__nongkiHistorySyncRunning=false;}
 }
 window.addEventListener('online',syncPending);
 
@@ -517,7 +570,7 @@ $('addPreviewUser').addEventListener('click',async()=>{if(!currentUser||currentU
 document.addEventListener('click',e=>{const b=e.target.closest('[data-user-toggle]');if(!b)return;const u=users[Number(b.dataset.userToggle)];if(u&&u.role!=='owner'){u.active=!u.active;saveUsers();renderUsers();toast(u.active?'Akun diaktifkan':'Akun dinonaktifkan')}});
 
 // Google Sheets bridge: OAuth token hanya disimpan di memori halaman, tidak di localStorage.
-const NONGKI_SHEETS={clientId:'1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',spreadsheetId:'1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',sheetName:'INCOME LOG',allowedEmail:'vaivai851@gmail.com'};
+const NONGKI_SHEETS={clientId:'1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',spreadsheetId:'1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',sheetName:'INCOME LOG',historySpreadsheetId:'1Zoselyd0VjYust12Rm62Y-bXyQiwcDq3',allowedEmail:'vaivai851@gmail.com'};
 let sheetsToken=null, sheetsEmail=null, sheetsGisPromise=null;
 function loadSheetsGIS(){
  if(window.google?.accounts?.oauth2)return Promise.resolve();
@@ -545,6 +598,7 @@ async function connectSheets(){
  $('connectGoogleSheetsBtn').textContent='Putuskan koneksi';
  $('syncGoogleSheetsBtn').disabled=false;
  toast('Google terhubung. Periksa tanggal sebelum sinkronisasi.');
+ setTimeout(()=>syncPending(),0);
 }
 async function sheetsFetch(url,opts={}){
  if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
