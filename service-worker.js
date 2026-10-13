@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v22-fix-global-income';
+const CACHE_NAME = 'v23-silent-history-error';
 const CORE_FILES = [
   './',
   './index.html',
