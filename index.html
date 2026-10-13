@@ -383,6 +383,15 @@ function queueDailySync(date) {
   sheetsSyncTimer = setTimeout(() => syncPending(), 700);
 }
 
+function showToast(message){
+ const el=document.getElementById('toast');
+ if(!el){console.log('[Nongki]',message);return;}
+ el.textContent=String(message??'');
+ el.classList.add('show');
+ clearTimeout(window.__nongkiToastTimer);
+ window.__nongkiToastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
 function appScriptConfigured(){
  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(String(APPS_SCRIPT_URL||'')) &&
         APPS_SCRIPT_TOKEN && APPS_SCRIPT_TOKEN!=='SET_TOKEN_LOCALLY';
@@ -463,9 +472,77 @@ async function updateOutboxError(item,error){
  }finally{db.close();}
 }
 
-async function syncPending() {
-  // Tidak ada backend yang dikonfigurasi; antrean dipertahankan sampai server mengonfirmasi.
-  return;
+async function enqueueLegacyPendingTransactions(outbox){
+ const queuedEntities=new Set(outbox.map(x=>String(x.entityId||'')));
+ const legacy=data.transactions.filter(t=>t&&t.id&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
+ if(!legacy.length)return;
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction('outbox','readwrite'),done=txDone(tx),store=tx.objectStore('outbox');
+  for(const t of legacy){
+   const canceled=t.status==='cancelled'||t.status==='canceled';
+   const id='legacy-'+String(t.id)+(canceled?'-cancel':'-create');
+   store.put({id,entityId:String(t.id),eventType:canceled?'transaction.canceled':'transaction.created',createdAt:t.cancelledAt||t.createdAt||new Date().toISOString(),payload:canceled?{transactionId:String(t.id),status:'canceled',canceledAt:t.cancelledAt||new Date().toISOString(),canceledBy:t.cancelledBy||'Kasir / Admin',total:Number(t.total)||0,name:t.name,qty:Number(t.qty)||1,date:t.date,time:t.time,userId:t.userId}: {id:String(t.id),createdAt:t.createdAt||new Date().toISOString(),businessDate:t.date||today(),userId:t.userId||'Kasir / Admin',deviceId:localStorage.getItem('nongki_device_id_v1')||'Perangkat ini',status:'active',items:[{productId:String(t.productId||t.id),productName:String(t.name||'Produk'),quantity:Number(t.qty)||1,unitPrice:Number(t.unitPrice)||Number(t.total)||0,lineTotal:Number(t.total)||0}],total:Number(t.total)||0},attempts:0,lastError:null});
+  }
+  await done;
+ }finally{db.close();}
+}
+async function syncPending(){
+ if(appScriptSyncPromise)return appScriptSyncPromise;
+ if(!navigator.onLine)return false;
+ if(!appScriptConfigured()){
+  const status=$('sheetsConnectionStatus');if(status)status.textContent='Offline queue aktif · isi APPS_SCRIPT_URL dan token untuk sinkronisasi.';
+  return false;
+ }
+ appScriptSyncPromise=(async()=>{
+  const button=$('syncGoogleSheetsBtn');
+  if(button)button.disabled=true;
+  let sent=0,failed=0,lastError='';
+  try{
+   let outbox=await getAllRecords('outbox');
+   await enqueueLegacyPendingTransactions(outbox);
+   outbox=(await getAllRecords('outbox')).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+   for(const item of outbox){
+    try{
+     const payload=outboxToPayload(item);
+     await postToAppsScript(payload);
+     await removeOutboxItem(item.id);
+     const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
+     if(tx){
+      // Only mark the event as synced after the backend acknowledges it.
+      const stillPending=(await getAllRecords('outbox')).some(q=>String(q.entityId)===String(item.entityId));
+      tx.syncStatus=stillPending?'pending':'synced';
+      save();
+     }
+     sent++;
+    }catch(error){
+     failed++;lastError=String(error?.message||error);
+     await updateOutboxError(item,error);
+     // Preserve FIFO: do not send newer events ahead of a failed event.
+     break;
+    }
+   }
+   const remaining=(await getAllRecords('outbox')).length;
+   const status=$('sheetsConnectionStatus');
+   if(status)status.textContent=failed
+    ?'Sinkronisasi tertunda · '+remaining+' antrean tersisa · '+lastError
+    :'Sinkronisasi selesai · '+sent+' event dikirim · '+remaining+' antrean tersisa.';
+   if(failed)showToast('Sinkronisasi tertunda: '+lastError);
+   else if(sent)showToast(sent+' event berhasil dikirim ke Apps Script.');
+   if(sent)render();
+   return failed===0;
+  }catch(error){
+   const status=$('sheetsConnectionStatus');
+   if(status)status.textContent='Antrean lokal aman · '+String(error?.message||error);
+   console.error('Sinkronisasi Apps Script gagal:',error);
+   showToast('Sinkronisasi gagal. Data tetap tersimpan lokal.');
+   return false;
+  }finally{
+   if(button)button.disabled=false;
+   appScriptSyncPromise=null;
+  }
+ })();
+ return appScriptSyncPromise;
 }
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
@@ -540,8 +617,8 @@ async function record(id){
  try {
    const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
    const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});save();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
- } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
+   data.transactions.push({...tx});save();queueDailySync(today());render();showToast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
+ } catch(error) { console.error(error);showToast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
 }
 
 async function cancelTx(id){
@@ -553,8 +630,8 @@ async function cancelTx(id){
    if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
    t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
    const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-   save();saveCloudPreview();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
- } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
+   save();saveCloudPreview();queueDailySync(t.date||today());render();showToast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
+ } catch(error) { console.error(error);showToast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
 function syncPending(){
@@ -637,8 +714,8 @@ async function record(id){
  try {
    const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
    const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});save();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
- } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
+   data.transactions.push({...tx});save();queueDailySync(today());render();showToast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
+ } catch(error) { console.error(error);showToast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
 }
 
 async function cancelTx(id){
@@ -650,8 +727,8 @@ async function cancelTx(id){
    if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
    t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
    const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-   save();saveCloudPreview();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
- } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
+   save();saveCloudPreview();queueDailySync(t.date||today());render();showToast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
+ } catch(error) { console.error(error);showToast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
 async function syncHistoryToSheets(){
@@ -776,34 +853,34 @@ async function syncHistoryToSheets(){
   data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});
   save();render();
   $('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');
-  toast('Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet'));
+  showToast('Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet'));
   return false;
  }finally{window.__nongkiHistorySyncRunning=false;}
 }
 window.addEventListener('online',syncPending);
 
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
-function editProduct(id){if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
+function editProduct(id){if(!currentUser||currentUser.role!=='owner'){showToast('Hanya pemilik yang dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts();if(id==='reportsView')renderReports()}
 document.addEventListener('click',e=>{
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
-let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan')}return}
-let rem=e.target.closest('[data-remove-product]');if(rem){if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat mengelola produk');return}let p=data.products.find(x=>x.id===rem.dataset.removeProduct);if(p&&confirm('Hapus produk '+p.name+' dari daftar? Riwayat lama tidak ikut terhapus.')){data.products=data.products.filter(x=>x.id!==p.id);save();render();toast('Produk dihapus')}return}
+let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||currentUser.role!=='owner'){showToast('Hanya pemilik yang dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;save();render();showToast(p.active?'Produk diaktifkan':'Produk dinonaktifkan')}return}
+let rem=e.target.closest('[data-remove-product]');if(rem){if(!currentUser||currentUser.role!=='owner'){showToast('Hanya pemilik yang dapat mengelola produk');return}let p=data.products.find(x=>x.id===rem.dataset.removeProduct);if(p&&confirm('Hapus produk '+p.name+' dari daftar? Riwayat lama tidak ikut terhapus.')){data.products=data.products.filter(x=>x.id!==p.id);save();render();showToast('Produk dihapus')}return}
 let tab=e.target.closest('[data-view]');if(tab){showView(tab.dataset.view);return}
 });
-$('saveProduct').addEventListener('click',()=>{if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat mengubah produk dan harga');return}let name=$('productName').value.trim(),price=Number($('productPrice').value);if(!name){toast('Nama produk harus diisi');return}if(!Number.isFinite(price)||price<0||$('productPrice').value===''){toast('Masukkan harga yang valid');return}if(editingId){let p=data.products.find(x=>x.id===editingId);if(p){p.name=name;p.price=price;p.icon=$('productIcon').value;p.category=$('productCategory').value}toast('Produk diperbarui')}else{data.products.push({id:'p'+Date.now(),name,price,icon:$('productIcon').value,category:$('productCategory').value,active:true});toast('Produk ditambahkan')}save();resetForm();render()});
+$('saveProduct').addEventListener('click',()=>{if(!currentUser||currentUser.role!=='owner'){showToast('Hanya pemilik yang dapat mengubah produk dan harga');return}let name=$('productName').value.trim(),price=Number($('productPrice').value);if(!name){showToast('Nama produk harus diisi');return}if(!Number.isFinite(price)||price<0||$('productPrice').value===''){showToast('Masukkan harga yang valid');return}if(editingId){let p=data.products.find(x=>x.id===editingId);if(p){p.name=name;p.price=price;p.icon=$('productIcon').value;p.category=$('productCategory').value}showToast('Produk diperbarui')}else{data.products.push({id:'p'+Date.now(),name,price,icon:$('productIcon').value,category:$('productCategory').value,active:true});showToast('Produk ditambahkan')}save();resetForm();render()});
 $('cancelEdit').addEventListener('click',resetForm);
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&sheetsToken){try{await loadServerHistory()}catch(e){console.error(e);toast(e.message||'Riwayat server gagal dimuat.')}}}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&sheetsToken){try{await loadServerHistory()}catch(e){console.error(e);showToast(e.message||'Riwayat server gagal dimuat.')}}}));
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
-$('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
+$('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){showToast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
 $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
-$('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
+$('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();showToast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
 function download(content,name,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
 
@@ -815,14 +892,14 @@ function saveUsers(){localStorage.setItem(USER_KEY,JSON.stringify(users))}
 function updateLoginMode(){const first=users.length===0;$('loginHeading').textContent=first?'Buat akun pemilik':'Masuk ke Nongki';$('loginDescription').textContent=first?'Buat akun pemilik untuk mengamankan aplikasi pada perangkat ini. Simpan User ID dan PIN baik-baik.':'Masukkan User ID dan PIN akun yang sudah dibuat.';$('loginBtn').textContent=first?'Buat akun & masuk':'Masuk';$('loginUserId').placeholder=first?'Buat User ID pemilik':'Masukkan User ID';$('loginPin').placeholder=first?'Buat PIN minimal 4 angka':'Masukkan PIN';const note=$('loginLocalNote');if(note)note.textContent='Akun ini tersimpan pada browser/perangkat ini. Login dan sinkronisasi lintas perangkat memerlukan backend.'}
 function renderUsers(){const box=$('previewUserList');if(!box)return;box.innerHTML=users.map((u,i)=>`<div class="user-row"><div><b>${esc(u.id)} · ${esc(u.name)}</b><small>${u.role==='owner'?'Pemilik':'Pegawai'} · ${u.active?'Aktif':'Nonaktif'}</small></div><button class="btn" data-user-toggle="${i}">${u.active?'Nonaktifkan':'Aktifkan'}</button></div>`).join('')}
 function applyRole(){const owner=!!(currentUser&&currentUser.role==='owner');$('userAdminPanel').classList.toggle('hidden',!owner);$('manageBtn').classList.toggle('hidden',!owner);$('activeRoleName').textContent='Login sebagai '+(currentUser?currentUser.name:'—');$('activeRoleBadge').textContent=owner?'PEMILIK':'PEGAWAI';$('rolePreviewText').textContent=owner?'Akun pemilik dapat melihat laporan dan mengelola produk.':'Akun pegawai dapat mencatat penjualan dan melihat laporan.';renderReports();renderProducts();renderUsers()}
-$('loginBtn').addEventListener('click',async()=>{const id=$('loginUserId').value.trim().toUpperCase(),pin=$('loginPin').value;if(!id||pin.length<4){alert('Masukkan User ID dan PIN minimal 4 karakter.');return}if(users.length===0){const user={id,name:'Pemilik',pinHash:await hashPin(pin),role:'owner',active:true};users.push(user);saveUsers();currentUser=user;$('loginOverlay').classList.add('hidden');updateLoginMode();applyRole();toast('Akun pemilik berhasil dibuat pada perangkat ini');return}const pinHash=await hashPin(pin),matchedId=users.find(u=>u.id===id),user=users.find(u=>u.id===id&&u.pinHash===pinHash&&u.active);if(!user){if(!matchedId){alert('Akun dengan User ID '+id+' belum terdaftar di perangkat ini. Login sebagai pemilik, buka menu Kelola produk lalu bagian Kelola User ID, dan buat akun pegawai terlebih dahulu.');}else if(!matchedId.active){alert('Akun '+id+' sedang nonaktif. Minta pemilik mengaktifkannya di menu Kelola User ID.');}else{alert('PIN untuk User ID '+id+' tidak cocok. Periksa PIN dan pastikan tidak ada spasi.');}return}currentUser=user;$('loginOverlay').classList.add('hidden');applyRole();toast('Berhasil masuk sebagai '+user.name)});
-function openLogoutPin(){if(!currentUser){toast('Tidak ada akun yang sedang masuk');return}$('logoutPinInput').value='';$('logoutPinError').style.display='none';$('logoutPinOverlay').classList.remove('hidden');setTimeout(()=>{try{$('logoutPinInput').focus({preventScroll:true})}catch(e){$('logoutPinInput').focus()}},120)}
+$('loginBtn').addEventListener('click',async()=>{const id=$('loginUserId').value.trim().toUpperCase(),pin=$('loginPin').value;if(!id||pin.length<4){alert('Masukkan User ID dan PIN minimal 4 karakter.');return}if(users.length===0){const user={id,name:'Pemilik',pinHash:await hashPin(pin),role:'owner',active:true};users.push(user);saveUsers();currentUser=user;$('loginOverlay').classList.add('hidden');updateLoginMode();applyRole();showToast('Akun pemilik berhasil dibuat pada perangkat ini');return}const pinHash=await hashPin(pin),matchedId=users.find(u=>u.id===id),user=users.find(u=>u.id===id&&u.pinHash===pinHash&&u.active);if(!user){if(!matchedId){alert('Akun dengan User ID '+id+' belum terdaftar di perangkat ini. Login sebagai pemilik, buka menu Kelola produk lalu bagian Kelola User ID, dan buat akun pegawai terlebih dahulu.');}else if(!matchedId.active){alert('Akun '+id+' sedang nonaktif. Minta pemilik mengaktifkannya di menu Kelola User ID.');}else{alert('PIN untuk User ID '+id+' tidak cocok. Periksa PIN dan pastikan tidak ada spasi.');}return}currentUser=user;$('loginOverlay').classList.add('hidden');applyRole();showToast('Berhasil masuk sebagai '+user.name)});
+function openLogoutPin(){if(!currentUser){showToast('Tidak ada akun yang sedang masuk');return}$('logoutPinInput').value='';$('logoutPinError').style.display='none';$('logoutPinOverlay').classList.remove('hidden');setTimeout(()=>{try{$('logoutPinInput').focus({preventScroll:true})}catch(e){$('logoutPinInput').focus()}},120)}
 function cancelLogoutPin(){$('logoutPinOverlay').classList.add('hidden');$('logoutPinInput').value='';$('logoutPinError').style.display='none'}
 async function verifyAndLogout(){const entered=$('logoutPinInput').value;if(!currentUser||await hashPin(entered)!==currentUser.pinHash){$('logoutPinError').style.display='block';$('logoutPinInput').value='';$('logoutPinInput').focus();return}cancelLogoutPin();currentUser=null;$('loginUserId').value='';$('loginPin').value='';$('loginOverlay').classList.remove('hidden');$('loginOverlay').scrollTop=0;updateLoginMode();applyRole();setTimeout(()=>{try{$('loginUserId').focus({preventScroll:true})}catch(e){$('loginUserId').focus()}},120)}
 $('logoutBtn').addEventListener('click',openLogoutPin);$('cancelLogoutBtn').addEventListener('click',cancelLogoutPin);$('confirmLogoutBtn').addEventListener('click',verifyAndLogout);$('logoutPinInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyAndLogout()}if(e.key==='Escape')cancelLogoutPin()});
 ['loginUserId','loginPin'].forEach(id=>{const el=$(id);el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('loginBtn').click()}});el.addEventListener('focus',()=>{const overlay=$('loginOverlay');setTimeout(()=>{if(document.activeElement===el){const r=el.getBoundingClientRect();if(r.bottom>window.innerHeight-30||r.top<0)el.scrollIntoView({block:'center',behavior:'auto'});}},180)});});
-$('addPreviewUser').addEventListener('click',async()=>{if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat menambah pengguna');return}const id=$('newUserId').value.trim().toUpperCase(),name=$('newUserName').value.trim(),pin=$('newUserPin').value,role=$('newUserRole').value||'staff';if(!id||!name||!pin){toast('Lengkapi User ID, nama, dan PIN');return}if(users.some(u=>u.id===id)){toast('User ID sudah digunakan');return}users.push({id,name,pinHash:await hashPin(pin),role,active:true});saveUsers();$('newUserId').value='';$('newUserName').value='';$('newUserPin').value='';renderUsers();toast('Pengguna berhasil ditambahkan')});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-user-toggle]');if(!b)return;const u=users[Number(b.dataset.userToggle)];if(u&&u.role!=='owner'){u.active=!u.active;saveUsers();renderUsers();toast(u.active?'Akun diaktifkan':'Akun dinonaktifkan')}});
+$('addPreviewUser').addEventListener('click',async()=>{if(!currentUser||currentUser.role!=='owner'){showToast('Hanya pemilik yang dapat menambah pengguna');return}const id=$('newUserId').value.trim().toUpperCase(),name=$('newUserName').value.trim(),pin=$('newUserPin').value,role=$('newUserRole').value||'staff';if(!id||!name||!pin){showToast('Lengkapi User ID, nama, dan PIN');return}if(users.some(u=>u.id===id)){showToast('User ID sudah digunakan');return}users.push({id,name,pinHash:await hashPin(pin),role,active:true});saveUsers();$('newUserId').value='';$('newUserName').value='';$('newUserPin').value='';renderUsers();showToast('Pengguna berhasil ditambahkan')});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-user-toggle]');if(!b)return;const u=users[Number(b.dataset.userToggle)];if(u&&u.role!=='owner'){u.active=!u.active;saveUsers();renderUsers();showToast(u.active?'Akun diaktifkan':'Akun dinonaktifkan')}});
 
 // Google Sheets bridge: OAuth token hanya disimpan di memori halaman, tidak di localStorage.
 const NONGKI_SHEETS={clientId:'1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',spreadsheetId:'1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',sheetName:'INCOME LOG',historySpreadsheetId:'1Zoselyd0VjYust12Rm62Y-bXyQiwcDq3',allowedEmail:'vaivai851@gmail.com'};
@@ -853,7 +930,7 @@ async function connectSheets(){
  $('connectGoogleSheetsBtn').textContent='Putuskan koneksi';
  $('syncGoogleSheetsBtn').disabled=false;
  $('refreshServerHistoryBtn').disabled=false;
- toast('Google terhubung. Sinkronkan riwayat untuk mulai.');
+ showToast('Google terhubung. Sinkronkan riwayat untuk mulai.');
  setTimeout(()=>syncPending(),0);
 }
 async function sheetsFetch(url,opts={}){
@@ -900,30 +977,30 @@ async function syncSelectedDailyTotal(){
   await sheetsFetch(base+'/values/'+range+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});
  }
  $('sheetsConnectionStatus').textContent='Terakhir sinkron: '+date+' · '+rupiah(amount);
- toast('Total '+date+' ('+rupiah(amount)+') berhasil dikirim ke INCOME LOG.');
+ showToast('Total '+date+' ('+rupiah(amount)+') berhasil dikirim ke INCOME LOG.');
 }
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',()=>{
  const url=String($('appsScriptUrlInput')?.value||'').trim();
  const token=String($('appsScriptTokenInput')?.value||'').trim();
  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(url)){
-  toast('URL Apps Script tidak valid. Gunakan URL Web App yang berakhiran /exec.');return;
+  showToast('URL Apps Script tidak valid. Gunakan URL Web App yang berakhiran /exec.');return;
  }
- if(!token){toast('Token API belum diisi.');return;}
+ if(!token){showToast('Token API belum diisi.');return;}
  try{
   localStorage.setItem(APPS_SCRIPT_SETTINGS_KEY,JSON.stringify({url,token,savedAt:new Date().toISOString()}));
   APPS_SCRIPT_URL=url;APPS_SCRIPT_TOKEN=token;
   const status=$('sheetsConnectionStatus');if(status)status.textContent='Pengaturan tersimpan di perangkat ini · siap sinkronisasi.';
-  toast('Pengaturan Apps Script tersimpan di perangkat ini.');
- }catch(error){toast('Pengaturan gagal disimpan di browser.');console.error(error);}
+  showToast('Pengaturan Apps Script tersimpan di perangkat ini.');
+ }catch(error){showToast('Pengaturan gagal disimpan di browser.');console.error(error);}
 });
 $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
  if(!appScriptConfigured()){
-  toast('Simpan URL Apps Script dan token terlebih dahulu.');
+  showToast('Simpan URL Apps Script dan token terlebih dahulu.');
   $('appsScriptTokenInput')?.focus();
   return;
  }
  try{await syncPending();}
- catch(e){console.error(e);toast(e.message||'Sinkronisasi gagal.');}
+ catch(e){console.error(e);showToast(e.message||'Sinkronisasi gagal.');}
 });
 load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
