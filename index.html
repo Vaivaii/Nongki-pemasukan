@@ -309,7 +309,23 @@ function reqResult(r){return new Promise((resolve,reject)=>{r.onsuccess=()=>reso
 function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Transaksi database gagal'));tx.onabort=()=>reject(tx.error||new Error('Transaksi database dibatalkan'));});}
 async function getAllRecords(storeName){const db=await openNongkiDB();try{return await reqResult(db.transaction(storeName,'readonly').objectStore(storeName).getAll());}finally{db.close();}}
 async function putProduct(p){const db=await openNongkiDB();try{const tx=db.transaction('products','readwrite');const done=txDone(tx);tx.objectStore('products').put({...p,id:String(p.id),price:Number(p.price)||0,updatedAt:new Date().toISOString()});await done;}finally{db.close();}}
-async function recordTransaction({userId=null,deviceId=null,items}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function recordTransaction({userId=null,deviceId=null,items}){
+ if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');
+ const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),category:String(i.category||'Lainnya'),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));
+ if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');
+ const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+ const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);
+  tx.objectStore('transactions').add(row);
+  tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});
+  await done;
+ }finally{db.close();}
+ // Fire-and-forget: transaksi lokal sudah tersimpan, antrean tetap aman bila offline.
+ if(navigator.onLine)setTimeout(()=>{syncPending();loadGlobalIncome();},0);
+ return row;
+}
 async function cancelTransaction(id,{userId=null,reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function migrateLegacyLocalData(){return {products:0,transactions:0,skipped:true};}
 
@@ -688,7 +704,7 @@ async function cancelTx(id){
 
 // Legacy no-op syncPending removed: the Apps Script outbox implementation above is authoritative.
 
-window.addEventListener('online',()=>syncPending());
+window.addEventListener('online',()=>{syncPending();loadGlobalIncome();});
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
@@ -1116,6 +1132,8 @@ try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpa
 render();
 // Muat angka global saat aplikasi dibuka, lalu perbarui lagi setelah sinkronisasi.
 loadGlobalIncome();
+// Periodic background retry; offline transactions remain safely queued.
+setInterval(()=>{if(navigator.onLine){syncPending();loadGlobalIncome();}},30000);
 // Antrean dipertahankan sampai backend nyata memberikan konfirmasi.
 syncPending();
 })();
