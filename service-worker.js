@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v20-auto-sync';
+const CACHE_NAME = 'nongki-income-v21-global-income-field';
 const CORE_FILES = [
   './',
   './index.html',
