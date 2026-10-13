@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v33-force-profile-login-owner-pin';;;
+const CACHE_NAME = 'v34-global-daily-total';;;
 const CORE_FILES = [
   './',
   './index.html',
