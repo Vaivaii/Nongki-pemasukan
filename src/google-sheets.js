@@ -7,6 +7,15 @@ const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
 const USERINFO_API = 'https://openidconnect.googleapis.com/v1/userinfo';
 
+// Public app configuration. OAuth Client IDs and spreadsheet IDs are not secrets.
+// The owner email must be filled in before enabling the UI connection.
+export const NONGKI_GOOGLE_CONFIG = Object.freeze({
+  clientId: '1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',
+  spreadsheetId: '1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',
+  sheetName: 'INCOME LOG',
+  allowedEmail: 'ISI_EMAIL_GOOGLE_PEMILIK_DI_SINI'
+});
+
 let gisPromise;
 let tokenClient;
 let activeAccessToken = null;
