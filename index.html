@@ -714,8 +714,15 @@ async function postToAppsScript(payload){
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
   let result;
   try{result=JSON.parse(raw);}catch{throw new Error('Respons Apps Script bukan JSON yang valid. Pastikan doPost mengembalikan ContentService JSON.');}
-  if(result?.success===false||result?.ok===false||result?.status==='error'){
+  if(result?.success===false||result?.ok===false||String(result?.status||'').toLowerCase()==='error'){
    throw new Error(String(result.message||result.error||'Apps Script menolak transaksi.'));
+  }
+  // Jangan hapus event dari IndexedDB hanya karena server mengembalikan JSON apa pun.
+  // Harus ada tanda sukses eksplisit supaya antrean tidak hilang saat backend menolak payload.
+  const ackStatus=String(result?.status||'').toLowerCase();
+  const acknowledged=result?.success===true||result?.ok===true||['success','ok','synced','accepted'].includes(ackStatus);
+  if(!acknowledged){
+   throw new Error(String(result?.message||result?.error||'Respons Apps Script belum mengonfirmasi sukses. Antrean lokal dipertahankan; periksa format respons doPost.'));
   }
   return result;
  }catch(error){
