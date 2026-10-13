@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v27-3profil-pin';
+const CACHE_NAME = 'v28-ui-clean-sync';
 const CORE_FILES = [
   './',
   './index.html',
