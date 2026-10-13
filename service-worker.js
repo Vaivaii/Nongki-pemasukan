@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v17-detail-items-payload';
+const CACHE_NAME = 'nongki-income-v18-login-session';
 const CORE_FILES = [
   './',
   './index.html',
