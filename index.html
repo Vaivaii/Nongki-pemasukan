@@ -251,16 +251,16 @@ header {
 <button class="history-switch-btn active" data-history-source="local">Riwayat Lokal <span id="localCount">0</span></button>
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
-<div class="locked-note">Riwayat lokal disimpan pada perangkat ini. Data lokal tetap tersimpan di perangkat; total harian dapat dikirim ke Google Sheets setelah akun terhubung.</div>
+<div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
 <div class="panel" id="googleSheetsPanel">
-  <div class="section-head"><div><h3>Google Sheets · INCOME LOG</h3><span class="sub" id="sheetsConnectionStatus">Belum terhubung</span></div></div>
-  <div class="toolbar"><button class="btn" id="connectGoogleSheetsBtn" type="button">Hubungkan Google</button><button class="btn primary" id="syncGoogleSheetsBtn" type="button" disabled>Sinkronkan total tanggal</button></div>
-  <p class="note">Sinkronisasi ini mengirim total pemasukan harian untuk tanggal yang dipilih ke kolom A (tanggal) dan B (total) pada tab INCOME LOG. Ini bukan riwayat transaksi per item.</p>
+  <div class="section-head"><div><h3>Sinkronisasi Nongki · Apps Script</h3><span class="sub" id="sheetsConnectionStatus">Antrean lokal aktif · endpoint belum dikonfigurasi</span></div></div>
+  <div class="toolbar"><button class="btn primary" id="syncGoogleSheetsBtn" type="button">Sinkronkan antrean</button></div>
+  <p class="note">Transaksi disimpan terlebih dahulu di IndexedDB. Saat online, antrean dikirim ke Google Apps Script Web App. Pastikan APPS_SCRIPT_URL dan token sudah diatur, serta backend memakai id_event untuk mencegah duplikasi antarperangkat.</p>
 </div>
 <div class="panel" id="historySummary"></div>
 <div class="panel" id="historyList"></div>
 <div class="toolbar"><button class="btn" id="exportCsv">Ekspor CSV</button><button class="btn" id="backupBtn">Backup data</button><button class="btn" id="restoreBtn">Pulihkan</button><input accept="application/json,.json" hidden="" id="restoreFile" type="file"/></div>
-<p class="note">Google Sheets menyimpan total harian; riwayat transaksi per item tetap tersedia di perangkat ini.</p>
+<p class="note">Riwayat lokal disimpan di perangkat. Sinkronisasi ke spreadsheet dikerjakan oleh Apps Script backend.</p>
 </section>
 <section class="view" id="productsView">
 <div class="section-head"><h2>Daftar produk</h2><span class="sub">Nama dan harga jual</span></div>
@@ -516,77 +516,175 @@ $('logoutBtn').addEventListener('click',openLogoutPin);$('cancelLogoutBtn').addE
 $('addPreviewUser').addEventListener('click',async()=>{if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat menambah pengguna');return}const id=$('newUserId').value.trim().toUpperCase(),name=$('newUserName').value.trim(),pin=$('newUserPin').value,role='staff';if(!id||!name||!pin){toast('Lengkapi User ID, nama, dan PIN');return}if(users.some(u=>u.id===id)){toast('User ID sudah digunakan');return}users.push({id,name,pinHash:await hashPin(pin),role,active:true});saveUsers();$('newUserId').value='';$('newUserName').value='';$('newUserPin').value='';renderUsers();toast('Pengguna berhasil ditambahkan')});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-user-toggle]');if(!b)return;const u=users[Number(b.dataset.userToggle)];if(u&&u.role!=='owner'){u.active=!u.active;saveUsers();renderUsers();toast(u.active?'Akun diaktifkan':'Akun dinonaktifkan')}});
 
-// Google Sheets bridge: OAuth token hanya disimpan di memori halaman, tidak di localStorage.
-const NONGKI_SHEETS={clientId:'1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',spreadsheetId:'1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',sheetName:'INCOME LOG',allowedEmail:'vaivai851@gmail.com'};
-let sheetsToken=null, sheetsEmail=null, sheetsGisPromise=null;
-function loadSheetsGIS(){
- if(window.google?.accounts?.oauth2)return Promise.resolve();
- if(sheetsGisPromise)return sheetsGisPromise;
- sheetsGisPromise=new Promise((resolve,reject)=>{
-  const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;sc.defer=true;
-  sc.onload=()=>window.google?.accounts?.oauth2?resolve():reject(new Error('Layanan login Google tidak tersedia.'));
-  sc.onerror=()=>reject(new Error('Gagal memuat layanan login Google.'));
-  document.head.appendChild(sc);
- });return sheetsGisPromise;
+// Google Apps Script bridge. Keep the shared token out of public source control.
+// Set APPS_SCRIPT_URL to the deployed Apps Script Web App URL.
+// Configure APPS_SCRIPT_TOKEN locally; do not commit a real shared secret to a public repository.
+const APPS_SCRIPT_URL='PASTE_APPS_SCRIPT_WEB_APP_URL_HERE';
+const APPS_SCRIPT_TOKEN='SET_TOKEN_LOCALLY';
+const APPS_SCRIPT_TIMEOUT_MS=20000;
+let appScriptSyncPromise=null;
+function queueDailySync(date){
+ // IndexedDB outbox is the durable queue; this timer only coalesces network attempts.
+ clearTimeout(sheetsSyncTimer);
+ sheetsSyncTimer=setTimeout(()=>syncPending(),700);
 }
-async function connectSheets(){
- await loadSheetsGIS();
- sheetsToken=await new Promise((resolve,reject)=>{
-  const client=window.google.accounts.oauth2.initTokenClient({client_id:NONGKI_SHEETS.clientId,scope:'openid email https://www.googleapis.com/auth/spreadsheets',callback:r=>{
-   if(r?.error||!r?.access_token){reject(new Error(r?.error_description||r?.error||'Login Google dibatalkan.'));return;}resolve(r.access_token);
-  },error_callback:e=>reject(new Error(e?.message||'Login Google gagal.'))});
-  client.requestAccessToken({prompt:'consent'});
- });
- const resp=await fetch('https://openidconnect.googleapis.com/v1/userinfo',{headers:{Authorization:'Bearer '+sheetsToken}});
- if(!resp.ok){sheetsToken=null;throw new Error('Tidak dapat memverifikasi akun Google.');}
- const profile=await resp.json();sheetsEmail=String(profile.email||'').toLowerCase();
- if(!profile.email_verified||sheetsEmail!==NONGKI_SHEETS.allowedEmail.toLowerCase()){sheetsToken=null;sheetsEmail=null;throw new Error('Gunakan akun Google pemilik yang diizinkan: '+NONGKI_SHEETS.allowedEmail);}
- $('sheetsConnectionStatus').textContent='Terhubung: '+sheetsEmail;
- $('connectGoogleSheetsBtn').textContent='Putuskan koneksi';
- $('syncGoogleSheetsBtn').disabled=false;
- toast('Google terhubung. Periksa tanggal sebelum sinkronisasi.');
+function appScriptConfigured(){
+ return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(String(APPS_SCRIPT_URL||'')) &&
+        APPS_SCRIPT_TOKEN && APPS_SCRIPT_TOKEN!=='SET_TOKEN_LOCALLY';
 }
-async function sheetsFetch(url,opts={}){
- if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
- const r=await fetch(url,{...opts,headers:{Authorization:'Bearer '+sheetsToken,'Content-Type':'application/json',...(opts.headers||{})}});
- const body=await r.json().catch(()=>({}));
- if(!r.ok){if(r.status===401){sheetsToken=null;sheetsEmail=null;$('syncGoogleSheetsBtn').disabled=true;$('sheetsConnectionStatus').textContent='Sesi habis; hubungkan kembali.';}throw new Error(body?.error?.message||('Google Sheets API gagal (HTTP '+r.status+').'));}
- return body;
+function localTimestamp(value){
+ const d=value?new Date(value):new Date();
+ if(Number.isNaN(d.getTime()))return new Date().toISOString().slice(0,19).replace('T',' ');
+ return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')+' '+[String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0')].join(':');
 }
-async function syncSelectedDailyTotal(){
- if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
- const date=$('historyDate').value||today();
- const amount=total(dayTx(date));
- const base='https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(NONGKI_SHEETS.spreadsheetId);
- const sheet="'"+NONGKI_SHEETS.sheetName.replace(/'/g,"''")+"'";
- const range=encodeURIComponent(sheet+'!A:B');
- const result=await sheetsFetch(base+'/values/'+range+'?majorDimension=ROWS');
- const rows=Array.isArray(result.values)?result.values:[];
- let row=-1;
- for(let i=1;i<rows.length;i++){if(String(rows[i][0]||'').trim()===date){row=i+1;break;}}
- const values=[[date,amount]];
- if(row>=2){
-  const target=sheet+'!A'+row+':B'+row;
-  await sheetsFetch(base+'/values/'+encodeURIComponent(target)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range:target,majorDimension:'ROWS',values})});
- }else{
-  await sheetsFetch(base+'/values/'+range+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});
- }
- $('sheetsConnectionStatus').textContent='Terakhir sinkron: '+date+' · '+rupiah(amount);
- toast('Total '+date+' ('+rupiah(amount)+') berhasil dikirim ke INCOME LOG.');
+function outboxToPayload(item){
+ const event=item.eventType==='transaction.canceled'?'cancelTransaction':'newTransaction';
+ const source=item.payload||{};
+ const row=source.items?source:(source.transaction||source);
+ const items=Array.isArray(row.items)?row.items:[];
+ const txId=String(item.entityId||source.transactionId||row.id||'');
+ if(!txId)throw new Error('ID transaksi tidak ditemukan pada antrean lokal.');
+ const summary=items.length?items.map(i=>String(i.productName||i.name||'Produk')+' × '+(Number(i.quantity)||1)).join(', '):String(source.name||source.productName||'Transaksi Nongki');
+ const quantity=items.length?items.reduce((sum,i)=>sum+(Number(i.quantity)||1),0):(Number(source.qty)||1);
+ const amount=Number(row.total??source.total??source.nominal??0)||0;
+ const stamp=event==='cancelTransaction'?(source.canceledAt||item.createdAt):(row.createdAt||item.createdAt);
+ const date=String(row.businessDate||source.businessDate||source.date||localTimestamp(stamp).slice(0,10));
+ const user=String(row.userId||source.canceledBy||source.userId||'Kasir / Admin');
+ const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
+ const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
+ const transaction={
+  id_event:eventId,
+  id_transaksi:txId,
+  waktu:localTimestamp(stamp),
+  jenis_event:event==='cancelTransaction'?'Pembatalan Transaksi':'Penjualan Baru',
+  ringkasan_produk:summary,
+  jumlah_item:quantity,
+  nominal:amount,
+  pengguna:user,
+  perangkat:device,
+  status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
+  tanggal:date
+ };
+ const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction};
+ if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
+ return payload;
 }
-$('connectGoogleSheetsBtn')?.addEventListener('click',async()=>{
+async function postToAppsScript(payload){
+ if(!appScriptConfigured())throw new Error('Konfigurasi belum lengkap. Isi APPS_SCRIPT_URL dan APPS_SCRIPT_TOKEN di bagian atas script.');
+ const controller=typeof AbortController!=='undefined'?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
  try{
-  if(sheetsToken){
-   if(window.google?.accounts?.oauth2)window.google.accounts.oauth2.revoke(sheetsToken,()=>{});
-   sheetsToken=null;sheetsEmail=null;$('sheetsConnectionStatus').textContent='Belum terhubung';$('connectGoogleSheetsBtn').textContent='Hubungkan Google';$('syncGoogleSheetsBtn').disabled=true;toast('Koneksi Google diputus.');
-  }else{ $('connectGoogleSheetsBtn').disabled=true;await connectSheets(); }
- }catch(e){console.error(e);toast(e.message||'Gagal menghubungkan Google.');}
- finally{$('connectGoogleSheetsBtn').disabled=false;}
-});
+  const response=await fetch(APPS_SCRIPT_URL,{
+   method:'POST',
+   headers:{'Content-Type':'text/plain;charset=utf-8'},
+   body:JSON.stringify(payload),
+   signal:controller?controller.signal:undefined
+  });
+  const raw=await response.text();
+  if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
+  let result;
+  try{result=JSON.parse(raw);}catch{throw new Error('Respons Apps Script bukan JSON yang valid. Pastikan doPost mengembalikan ContentService JSON.');}
+  if(result?.success===false||result?.ok===false||result?.status==='error'){
+   throw new Error(String(result.message||result.error||'Apps Script menolak transaksi.'));
+  }
+  return result;
+ }catch(error){
+  if(error?.name==='AbortError')throw new Error('Koneksi Apps Script timeout; antrean tetap disimpan untuk dicoba ulang.');
+  if(error instanceof TypeError)throw new Error('Gagal menghubungi Apps Script. Periksa URL Web App dan konfigurasi akses/CORS; antrean lokal tetap aman.');
+  throw error;
+ }finally{if(timer)clearTimeout(timer);}
+}
+async function removeOutboxItem(id){
+ const db=await openNongkiDB();
+ try{const tx=db.transaction('outbox','readwrite'),done=txDone(tx);tx.objectStore('outbox').delete(id);await done;}
+ finally{db.close();}
+}
+async function updateOutboxError(item,error){
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction('outbox','readwrite'),done=txDone(tx),store=tx.objectStore('outbox');
+  store.put({...item,attempts:(Number(item.attempts)||0)+1,lastError:String(error?.message||error),lastAttemptAt:new Date().toISOString()});
+  await done;
+ }finally{db.close();}
+}
+async function enqueueLegacyPendingTransactions(outbox){
+ const queuedEntities=new Set(outbox.map(x=>String(x.entityId||'')));
+ const legacy=data.transactions.filter(t=>t&&t.id&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
+ if(!legacy.length)return;
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction('outbox','readwrite'),done=txDone(tx),store=tx.objectStore('outbox');
+  for(const t of legacy){
+   const canceled=t.status==='cancelled'||t.status==='canceled';
+   const id='legacy-'+String(t.id)+(canceled?'-cancel':'-create');
+   store.put({id,entityId:String(t.id),eventType:canceled?'transaction.canceled':'transaction.created',createdAt:t.cancelledAt||t.createdAt||new Date().toISOString(),payload:canceled?{transactionId:String(t.id),status:'canceled',canceledAt:t.cancelledAt||new Date().toISOString(),canceledBy:t.cancelledBy||'Kasir / Admin',total:Number(t.total)||0,name:t.name,qty:Number(t.qty)||1,date:t.date,time:t.time,userId:t.userId}: {id:String(t.id),createdAt:t.createdAt||new Date().toISOString(),businessDate:t.date||today(),userId:t.userId||'Kasir / Admin',deviceId:localStorage.getItem('nongki_device_id_v1')||'Perangkat ini',status:'active',items:[{productId:String(t.productId||t.id),productName:String(t.name||'Produk'),quantity:Number(t.qty)||1,unitPrice:Number(t.unitPrice)||Number(t.total)||0,lineTotal:Number(t.total)||0}],total:Number(t.total)||0},attempts:0,lastError:null});
+  }
+  await done;
+ }finally{db.close();}
+}
+async function syncPending(){
+ if(appScriptSyncPromise)return appScriptSyncPromise;
+ if(!navigator.onLine)return false;
+ if(!appScriptConfigured()){
+  const status=$('sheetsConnectionStatus');if(status)status.textContent='Offline queue aktif · isi APPS_SCRIPT_URL dan token untuk sinkronisasi.';
+  return false;
+ }
+ appScriptSyncPromise=(async()=>{
+  const button=$('syncGoogleSheetsBtn');
+  if(button)button.disabled=true;
+  let sent=0,failed=0,lastError='';
+  try{
+   let outbox=await getAllRecords('outbox');
+   await enqueueLegacyPendingTransactions(outbox);
+   outbox=(await getAllRecords('outbox')).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+   for(const item of outbox){
+    try{
+     const payload=outboxToPayload(item);
+     await postToAppsScript(payload);
+     await removeOutboxItem(item.id);
+     const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
+     if(tx){
+      // Only mark the event as synced after the backend acknowledges it.
+      const stillPending=(await getAllRecords('outbox')).some(q=>String(q.entityId)===String(item.entityId));
+      tx.syncStatus=stillPending?'pending':'synced';
+      save();
+     }
+     sent++;
+    }catch(error){
+     failed++;lastError=String(error?.message||error);
+     await updateOutboxError(item,error);
+     // Preserve FIFO: do not send newer events ahead of a failed event.
+     break;
+    }
+   }
+   const remaining=(await getAllRecords('outbox')).length;
+   const status=$('sheetsConnectionStatus');
+   if(status)status.textContent=failed
+    ?'Sinkronisasi tertunda · '+remaining+' antrean tersisa · '+lastError
+    :'Sinkronisasi selesai · '+sent+' event dikirim · '+remaining+' antrean tersisa.';
+   if(failed)toast('Sinkronisasi tertunda: '+lastError);
+   else if(sent)toast(sent+' event berhasil dikirim ke Apps Script.');
+   if(sent)render();
+   return failed===0;
+  }catch(error){
+   const status=$('sheetsConnectionStatus');
+   if(status)status.textContent='Antrean lokal aman · '+String(error?.message||error);
+   console.error('Sinkronisasi Apps Script gagal:',error);
+   toast('Sinkronisasi gagal. Data tetap tersimpan lokal.');
+   return false;
+  }finally{
+   if(button)button.disabled=false;
+   appScriptSyncPromise=null;
+  }
+ })();
+ return appScriptSyncPromise;
+}
+window.addEventListener('online',()=>syncPending());
+
+// Manual sync button; no Google OAuth or Direct Sheets API is used.
 $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
- try{$('syncGoogleSheetsBtn').disabled=true;await syncSelectedDailyTotal();}
- catch(e){console.error(e);toast(e.message||'Sinkronisasi gagal.');}
- finally{$('syncGoogleSheetsBtn').disabled=!sheetsToken;}
+ try{await syncPending();}
+ catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
 load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
