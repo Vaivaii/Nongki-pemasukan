@@ -661,7 +661,7 @@ function renderGrid(){
 }
 function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled';return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">Status transaksi: ${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='synced'?'active':'cancelled'}">Status riwayat: ${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
-let historySource='local';
+historySource='local';
 function renderHistory(){
  const date=$('historyDate').value||today();
  const localPending=data.transactions.filter(t=>t.date===date&&t.syncStatus!=='synced');
