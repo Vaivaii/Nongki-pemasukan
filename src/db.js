@@ -126,6 +126,7 @@ export async function recordTransaction({ userId = null, deviceId = null, items 
   const db = await openNongkiDB();
   try {
     const tx = db.transaction([STORES.transactions, STORES.outbox], 'readwrite');
+    const done = transactionDone(tx);
     tx.objectStore(STORES.transactions).add(transaction);
     tx.objectStore(STORES.outbox).add({
       id: crypto.randomUUID(),
@@ -136,7 +137,7 @@ export async function recordTransaction({ userId = null, deviceId = null, items 
       attempts: 0,
       lastError: null
     });
-    await transactionDone(tx);
+    await done;
     return transaction;
   } finally {
     db.close();
