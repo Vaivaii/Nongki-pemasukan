@@ -501,8 +501,8 @@ async function syncHistoryToSheets(){
    if(canceled&&!eventIds.has(canceledId)){await append(historyId,'RIWAYAT TRANSAKSI','L',[[canceledId,txId,String(t.cancelledAt||new Date().toISOString()),'DIBATALKAN',name,qty,amount,staffName(),device(),'DIBATALKAN',String(t.cancelReason||'Dibatalkan dari riwayat Nongki'),'APLIKASI']]);eventIds.add(canceledId);}
    t.syncStatus='synced';save();
   }
-  $('sheetsConnectionStatus').textContent='Transaksi tersinkron ke INCOME LOG dan riwayat server.';render();
- }catch(error){console.error('Sinkronisasi Nongki gagal:',error);data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});save();render();$('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');}
+  $('sheetsConnectionStatus').textContent='Transaksi tersinkron ke INCOME LOG dan riwayat server.';render();return true;
+ }catch(error){console.error('Sinkronisasi Nongki gagal:',error);data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});save();render();$('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');return false;}
  finally{window.__nongkiHistorySyncRunning=false;}
 }
 window.addEventListener('online',syncPending);
@@ -596,7 +596,7 @@ async function loadServerHistory(){
  const rows=Array.isArray(res.values)?res.values:[];
  cloudTransactions=rows.slice(1).filter(r=>r[0]).map(r=>{
   const eventId=String(r[0]||''), txId=String(r[1]||''), stamp=String(r[2]||'');
-  const match=stamp.match(/^(\\d{4}-\\d{2}-\\d{2})[ T](\\d{2}:\\d{2}(?::\\d{2})?)/);
+  const match=stamp.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)/);
   const date=match?match[1]:(stamp.slice(0,10));
   const time=match?match[2]:'';
   const kind=String(r[3]||'');
@@ -637,7 +637,7 @@ $('connectGoogleSheetsBtn')?.addEventListener('click',async()=>{
  finally{$('connectGoogleSheetsBtn').disabled=false;}
 });
 $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
- try{$('syncGoogleSheetsBtn').disabled=true;await syncPending();await loadServerHistory();toast('Sinkronisasi riwayat selesai.');}
+ try{$('syncGoogleSheetsBtn').disabled=true;const syncResult=await syncPending();await loadServerHistory();if(syncResult===false)throw new Error('Riwayat server berhasil dibaca, tetapi sebagian transaksi gagal disinkronkan. Periksa pesan error dan akses spreadsheet.');toast('Sinkronisasi riwayat selesai.');}
  catch(e){console.error(e);toast(e.message||'Sinkronisasi riwayat gagal.');}
  finally{$('syncGoogleSheetsBtn').disabled=!sheetsToken;}
 });
