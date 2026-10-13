@@ -13,16 +13,7 @@ Integrasi ini memakai Google OAuth dan Google Sheets API langsung dari GitHub Pa
 
 ## Format tab INCOME LOG
 
-Modul `src/google-sheets.js` saat ini mengharapkan baris header di row 1 dan kolom:
-
-| Kolom | Isi |
-|---|---|
-| A | Tanggal dalam format `YYYY-MM-DD` |
-| B | Kategori, diisi `Penjualan global` |
-| C | Total penjualan harian (angka rupiah) |
-| D | Waktu pembaruan (ISO 8601) |
-
-Satu baris per tanggal untuk kategori `Penjualan global`. Jika tanggal tersebut sudah ada, modul memperbarui barisnya; jika belum ada, modul menambahkan baris baru. Modul ini tidak boleh diaktifkan sebelum format kolom pada spreadsheet diperiksa.
+Sesuai keputusan sebelumnya, gunakan spreadsheet Nongki yang sudah ada—jangan membuat spreadsheet duplikat. Modul `src/google-sheets.js` mengasumsikan baris 1 adalah header, kolom A berisi tanggal, dan kolom B berisi total penjualan harian (angka rupiah). Satu baris per tanggal. Jika tanggal sudah ada, modul memperbarui kolom A:B pada baris itu; jika belum ada, modul menambahkan baris. Kolom lain dan tab lain tidak disentuh. Sebelum mengaktifkan sinkronisasi, cocokkan asumsi ini dengan susunan aktual tab `INCOME LOG`.
 
 ## Catatan keamanan
 
