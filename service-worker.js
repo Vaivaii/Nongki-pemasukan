@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v9-google-sheets-ui';
+const CACHE_NAME = 'v27-3profil-pin';
 const CORE_FILES = [
   './',
   './index.html',
