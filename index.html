@@ -466,7 +466,7 @@ let historySource='local';
 function renderHistory(){
  const date=$('historyDate').value||today();
  $('localCount').textContent=data.transactions.filter(t=>t.date===date).length;
- $('cloudCount').textContent=cloudTransactions.filter(t=>t.date===date).length;
+ const cloudCountEl=$('cloudCount');if(cloudCountEl)cloudCountEl.textContent=cloudTransactions.filter(t=>t.date===date).length;
  document.querySelectorAll('[data-history-source]').forEach(b=>b.classList.toggle('active',b.dataset.historySource===historySource));
  if(historySource==='local'){
   const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled');
