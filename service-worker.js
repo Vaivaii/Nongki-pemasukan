@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v28-ui-clean-sync';
+const CACHE_NAME = 'v28-ui-clean-sync-2';
 const CORE_FILES = [
   './',
   './index.html',
