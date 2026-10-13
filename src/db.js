@@ -61,9 +61,10 @@ async function withStore(storeName, mode, callback) {
   const db = await openNongkiDB();
   try {
     const tx = db.transaction(storeName, mode);
+    const done = transactionDone(tx);
     const store = tx.objectStore(storeName);
     const result = await callback(store, tx);
-    await transactionDone(tx);
+    await done;
     return result;
   } finally {
     db.close();
@@ -146,11 +147,12 @@ export async function cancelTransaction(transactionId, { userId = null, reason =
   const db = await openNongkiDB();
   try {
     const tx = db.transaction([STORES.transactions, STORES.outbox], 'readwrite');
+    const done = transactionDone(tx);
     const transactions = tx.objectStore(STORES.transactions);
     const current = await requestResult(transactions.get(transactionId));
     if (!current) throw new Error('Transaksi tidak ditemukan.');
     if (current.status === 'canceled') {
-      await transactionDone(tx);
+      await done;
       return current;
     }
     const now = new Date().toISOString();
@@ -177,7 +179,7 @@ export async function cancelTransaction(transactionId, { userId = null, reason =
       attempts: 0,
       lastError: null
     });
-    await transactionDone(tx);
+    await done;
     return updated;
   } finally {
     db.close();
@@ -197,6 +199,7 @@ export async function markOutboxAttempt(eventId, errorMessage = '') {
   const db = await openNongkiDB();
   try {
     const tx = db.transaction(STORES.outbox, 'readwrite');
+    const done = transactionDone(tx);
     const store = tx.objectStore(STORES.outbox);
     const event = await requestResult(store.get(eventId));
     if (event) {
@@ -204,7 +207,7 @@ export async function markOutboxAttempt(eventId, errorMessage = '') {
       event.lastError = String(errorMessage || '').slice(0, 500) || null;
       store.put(event);
     }
-    await transactionDone(tx);
+    await done;
     return event || null;
   } finally {
     db.close();
