@@ -213,3 +213,73 @@ export async function markOutboxAttempt(eventId, errorMessage = '') {
     db.close();
   }
 }
+
+/** Summary helpers: canceled transactions remain in history but do not count as sales. */
+export async function getSalesSummary({ fromDate = null, toDate = null } = {}) {
+  const transactions = await getAllRecords(STORES.transactions);
+  const included = transactions.filter(t =>
+    t.status !== 'canceled' &&
+    (!fromDate || t.businessDate >= fromDate) &&
+    (!toDate || t.businessDate <= toDate)
+  );
+  const products = new Map();
+  let total = 0;
+  let itemCount = 0;
+  for (const transaction of included) {
+    total += Number(transaction.total) || 0;
+    for (const item of (transaction.items || [])) {
+      const qty = Number(item.quantity) || 0;
+      itemCount += qty;
+      const key = item.productId;
+      const row = products.get(key) || { productId: key, productName: item.productName, quantity: 0, revenue: 0 };
+      row.quantity += qty;
+      row.revenue += Number(item.lineTotal) || qty * (Number(item.unitPrice) || 0);
+      products.set(key, row);
+    }
+  }
+  return {
+    transactionCount: included.length,
+    itemCount,
+    netRevenue: total,
+    products: [...products.values()].sort((a, b) => b.quantity - a.quantity)
+  };
+}
+
+export async function saveSession({ userId, deviceId = null, role = 'staff', startedAt = new Date().toISOString() }) {
+  if (!userId) throw new Error('User ID wajib diisi.');
+  const session = { id: crypto.randomUUID(), userId: String(userId), deviceId, role, startedAt, endedAt: null, lastSeenAt: startedAt, syncStatus: 'pending' };
+  const db = await openNongkiDB();
+  try {
+    const tx = db.transaction([STORES.sessions, STORES.outbox], 'readwrite');
+    const done = transactionDone(tx);
+    tx.objectStore(STORES.sessions).add(session);
+    tx.objectStore(STORES.outbox).add({
+      id: crypto.randomUUID(), entityId: session.id, eventType: 'session.started',
+      createdAt: startedAt, payload: session, attempts: 0, lastError: null
+    });
+    await done;
+    return session;
+  } finally { db.close(); }
+}
+
+export async function closeSession(sessionId, { endedAt = new Date().toISOString() } = {}) {
+  const db = await openNongkiDB();
+  try {
+    const tx = db.transaction([STORES.sessions, STORES.outbox], 'readwrite');
+    const done = transactionDone(tx);
+    const store = tx.objectStore(STORES.sessions);
+    const session = await requestResult(store.get(sessionId));
+    if (!session) throw new Error('Sesi tidak ditemukan.');
+    if (!session.endedAt) {
+      session.endedAt = endedAt;
+      session.lastSeenAt = endedAt;
+      store.put(session);
+      tx.objectStore(STORES.outbox).add({
+        id: crypto.randomUUID(), entityId: sessionId, eventType: 'session.ended',
+        createdAt: endedAt, payload: { sessionId, userId: session.userId, endedAt }, attempts: 0, lastError: null
+      });
+    }
+    await done;
+    return session;
+  } finally { db.close(); }
+}
