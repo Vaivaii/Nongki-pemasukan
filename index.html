@@ -565,14 +565,10 @@ const PROFILE_LIST=[
 const PROFILE_PINS={owner:'1234',wife:'5678'};
 let currentUser=null;
 function readProfileSession(){
- // Hanya membaca sekali saat inisialisasi; tidak mengubah storage atau memanggil login.
- try{
-  const rawText=localStorage.getItem(SESSION_KEY);
-  if(!rawText)return null;
-  const raw=JSON.parse(rawText);
-  if(!raw||typeof raw!=='object'||typeof raw.profileId!=='string')return null;
-  return PROFILE_LIST.find(p=>p.id===raw.profileId)||null;
- }catch(error){console.warn('Sesi profil tidak dapat dibaca; mulai tanpa sesi.',error);return null}
+ // Jangan pulihkan role dari localStorage: data profileId bukan bukti autentikasi PIN.
+ // Setiap pemuatan aplikasi wajib kembali ke layar login; Owner harus memasukkan PIN lagi.
+ try{localStorage.removeItem(SESSION_KEY);}catch(error){console.warn('Sesi lama tidak dapat dibersihkan.',error);}
+ return null;
 }
 function saveProfileSession(profile){
  try{
@@ -652,11 +648,17 @@ function attemptProfileLogin(){
   const profile=PROFILE_LIST.find(p=>p.id===id);
   const pin=String($('loginPin')?.value||'');
   if(!profile){toast('Pilih profil yang valid.');return false}
-  if(profile.role!=='staff'&&pin!==PROFILE_PINS[profile.id]){
-   alert('PIN salah.');
-   const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
-   return false;
-  }
+   // Validasi wajib sebelum mengubah currentUser atau menampilkan UI sesuai role.
+   if(profile.id==='owner'&&pin!==PROFILE_PINS.owner){
+    alert('PIN Owner salah. Masukkan PIN Owner untuk melanjutkan.');
+    const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
+    return false;
+   }
+   if(profile.id==='wife'&&pin!==PROFILE_PINS.wife){
+    alert('PIN Istri salah.');
+    const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
+    return false;
+   }
   // Ubah state lebih dahulu. Kegagalan UI tidak mengembalikan profil ke role sebelumnya.
   currentUser=profile;
   saveProfileSession(profile);
