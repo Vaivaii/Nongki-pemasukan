@@ -485,7 +485,7 @@ function renderReports(){
  $('monthlyLabels').innerHTML=months.map(m=>`<span style="font-size:9px;color:var(--muted);width:16%;text-align:center">${m.sum?rupiah(m.sum):'—'}</span>`).join('');
  const staff=!!(currentUser&&currentUser.role==='staff');$('rolePreviewText').textContent=staff?'Akun pegawai dapat mencatat penjualan dan melihat laporan.':'Akun pemilik dapat melihat laporan dan mengelola produk.';
 }
-function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports()}
+function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
 function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');if(dot){dot.classList.remove('status-connected','status-syncing','status-offline','status-error');dot.classList.add(state==='connected'?'status-connected':state==='syncing'?'status-syncing':state==='error'?'status-error':'status-offline');dot.setAttribute('aria-label',label)}if(text)text.textContent=label}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -607,7 +607,7 @@ function applyRole(){
  $('activeRoleName').textContent='Login sebagai '+(currentUser?currentUser.name:'—');$('headerProfileName').textContent=currentUser?'Profil: '+currentUser.name:'Belum masuk';
  $('roleSwitchBtn').classList.add('hidden');$('profileAvatarBtn')?.classList.toggle('hidden',!currentUser);
  const avatarGlyph=$('profileAvatarGlyph');if(avatarGlyph)avatarGlyph.textContent=currentUser?.role==='owner'?'👑':currentUser?.role==='wife'?'⭐':'🧢';
- const syncFab=$('staffSyncFab');if(syncFab)syncFab.hidden=!(currentUser&&currentUser.role==='staff');
+ const syncFab=$('staffSyncFab');if(syncFab)syncFab.hidden=!(currentUser&&currentUser.role==='staff');refreshStaffSyncBadge();
  $('activeRoleBadge').textContent=roleName().toUpperCase();
  $('rolePreviewText').textContent=owner?'Owner: akses penuh, termasuk sinkronisasi dan backup.':wife?'Istri: catat penjualan, riwayat, laporan, dan pengaturan menu.':'Pegawai: hanya mencatat penjualan.';
  // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
@@ -794,7 +794,7 @@ async function syncPending(){
     ?'Sinkronisasi tertunda · '+remaining+' antrean tersisa · '+lastError
     :'Sinkronisasi selesai · '+sent+' event dikirim · '+remaining+' antrean tersisa.';
    if(failed){setGlobalSyncStatus('error','Gagal tersambung ke server');toast('Sinkronisasi tertunda: '+lastError)}
-   else if(sent){setGlobalSyncStatus('connected','Terhubung · sinkronisasi berhasil');toast(sent+' event berhasil dikirim ke Apps Script.')}
+   else if(sent){setGlobalSyncStatus('connected','Server merespons · transaksi terkirim');toast(sent+' event berhasil dikirim ke Apps Script.')}
    else setGlobalSyncStatus('offline','Belum ada konfirmasi data server');
    if(sent)render();await refreshStaffSyncBadge();
    return failed===0;
