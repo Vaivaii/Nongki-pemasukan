@@ -104,37 +104,36 @@ async function sheetsRequest(url, options = {}) {
 }
 
 /*
- * Expected sheet columns (row 1 headers):
- * A: Tanggal (YYYY-MM-DD), B: Kategori, C: Total, D: Diperbarui
- * This function updates the existing matching date/category row or appends one.
+ * Preserve the user's existing spreadsheet and INCOME LOG tab.
+ * Expected minimum structure: row 1 headers, column A date, column B overall sales amount.
+ * Only columns A:B are touched; all other columns and tabs remain intact.
  */
-export async function upsertDailyIncome({ spreadsheetId, sheetName = 'INCOME LOG', date, amount, category = 'Penjualan global' }) {
+export async function upsertDailyIncome({ spreadsheetId, sheetName = 'INCOME LOG', date, amount }) {
   if (!spreadsheetId || spreadsheetId.includes('GANTI_DENGAN')) {
     throw new Error('Spreadsheet ID belum dikonfigurasi.');
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Format tanggal harus YYYY-MM-DD.');
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) throw new Error('Format tanggal harus YYYY-MM-DD.');
   if (!Number.isFinite(Number(amount)) || Number(amount) < 0) throw new Error('Total pemasukan tidak valid.');
 
   const encodedSheet = "'" + sheetName.replace(/'/g, "''") + "'";
-  const range = encodeURIComponent(encodedSheet + '!A:D');
+  const range = encodeURIComponent(encodedSheet + '!A:B');
   const base = SHEETS_API + '/' + encodeURIComponent(spreadsheetId);
   const result = await sheetsRequest(base + '/values/' + range + '?majorDimension=ROWS');
   const rows = Array.isArray(result.values) ? result.values : [];
   let matchRow = -1;
   for (let i = 1; i < rows.length; i += 1) {
-    if (String(rows[i][0] || '').trim() === date &&
-        String(rows[i][1] || '').trim().toLowerCase() === category.toLowerCase()) {
+    if (String(rows[i][0] || '').trim() === date) {
       matchRow = i + 1;
       break;
     }
   }
 
-  const rowValues = [[date, category, Number(amount), new Date().toISOString()]];
+  const rowValues = [[date, Number(amount)]];
   if (matchRow >= 2) {
-    const updateRange = encodeURIComponent(encodedSheet + '!A' + matchRow + ':D' + matchRow);
+    const updateRange = encodeURIComponent(encodedSheet + '!A' + matchRow + ':B' + matchRow);
     return sheetsRequest(base + '/values/' + updateRange + '?valueInputOption=RAW', {
       method: 'PUT',
-      body: JSON.stringify({ range: encodedSheet + '!A' + matchRow + ':D' + matchRow, majorDimension: 'ROWS', values: rowValues })
+      body: JSON.stringify({ range: encodedSheet + '!A' + matchRow + ':B' + matchRow, majorDimension: 'ROWS', values: rowValues })
     });
   }
   return sheetsRequest(base + '/values/' + range + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', {
