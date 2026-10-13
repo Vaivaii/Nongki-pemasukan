@@ -469,60 +469,41 @@ async function cancelTx(id){
 }
 
 async function syncHistoryToSheets(){
- // Sinkronisasi transaksi ke spreadsheet kedua. ID event deterministik mencegah duplikasi saat retry.
+ // Sinkronisasi event ke INCOME LOG dan spreadsheet riwayat kedua.
  if(!sheetsToken||!data?.transactions?.length)return;
  if(window.__nongkiHistorySyncRunning)return;
  window.__nongkiHistorySyncRunning=true;
- const id=NONGKI_SHEETS.historySpreadsheetId;
- const base='https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(id);
+ const historyId=NONGKI_SHEETS.historySpreadsheetId, incomeId=NONGKI_SHEETS.spreadsheetId;
+ const apiBase=id=>'https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(id);
  const quote=name=>"'"+name.replace(/'/g,"''")+"'";
- const readRange=async(name,cols)=>{const r=await sheetsFetch(base+'/values/'+encodeURIComponent(quote(name)+'!A:'+cols)+'?majorDimension=ROWS');return Array.isArray(r.values)?r.values:[];};
- const appendRows=async(name,cols,values)=>{if(!values.length)return;const range=quote(name)+'!A:'+cols;await sheetsFetch(base+'/values/'+encodeURIComponent(range)+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});};
+ const readRows=async(id,name,cols)=>{const r=await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(quote(name)+'!A:'+cols)+'?majorDimension=ROWS');return Array.isArray(r.values)?r.values:[];};
+ const append=async(id,name,cols,values,mode='RAW')=>{if(!values.length)return;const range=quote(name)+'!A:'+cols;await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(range)+':append?valueInputOption='+mode+'&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});};
  try{
-  const [detailRows,eventRows]=await Promise.all([readRange('DETAIL PRODUK','O'),readRange('RIWAYAT TRANSAKSI','L')]);
-  const detailIndex=new Map();
-  for(let i=1;i<detailRows.length;i++){const key=String(detailRows[i][0]||'')+'|'+String(detailRows[i][1]||'');if(key!=='|')detailIndex.set(key,i+1);}
-  const eventIds=new Set(eventRows.slice(1).map(row=>String(row[0]||'')));
+  const [detailRows,eventRows,incomeRows]=await Promise.all([readRows(historyId,'DETAIL PRODUK','O'),readRows(historyId,'RIWAYAT TRANSAKSI','L'),readRows(incomeId,'INCOME LOG','K')]);
+  const detailIndex=new Map();for(let i=1;i<detailRows.length;i++){const k=String(detailRows[i][0]||'')+'|'+String(detailRows[i][1]||'');if(k!=='|')detailIndex.set(k,i+1);}
+  const eventIds=new Set(eventRows.slice(1).map(r=>String(r[0]||'')));
+  const incomeMarkers=new Set(incomeRows.map(r=>String(r[7]||'')).filter(Boolean));
   const staffName=()=>String(currentUser?.name||currentUser?.username||currentUser?.id||'STAFF001');
   const device=()=>String(localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
   for(const t of data.transactions.filter(x=>x.syncStatus!=='synced')){
    const txId=String(t.id||'');if(!txId)continue;
-   const canceled=t.status==='cancelled'||t.status==='canceled';
-   const eventTime=t.cancelledAt||new Date().toISOString();
-   const itemId=txId+':ITEM:1';
-   const key=txId+'|'+itemId;
-   const detailValues=[txId,itemId,String(t.date||today()),String(t.time||''),String(t.name||'Produk'),String(t.category||'Produk'),Number(t.qty)||1,Number(t.unitPrice)||0,Number(t.total)||0,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','TERSINKRON',canceled?txId+':CANCELED':txId+':CREATED',canceled?'Dibatalkan dari riwayat Nongki':''];
-   if(detailIndex.has(key)){
-    const rowNo=detailIndex.get(key);
-    const range=quote('DETAIL PRODUK')+'!A'+rowNo+':O'+rowNo;
-    await sheetsFetch(base+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values:[detailValues]})});
-   }else{
-    await appendRows('DETAIL PRODUK','O',[detailValues]);
-    detailIndex.set(key,-1);
-   }
-   const createdEventId=txId+':CREATED';
-   if(!eventIds.has(createdEventId)){
-    await appendRows('RIWAYAT TRANSAKSI','L',[[createdEventId,txId,String(t.date||today())+' '+String(t.time||''),'DIBUAT',String(t.name||'Transaksi'),Number(t.qty)||1,Number(t.total)||0,staffName(),device(),'AKTIF','Transaksi dicatat dari aplikasi Nongki','APLIKASI']]);
-    eventIds.add(createdEventId);
-   }
-   if(canceled){
-    const canceledEventId=txId+':CANCELED';
-    if(!eventIds.has(canceledEventId)){
-     await appendRows('RIWAYAT TRANSAKSI','L',[[canceledEventId,txId,eventTime,'DIBATALKAN',String(t.name||'Transaksi'),Number(t.qty)||1,Number(t.total)||0,staffName(),device(),'DIBATALKAN',String(t.cancelReason||'Dibatalkan dari riwayat Nongki'),'APLIKASI']]);
-     eventIds.add(canceledEventId);
-    }
-   }
-   t.syncStatus='synced';
-   save();
+   const canceled=t.status==='cancelled'||t.status==='canceled', date=String(t.date||today());
+   const name=String(t.name||'Produk'), qty=Number(t.qty)||1, amount=Number(t.total)||0;
+   const createdId=txId+':CREATED', canceledId=txId+':CANCELED';
+   const addIncome=async(marker,amt,category)=>{if(incomeMarkers.has(marker))return;const row=[date,category,"='FIRST - READ ME!'!$F$16",amt,'','',name,marker,'','=IF(B1=\"\",\"\",MONTH(B1))','=IF(B1=\"\",\"\",YEAR(B1))'];await append(incomeId,'INCOME LOG','K',[row],'USER_ENTERED');incomeMarkers.add(marker);};
+   await addIncome('NONGKI_TX:'+txId+':CREATED',amount,'Penjualan Nongki');
+   if(canceled)await addIncome('NONGKI_TX:'+txId+':CANCELED',-amount,'Pembatalan penjualan Nongki');
+   const itemId=txId+':ITEM:1', key=txId+'|'+itemId;
+   const detail=[txId,itemId,date,String(t.time||''),name,String(t.category||'Produk'),qty,Number(t.unitPrice)||0,amount,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','TERSINKRON',canceled?canceledId:createdId,canceled?'Dibatalkan dari riwayat Nongki':''];
+   if(detailIndex.has(key)){const n=detailIndex.get(key),range=quote('DETAIL PRODUK')+'!A'+n+':O'+n;await sheetsFetch(apiBase(historyId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values:[detail]})});}
+   else{await append(historyId,'DETAIL PRODUK','O',[detail]);detailIndex.set(key,-1);}
+   if(!eventIds.has(createdId)){await append(historyId,'RIWAYAT TRANSAKSI','L',[[createdId,txId,date+' '+String(t.time||''),'DIBUAT',name,qty,amount,staffName(),device(),'AKTIF','Transaksi dicatat dari aplikasi Nongki','APLIKASI']]);eventIds.add(createdId);}
+   if(canceled&&!eventIds.has(canceledId)){await append(historyId,'RIWAYAT TRANSAKSI','L',[[canceledId,txId,String(t.cancelledAt||new Date().toISOString()),'DIBATALKAN',name,qty,amount,staffName(),device(),'DIBATALKAN',String(t.cancelReason||'Dibatalkan dari riwayat Nongki'),'APLIKASI']]);eventIds.add(canceledId);}
+   t.syncStatus='synced';save();
   }
-  $('sheetsConnectionStatus').textContent='Riwayat transaksi tersinkron ke spreadsheet kedua.';
-  render();
- }catch(error){
-  console.error('Sinkronisasi riwayat Nongki gagal:',error);
-  data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});
-  save();render();
-  $('sheetsConnectionStatus').textContent='Sinkronisasi riwayat gagal: '+(error.message||'periksa akses spreadsheet');
- }finally{window.__nongkiHistorySyncRunning=false;}
+  $('sheetsConnectionStatus').textContent='Transaksi tersinkron ke INCOME LOG dan riwayat server.';render();
+ }catch(error){console.error('Sinkronisasi Nongki gagal:',error);data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});save();render();$('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');}
+ finally{window.__nongkiHistorySyncRunning=false;}
 }
 window.addEventListener('online',syncPending);
 
