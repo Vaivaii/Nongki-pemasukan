@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v30-toast-sync-fix-1';;
+const CACHE_NAME = 'v31-null-dom-guard-1';;;
 const CORE_FILES = [
   './',
   './index.html',
