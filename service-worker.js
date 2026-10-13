@@ -1,8 +1,7 @@
-const CACHE_NAME = 'nongki-income-v6-pwa-foundation';
+const CACHE_NAME = 'nongki-income-v7-approved-ui';
 const CORE_FILES = [
   './',
   './index.html',
-  './app-v2.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -41,7 +40,7 @@ self.addEventListener('fetch', event => {
       return response;
     } catch {
       if (request.mode === 'navigate') {
-        return (await caches.match('./app-v2.html')) || (await caches.match('./index.html'));
+        return (await caches.match('./index.html')) || (await caches.match('./'));
       }
       return new Response('Aset belum tersedia offline.', {
         status: 503,
