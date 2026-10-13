@@ -565,14 +565,30 @@ const PROFILE_LIST=[
 const PROFILE_PINS={owner:'1234',wife:'5678'};
 let currentUser=null;
 function readProfileSession(){
+ // Hanya membaca sekali saat inisialisasi; tidak mengubah storage atau memanggil login.
  try{
-  const raw=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
-  return PROFILE_LIST.find(p=>p.id===raw?.profileId)||null;
- }catch{return null}
+  const rawText=localStorage.getItem(SESSION_KEY);
+  if(!rawText)return null;
+  const raw=JSON.parse(rawText);
+  if(!raw||typeof raw!=='object'||typeof raw.profileId!=='string')return null;
+  return PROFILE_LIST.find(p=>p.id===raw.profileId)||null;
+ }catch(error){console.warn('Sesi profil tidak dapat dibaca; mulai tanpa sesi.',error);return null}
 }
 function saveProfileSession(profile){
- if(profile)localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:profile.id,savedAt:new Date().toISOString()}));
- else localStorage.removeItem(SESSION_KEY);
+ try{
+  if(profile&&PROFILE_LIST.some(p=>p.id===profile.id)){
+   localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:profile.id,savedAt:new Date().toISOString()}));
+  }else localStorage.removeItem(SESSION_KEY);
+  return true;
+ }catch(error){console.warn('Sesi profil tidak dapat disimpan di perangkat ini.',error);return false}
+}
+function safeProfileUiRefresh(){
+ // State profil sudah diperbarui sebelum menyentuh UI; error DOM tidak membatalkan login.
+ try{applyRole();}catch(error){console.error('UI profil belum sepenuhnya diperbarui:',error);}
+ try{const overlay=$('loginOverlay');if(overlay)overlay.classList.toggle('hidden',!!currentUser);}catch(error){console.warn('Overlay login tidak tersedia:',error);}
+ try{const name=$('headerProfileName');if(name)name.textContent=currentUser?'Profil: '+currentUser.name:'Belum masuk';}catch(error){}
+ try{const glyph=$('profileAvatarGlyph');if(glyph)glyph.textContent=currentUser?.role==='owner'?'👑':currentUser?.role==='wife'?'⭐':'🧢';}catch(error){}
+ try{const menu=$('profileDropdown');if(menu)menu.hidden=true;const btn=$('profileAvatarBtn');if(btn)btn.setAttribute('aria-expanded','false');}catch(error){}
 }
 function ensureProfilePicker(){
  const old=$('loginUserId');
@@ -631,40 +647,73 @@ function applyRole(){
  renderReports();renderProducts();
 }
 function attemptProfileLogin(){
- const id=$('loginUserId').value;
- const profile=PROFILE_LIST.find(p=>p.id===id);
- const pin=String($('loginPin').value||'');
- if(!profile){toast('Pilih profil yang valid.');return}
- if(profile.role!=='staff'&&pin!==PROFILE_PINS[profile.id]){
-  alert('PIN salah.');$('loginPin').value='';$('loginPin').focus();return;
+ try{
+  const id=$('loginUserId')?.value;
+  const profile=PROFILE_LIST.find(p=>p.id===id);
+  const pin=String($('loginPin')?.value||'');
+  if(!profile){toast('Pilih profil yang valid.');return false}
+  if(profile.role!=='staff'&&pin!==PROFILE_PINS[profile.id]){
+   alert('PIN salah.');
+   const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
+   return false;
+  }
+  // Ubah state lebih dahulu. Kegagalan UI tidak mengembalikan profil ke role sebelumnya.
+  currentUser=profile;
+  saveProfileSession(profile);
+  const pinInput=$('loginPin');if(pinInput)pinInput.value='';
+  try{showView('salesView');}catch(error){console.warn('Tampilan kasir belum dapat dibuka:',error);}
+  safeProfileUiRefresh();
+  try{toast('Masuk sebagai '+profile.name);}catch(error){}
+  return true;
+ }catch(error){
+  console.error('Login profil mengalami kendala:',error);
+  // Jika profil valid sudah dipilih, jangan membatalkan role hanya karena elemen UI hilang.
+  if(currentUser){safeProfileUiRefresh();return true;}
+  try{toast('Login gagal. Muat ulang aplikasi lalu coba lagi.');}catch(e){}
+  return false;
  }
- currentUser=profile;saveProfileSession(profile);$('loginPin').value='';
- showView('salesView');applyRole();toast('Masuk sebagai '+profile.name);
 }
-$('loginBtn').addEventListener('click',attemptProfileLogin);
+$('loginBtn')?.addEventListener('click',attemptProfileLogin);
 function openLogoutPin(){
- if(!currentUser){toast('Tidak ada profil yang aktif');return}
- if(!confirm('Ganti profil atau keluar dari Nongki?'))return;
- currentUser=null;saveProfileSession(null);$('loginPin').value='';
- $('loginOverlay').classList.remove('hidden');ensureProfilePicker();applyRole();
+ try{
+  if(!currentUser){toast('Tidak ada profil yang aktif');return}
+  if(!confirm('Ganti profil atau keluar dari Nongki?'))return;
+  currentUser=null;saveProfileSession(null);
+  const pin=$('loginPin');if(pin)pin.value='';
+  const overlay=$('loginOverlay');if(overlay)overlay.classList.remove('hidden');
+  try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak dapat diperbarui:',error);}
+  safeProfileUiRefresh();
+ }catch(error){console.error('Gagal membuka pergantian profil:',error);safeProfileUiRefresh();}
 }
-function cancelLogoutPin(){$('logoutPinOverlay').classList.add('hidden');}
+function cancelLogoutPin(){try{$('logoutPinOverlay')?.classList.add('hidden');}catch(error){console.warn(error);}}
 async function verifyAndLogout(){openLogoutPin();}
-$('logoutBtn').addEventListener('click',openLogoutPin);
-$('profileAvatarBtn')?.addEventListener('click',()=>{const menu=$('profileDropdown'),btn=$('profileAvatarBtn'),open=!!menu?.hidden;if(menu)menu.hidden=!open;btn?.setAttribute('aria-expanded',String(open))});
+$('logoutBtn')?.addEventListener('click',openLogoutPin);
+$('profileAvatarBtn')?.addEventListener('click',()=>{try{const menu=$('profileDropdown'),btn=$('profileAvatarBtn'),open=!!menu?.hidden;if(menu)menu.hidden=!open;btn?.setAttribute('aria-expanded',String(open));}catch(error){console.warn('Menu profil tidak dapat dibuka:',error);}});
 document.addEventListener('click',e=>{
- if(!e.target.closest('.profile-menu-wrap')){const menu=$('profileDropdown');if(menu)menu.hidden=true;$('profileAvatarBtn')?.setAttribute('aria-expanded','false')}
- const option=e.target.closest('[data-profile-choice]');
- if(option){const id=option.dataset.profileChoice,menu=$('profileDropdown');if(menu)menu.hidden=true;$('profileAvatarBtn')?.setAttribute('aria-expanded','false');
-  currentUser=null;saveProfileSession(null);$('loginPin').value='';ensureProfilePicker();$('loginUserId').value=id;$('loginPin').disabled=id==='staff';
-  $('loginPin').placeholder=id==='staff'?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';$('loginOverlay').classList.remove('hidden');applyRole();if(id!=='staff')$('loginPin').focus();
- }
+ try{
+  if(!e.target?.closest?.('.profile-menu-wrap')){const menu=$('profileDropdown');if(menu)menu.hidden=true;$('profileAvatarBtn')?.setAttribute('aria-expanded','false');}
+  const option=e.target?.closest?.('[data-profile-choice]');
+  if(!option)return;
+  const id=option.dataset.profileChoice;
+  if(!PROFILE_LIST.some(p=>p.id===id))return;
+  const menu=$('profileDropdown');if(menu)menu.hidden=true;
+  $('profileAvatarBtn')?.setAttribute('aria-expanded','false');
+  // Mulai perpindahan dengan membersihkan sesi sebelumnya; kegagalan DOM tidak boleh menghentikan handler.
+  currentUser=null;saveProfileSession(null);
+  const pin=$('loginPin');if(pin){pin.value='';pin.disabled=id==='staff';pin.placeholder=id==='staff'?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}
+  try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak dapat diperbarui:',error);}
+  const selector=$('loginUserId');if(selector)selector.value=id;
+  const overlay=$('loginOverlay');if(overlay)overlay.classList.remove('hidden');
+  safeProfileUiRefresh();
+  if(id!=='staff')try{pin?.focus();}catch(error){}
+ }catch(error){console.error('Gagal mengganti profil:',error);safeProfileUiRefresh();}
 });
-$('cancelLogoutBtn').addEventListener('click',cancelLogoutPin);
-$('confirmLogoutBtn').addEventListener('click',verifyAndLogout);
-$('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();attemptProfileLogin()}});
-$('loginUserId').addEventListener('change',()=>{$('loginPin').value='';$('loginPin').disabled=$('loginUserId').value==='staff';$('loginPin').placeholder=$('loginPin').disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil'});
-$('loginUserId').value='owner';$('loginPin').disabled=false;
+$('cancelLogoutBtn')?.addEventListener('click',cancelLogoutPin);
+$('confirmLogoutBtn')?.addEventListener('click',verifyAndLogout);
+$('loginPin')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();attemptProfileLogin();}});
+$('loginUserId')?.addEventListener('change',()=>{try{const pin=$('loginPin'),selector=$('loginUserId');if(!pin||!selector)return;pin.value='';pin.disabled=selector.value==='staff';pin.placeholder=pin.disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}catch(error){console.warn('Kontrol PIN tidak tersedia:',error);}});
+if($('loginUserId'))$('loginUserId').value='owner';
+if($('loginPin'))$('loginPin').disabled=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
 document.addEventListener('click',e=>{
  const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
@@ -870,7 +919,7 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
  try{await syncPending();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
-load();loadCloudPreview();ensureProfilePicker();$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){$('loginUserId').value=currentUser.id;$('loginPin').disabled=currentUser.role==='staff';}else{$('loginOverlay').classList.remove('hidden');$('loginPin').disabled=false;}
+load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
 let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pending'){t.syncStatus='pending';resetSyncStatus=true}});if(resetSyncStatus)save();
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
