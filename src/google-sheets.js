@@ -13,7 +13,7 @@ export const NONGKI_GOOGLE_CONFIG = Object.freeze({
   clientId: '1053606534215-0fm3ar1kq2jhurls27i4jh7aqj2l17ao.apps.googleusercontent.com',
   spreadsheetId: '1i4u_0Q6BG2uGVghIiWlGuM_c3kcP-NOhw-esUApFc2w',
   sheetName: 'INCOME LOG',
-  allowedEmail: 'ISI_EMAIL_GOOGLE_PEMILIK_DI_SINI'
+  allowedEmail: 'vaivai851@gmail.com'
 });
 
 let gisPromise;
