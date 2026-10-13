@@ -740,7 +740,7 @@ let globalTotalFetchPromise=null;
 function extractGlobalTotal(result){
  if(!result||typeof result!=='object')return null;
  if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')return null;
- const candidates=[result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.total,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.total,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan,result.result?.total];
+ const candidates=[result.penjualan_global,result.data?.penjualan_global,result.result?.penjualan_global,result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.total,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.total,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan,result.result?.total];
  for(const value of candidates){
   if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0)return Number(value);
  }
@@ -759,7 +759,7 @@ async function fetchGlobalTotal(){
    const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
    let response,raw;
    try{
-    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalTotal',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
+    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
     raw=await response.text();
    }finally{if(timer)clearTimeout(timer)}
    if(!response.ok)throw new Error('HTTP '+response.status);
