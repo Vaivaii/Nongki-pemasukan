@@ -70,22 +70,29 @@ export async function migrateLegacyLocalData() {
     const createdAt = old.date && old.time
       ? new Date(old.date + 'T' + old.time).toISOString()
       : new Date().toISOString();
-    const transaction = await recordTransaction({
+    const transaction = {
+      id: crypto.randomUUID(),
+      legacyId,
+      createdAt,
+      businessDate: businessDate(old.date, old.time),
       userId: String(old.userId || 'legacy-import'),
       deviceId: deviceId(),
-      items: [{ productId, productName, quantity, unitPrice }]
-    });
-    // Preserve a link to the original local transaction so reloads won't duplicate it.
-    // The database transaction's immutable ID remains the sync identity.
-    transaction.legacyId = legacyId;
-    transaction.businessDate = businessDate(old.date, old.time);
-    transaction.createdAt = createdAt;
-    transaction.total = Number(old.total) >= 0 ? Number(old.total) : quantity * unitPrice;
+      status: wasCanceled ? 'canceled' : 'active',
+      canceledAt: old.cancelledAt || null,
+      canceledBy: old.cancelledBy || null,
+      cancelReason: wasCanceled ? 'Transaksi batal dari data lokal lama' : null,
+      items: [{
+        productId,
+        productName,
+        quantity,
+        unitPrice,
+        lineTotal: quantity * unitPrice
+      }],
+      total: Number(old.total) >= 0 ? Number(old.total) : quantity * unitPrice
+    };
+    // Imported history is local-only during migration. Do not enqueue it as a new sale;
+    // historical upload must be an explicit, separately reviewed backend operation.
     await putImportedTransaction(transaction);
-    if (wasCanceled) await cancelTransaction(transaction.id, {
-      userId: String(old.cancelledBy || old.userId || 'legacy-import'),
-      reason: 'Migrasi transaksi batal dari data lokal lama'
-    });
     knownTransactions.set(legacyId, transaction);
   }
 
