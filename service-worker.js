@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v14-apps-script-get-history';
+const CACHE_NAME = 'nongki-income-v15-toast-null-guard';
 const CORE_FILES = [
   './',
   './index.html',
