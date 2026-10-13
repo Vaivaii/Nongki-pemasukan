@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v32-profile-switch-guard-1';;;
+const CACHE_NAME = 'v33-force-profile-login-owner-pin';;;
 const CORE_FILES = [
   './',
   './index.html',
