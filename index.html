@@ -227,7 +227,7 @@ header {
 main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}@media(min-width:520px){.sync-fab{right:max(22px,calc((100vw - 720px)/2 + 18px))}}
 /* Final staff-only navigation fix: override legacy .tabs display:flex!important rules. */
 .tabs.hidden, body.staff-mode .tabs { display: none !important; visibility: hidden !important; pointer-events: none !important; }
-body.staff-mode .sync-fab { bottom: calc(18px + env(safe-area-inset-bottom)) !important; }
+body.staff-mode .sync-fab { bottom: calc(24px + env(safe-area-inset-bottom)) !important; right: 20px !important; }
 </style>
 </head>
 <body>
@@ -712,19 +712,14 @@ async function postToAppsScript(payload){
   });
   const raw=await response.text();
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
-  let result;
-  try{result=JSON.parse(raw);}catch{throw new Error('Respons Apps Script bukan JSON yang valid. Pastikan doPost mengembalikan ContentService JSON.');}
-  if(result?.success===false||result?.ok===false||String(result?.status||'').toLowerCase()==='error'){
-   throw new Error(String(result.message||result.error||'Apps Script menolak transaksi.'));
+  // Validasi respons dilonggarkan: respons teks/non-JSON diterima bila HTTP sukses.
+  // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
+  let result=null;
+  try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
+  if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
+   throw new Error(String(result.message||result.error||'Apps Script menolak transaksi. Antrean dipertahankan.'));
   }
-  // Jangan hapus event dari IndexedDB hanya karena server mengembalikan JSON apa pun.
-  // Harus ada tanda sukses eksplisit supaya antrean tidak hilang saat backend menolak payload.
-  const ackStatus=String(result?.status||'').toLowerCase();
-  const acknowledged=result?.success===true||result?.ok===true||['success','ok','synced','accepted'].includes(ackStatus);
-  if(!acknowledged){
-   throw new Error(String(result?.message||result?.error||'Respons Apps Script belum mengonfirmasi sukses. Antrean lokal dipertahankan; periksa format respons doPost.'));
-  }
-  return result;
+  return {httpStatus:response.status,response:result,raw};
  }catch(error){
   if(error?.name==='AbortError')throw new Error('Koneksi Apps Script timeout; antrean tetap disimpan untuk dicoba ulang.');
   if(error instanceof TypeError)throw new Error('Gagal menghubungi Apps Script. Periksa URL Web App dan konfigurasi akses/CORS; antrean lokal tetap aman.');
@@ -823,7 +818,7 @@ async function syncPending(){
 }
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
 window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
-$('staffSyncFab')?.addEventListener('click',async()=>{const button=$('staffSyncFab');if(!appScriptConfigured()){toast('Server belum dikonfigurasi. Minta Owner mengatur Apps Script.');setGlobalSyncStatus('offline',navigator.onLine?'Server belum dikonfigurasi':'Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
+$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}if(!appScriptConfigured()){toast('URL atau token Apps Script belum tersimpan dengan benar. Minta Owner memeriksa pengaturan.');setGlobalSyncStatus('error','Konfigurasi Apps Script belum lengkap');return}button.disabled=true;button.textContent='↻';try{await syncPending()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
 
 // Save endpoint and token locally; never write the token into the repository source.
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',()=>{
