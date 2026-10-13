@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v15-toast-null-guard';
+const CACHE_NAME = 'nongki-income-v16-cloud-count-fix';
 const CORE_FILES = [
   './',
   './index.html',
