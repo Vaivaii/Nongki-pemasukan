@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v7-approved-ui';
+const CACHE_NAME = 'nongki-income-v8-google-sheets';
 const CORE_FILES = [
   './',
   './index.html',
@@ -7,7 +7,8 @@ const CORE_FILES = [
   './icon-512.png',
   './src/db.js',
   './src/sync.js',
-  './src/legacy-adapter.js'
+  './src/legacy-adapter.js',
+  './src/google-sheets.js'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(
