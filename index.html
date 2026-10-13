@@ -596,7 +596,8 @@ async function connectSheets(){
  $('sheetsConnectionStatus').textContent='Terhubung: '+sheetsEmail;
  $('connectGoogleSheetsBtn').textContent='Putuskan koneksi';
  $('syncGoogleSheetsBtn').disabled=false;
- toast('Google terhubung. Periksa tanggal sebelum sinkronisasi.');
+ $('refreshServerHistoryBtn').disabled=false;
+ toast('Google terhubung. Sinkronkan riwayat untuk mulai.');
  setTimeout(()=>syncPending(),0);
 }
 async function sheetsFetch(url,opts={}){
@@ -605,6 +606,24 @@ async function sheetsFetch(url,opts={}){
  const body=await r.json().catch(()=>({}));
  if(!r.ok){if(r.status===401){sheetsToken=null;sheetsEmail=null;$('syncGoogleSheetsBtn').disabled=true;$('sheetsConnectionStatus').textContent='Sesi habis; hubungkan kembali.';}throw new Error(body?.error?.message||('Google Sheets API gagal (HTTP '+r.status+').'));}
  return body;
+}
+async function loadServerHistory(){
+ if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
+ const base='https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(NONGKI_SHEETS.historySpreadsheetId);
+ const range=encodeURIComponent("'RIWAYAT TRANSAKSI'!A:L");
+ const res=await sheetsFetch(base+'/values/'+range+'?majorDimension=ROWS');
+ const rows=Array.isArray(res.values)?res.values:[];
+ cloudTransactions=rows.slice(1).filter(r=>r[0]).map(r=>{
+  const eventId=String(r[0]||''), txId=String(r[1]||''), stamp=String(r[2]||'');
+  const match=stamp.match(/^(\\d{4}-\\d{2}-\\d{2})[ T](\\d{2}:\\d{2}(?::\\d{2})?)/);
+  const date=match?match[1]:(stamp.slice(0,10));
+  const time=match?match[2]:'';
+  const kind=String(r[3]||'');
+  return {id:eventId,transactionId:txId,date,time,name:String(r[4]||kind),qty:Number(r[5])||1,total:Number(r[6])||0,unitPrice:Number(r[6])||0,status:String(r[9]||''),syncStatus:'synced',category:kind==='DIBATALKAN'?'Pembatalan':'Riwayat'};
+ });
+ saveCloudPreview();renderHistory();
+ $('sheetsConnectionStatus').textContent='Riwayat server diperbarui · '+cloudTransactions.length+' event';
+ return cloudTransactions.length;
 }
 async function syncSelectedDailyTotal(){
  if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
@@ -631,15 +650,20 @@ $('connectGoogleSheetsBtn')?.addEventListener('click',async()=>{
  try{
   if(sheetsToken){
    if(window.google?.accounts?.oauth2)window.google.accounts.oauth2.revoke(sheetsToken,()=>{});
-   sheetsToken=null;sheetsEmail=null;$('sheetsConnectionStatus').textContent='Belum terhubung';$('connectGoogleSheetsBtn').textContent='Hubungkan Google';$('syncGoogleSheetsBtn').disabled=true;toast('Koneksi Google diputus.');
+   sheetsToken=null;sheetsEmail=null;$('sheetsConnectionStatus').textContent='Belum terhubung';$('connectGoogleSheetsBtn').textContent='Hubungkan Google';$('syncGoogleSheetsBtn').disabled=true;$('refreshServerHistoryBtn').disabled=true;toast('Koneksi Google diputus.');
   }else{ $('connectGoogleSheetsBtn').disabled=true;await connectSheets(); }
  }catch(e){console.error(e);toast(e.message||'Gagal menghubungkan Google.');}
  finally{$('connectGoogleSheetsBtn').disabled=false;}
 });
 $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
- try{$('syncGoogleSheetsBtn').disabled=true;await syncSelectedDailyTotal();}
- catch(e){console.error(e);toast(e.message||'Sinkronisasi gagal.');}
+ try{$('syncGoogleSheetsBtn').disabled=true;await syncPending();await loadServerHistory();toast('Sinkronisasi riwayat selesai.');}
+ catch(e){console.error(e);toast(e.message||'Sinkronisasi riwayat gagal.');}
  finally{$('syncGoogleSheetsBtn').disabled=!sheetsToken;}
+});
+$('refreshServerHistoryBtn')?.addEventListener('click',async()=>{
+ try{$('refreshServerHistoryBtn').disabled=true;await loadServerHistory();}
+ catch(e){console.error(e);toast(e.message||'Gagal membaca riwayat server.');}
+ finally{$('refreshServerHistoryBtn').disabled=!sheetsToken;}
 });
 load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
