@@ -375,7 +375,7 @@ function queueDailySync(date) {
   sheetsSyncTimer = setTimeout(() => syncPending(), 700);
 }
 
-function syncPending(){return syncHistoryToSheets();}
+function syncPending(){if(!sheetsToken)return Promise.resolve(false);if(window.__nongkiHistorySyncPromise)return window.__nongkiHistorySyncPromise;window.__nongkiHistorySyncPromise=syncHistoryToSheets().finally(()=>{window.__nongkiHistorySyncPromise=null;});return window.__nongkiHistorySyncPromise;}
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
