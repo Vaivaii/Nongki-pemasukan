@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v34-global-daily-total';;;
+const CACHE_NAME = 'v35-global-income-action';;;
 const CORE_FILES = [
   './',
   './index.html',
