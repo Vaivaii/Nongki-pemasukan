@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#164b32"><title>Nongki — Fondasi PWA</title>
+<style>
+:root{--green:#164b32;--green2:#205d40;--gold:#c8a75a;--ink:#203128;--muted:#738078;--bg:#f4f5f1;--card:#fff;--line:#e6e9e3;--red:#a53d36}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--green);color:white;padding:calc(env(safe-area-inset-top) + 12px) 18px 16px;border-bottom:2px solid var(--gold)}
+.brand{display:flex;align-items:center;gap:10px}.mark{width:42px;height:42px;border:1.5px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-weight:800;font-size:19px}.brand strong{display:block;letter-spacing:2px;font-size:19px}.brand small{color:#d9e3da;letter-spacing:1px}
+main{max-width:760px;margin:0 auto;padding:16px 14px 112px}.notice{background:#fff7df;border:1px solid #ead69a;color:#67521a;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.pill{border:1px solid var(--line);border-radius:999px;background:white;padding:8px 12px;font-size:13px;color:var(--green)}.pill.active{background:var(--green);color:white;border-color:var(--green)}
+h2{font-size:18px;margin:18px 0 10px}.sub{color:var(--muted);font-size:13px;margin-top:-5px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 2px 6px #173c2410}.product{display:flex;flex-direction:column;min-height:128px}.product strong{font-size:14px}.price{color:var(--green);font-weight:750;margin-top:5px}.product button{margin-top:auto;padding-top:10px}.btn{border:0;border-radius:11px;background:var(--green);color:white;padding:11px 13px;font-weight:650;cursor:pointer}.btn.secondary{background:#e8eee8;color:var(--green)}.btn.danger{background:#f8e9e7;color:var(--red)}.btn:disabled{opacity:.45}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.row+.row{margin-top:12px}.small{font-size:12px;color:var(--muted)}.status{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:5px 9px;background:#e8eee8;color:var(--green)}.status.warn{background:#fff0cf;color:#7d5911}.status.bad{background:#f8e9e7;color:var(--red)}
+.nav{position:fixed;z-index:10;bottom:calc(env(safe-area-inset-bottom) + 10px);left:50%;transform:translateX(-50%);width:min(430px,calc(100% - 28px));background:white;border:1px solid #e1e6df;border-radius:22px;box-shadow:0 8px 28px #152f1e24;display:flex;justify-content:space-around;padding:8px}.nav button{background:transparent;color:#617167;border:0;display:grid;gap:2px;justify-items:center;font-size:11px;padding:5px 12px}.nav button span{font-size:19px}.nav button.active{color:var(--green);font-weight:750}
+.view[hidden]{display:none}.empty{color:var(--muted);text-align:center;padding:24px 8px}.metric{font-size:24px;font-weight:800;color:var(--green);margin:5px 0}.history{padding:12px 0;border-bottom:1px solid var(--line)}.history:last-child{border:0}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="mark">N</div><div><strong>NONGKI</strong><small>ICE AND COFFEE · PWA TEST</small></div></div></header>
+<main>
+<div class="notice"><strong>Versi uji teknis.</strong> Data tersimpan di browser perangkat ini. Belum terhubung ke backend atau Google Sheets dan belum untuk pencatatan operasional.</div>
+<div class="toolbar"><span class="status" id="online">Memeriksa koneksi…</span><span class="status warn" id="queue-status">Memeriksa antrean…</span></div>
+<section class="view" id="view-home">
+<h2>Catat penjualan</h2><p class="sub">Tekan produk untuk mencatat satu unit. Data produk ini hanya contoh.</p>
+<div class="grid" id="products"></div>
+<h2>Ringkasan hari ini</h2><div class="panel"><div class="small">Pemasukan bersih lokal</div><div class="metric" id="today-total">Rp0</div><div class="row"><span class="small" id="today-count">0 transaksi aktif</span><button class="btn secondary" id="refresh-summary">Perbarui</button></div></div>
+</section>
+<section class="view" id="view-history" hidden><h2>Riwayat transaksi</h2><p class="sub">Transaksi batal tetap terlihat dan tidak dihitung sebagai penjualan.</p><div class="panel" id="history-list"><div class="empty">Belum ada transaksi.</div></div></section>
+<section class="view" id="view-sync" hidden><h2>Status data lokal</h2><div class="panel"><div class="row"><span>Antrean menunggu backend</span><strong id="pending-count">0</strong></div><div class="row"><span>Database browser</span><span class="status" id="db-state">Memeriksa</span></div><p class="small">Sinkronisasi belum diaktifkan karena URL backend yang aman belum dikonfigurasi. Jangan menaruh token rahasia di halaman ini.</p><button class="btn secondary" id="refresh-sync">Periksa ulang</button></div><h2>Ringkasan produk</h2><div class="panel" id="product-summary"></div></section>
+</main>
+<nav class="nav" aria-label="Navigasi"><button class="active" data-view="home"><span>＋</span>Catat</button><button data-view="history"><span>▤</span>Riwayat</button><button data-view="sync"><span>↻</span>Sinkron</button></nav>
+<script type="module">
+import { putProduct, getAllRecords, recordTransaction, cancelTransaction, getPendingOutbox, getSalesSummary } from './src/db.js';
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
+const products=[
+{id:'kopi-aren',name:'Es Kopi Susu Gula Aren',price:10000},
+{id:'kopi-nongki',name:'Es Kopi Susu Nongki',price:10000},
+{id:'americano',name:'Es Americano',price:7000},
+{id:'orange-squash',name:'Orange Squash',price:7000},
+{id:'melon-squash',name:'Melon Squash',price:7000},
+{id:'es-teh',name:'Es Teh',price:3000}
+];
+const $=id=>document.getElementById(id);
+function setStatus(el,text,kind=''){el.textContent=text;el.className='status'+(kind?' '+kind:'')}
+async function seedProducts(){for(const p of products){const existing=(await getAllRecords('products')).find(x=>x.id===p.id);if(!existing)await putProduct(p)}}
+async function renderProducts(){
+ const saved=(await getAllRecords('products')).filter(p=>p.active);
+ $('products').innerHTML='';
+ for(const p of saved){const card=document.createElement('article');card.className='product';const name=document.createElement('strong');name.textContent=p.name;const price=document.createElement('div');price.className='price';price.textContent=rupiah(p.price);const button=document.createElement('button');button.className='btn';button.textContent='Catat 1';button.onclick=async()=>{button.disabled=true;try{await recordTransaction({userId:'local-test',deviceId:'browser',items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:p.price}]});await renderAll();}catch(e){alert('Gagal menyimpan: '+e.message)}finally{button.disabled=false}};card.append(name,price,button);$('products').append(card)}
+}
+async function renderHistory(){
+ const rows=(await getAllRecords('transactions')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+ const box=$('history-list');box.innerHTML='';
+ if(!rows.length){box.innerHTML='<div class="empty">Belum ada transaksi.</div>';return}
+ for(const t of rows){const item=document.createElement('div');item.className='history';const top=document.createElement('div');top.className='row';const name=document.createElement('strong');name.textContent=(t.items||[]).map(i=>i.productName+' ×'+i.quantity).join(', ');const total=document.createElement('strong');total.textContent=rupiah(t.total);top.append(name,total);const bottom=document.createElement('div');bottom.className='row';const meta=document.createElement('span');meta.className='small';meta.textContent=new Date(t.createdAt).toLocaleString('id-ID');const state=document.createElement('span');state.className='status'+(t.status==='canceled'?' bad':'');state.textContent=t.status==='canceled'?'Dibatalkan':'Aktif';bottom.append(meta,state);item.append(top,bottom);if(t.status!=='canceled'){const cancel=document.createElement('button');cancel.className='btn danger';cancel.style.marginTop='8px';cancel.textContent='Batalkan transaksi';cancel.onclick=async()=>{if(!confirm('Batalkan transaksi ini? Catatan pembatalan akan disimpan.'))return;try{await cancelTransaction(t.id,{userId:'local-test',reason:'Dibatalkan dari halaman uji'});await renderAll()}catch(e){alert(e.message)}};item.append(cancel)}box.append(item)}
+}
+async function renderSummary(){
+ const all=await getAllRecords('transactions');const date=new Date();const today=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');const summary=await getSalesSummary({fromDate:today,toDate:today});$('today-total').textContent=rupiah(summary.netRevenue);$('today-count').textContent=summary.transactionCount+' transaksi aktif · '+summary.itemCount+' item';
+ const box=$('product-summary');box.innerHTML='';if(!summary.products.length){box.textContent='Belum ada penjualan aktif.'}else for(const p of summary.products){const row=document.createElement('div');row.className='row';const n=document.createElement('span');n.textContent=p.productName+' × '+p.quantity;const r=document.createElement('strong');r.textContent=rupiah(p.revenue);row.append(n,r);box.append(row)}
+}
+async function renderSync(){const queue=await getPendingOutbox();$('pending-count').textContent=queue.length;setStatus($('queue-status'),queue.length?queue.length+' event lokal menunggu':'Antrean lokal kosong',queue.length?'warn':'');setStatus($('db-state'),'Siap','');setStatus($('online'),navigator.onLine?'Online':'Offline',navigator.onLine?'':'warn')}
+async function renderAll(){await renderProducts();await renderHistory();await renderSummary();await renderSync()}
+document.querySelectorAll('.nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+button.dataset.view)}));
+$('refresh-summary').onclick=renderSummary;$('refresh-sync').onclick=renderSync;
+window.addEventListener('online',renderSync);window.addEventListener('offline',renderSync);
+try{await seedProducts();await renderAll()}catch(e){$('products').textContent='Database tidak dapat dibuka: '+e.message;setStatus($('db-state'),'Gagal','bad')}
+</script></body></html>
