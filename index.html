@@ -251,11 +251,11 @@ header {
 <button class="history-switch-btn active" data-history-source="local">Riwayat Lokal <span id="localCount">0</span></button>
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
-<div class="locked-note">Riwayat lokal disimpan pada perangkat ini. Data lokal tetap tersimpan di perangkat; total harian dapat dikirim ke Google Sheets setelah akun terhubung.</div>
+<div class="locked-note" id="historyModeNote">Riwayat lokal menampilkan transaksi yang belum tersinkron. Riwayat server menampilkan catatan yang sudah tersimpan di Google Sheets.</div>
 <div class="panel" id="googleSheetsPanel">
-  <div class="section-head"><div><h3>Google Sheets · INCOME LOG</h3><span class="sub" id="sheetsConnectionStatus">Belum terhubung</span></div></div>
-  <div class="toolbar"><button class="btn" id="connectGoogleSheetsBtn" type="button">Hubungkan Google</button><button class="btn primary" id="syncGoogleSheetsBtn" type="button" disabled>Sinkronkan total tanggal</button></div>
-  <p class="note">Sinkronisasi ini mengirim total pemasukan harian untuk tanggal yang dipilih ke kolom A (tanggal) dan B (total) pada tab INCOME LOG. Ini bukan riwayat transaksi per item.</p>
+  <div class="section-head"><div><h3>Google Sheets · RIWAYAT NONGKI</h3><span class="sub" id="sheetsConnectionStatus">Belum terhubung</span></div></div>
+  <div class="toolbar"><button class="btn" id="connectGoogleSheetsBtn" type="button">Hubungkan Google</button><button class="btn primary" id="syncGoogleSheetsBtn" type="button" disabled>Sinkronkan riwayat</button><button class="btn" id="refreshServerHistoryBtn" type="button" disabled>Perbarui riwayat server</button></div>
+  <p class="note">Detail transaksi disimpan pada DETAIL PRODUK dan catatan event pada RIWAYAT TRANSAKSI di spreadsheet kedua. Rekap harian tetap menggunakan spreadsheet INCOME LOG yang lama.</p>
 </div>
 <div class="panel" id="historySummary"></div>
 <div class="panel" id="historyList"></div>
@@ -375,10 +375,7 @@ function queueDailySync(date) {
   sheetsSyncTimer = setTimeout(() => syncPending(), 700);
 }
 
-async function syncPending() {
-  // Tidak ada backend yang dikonfigurasi; antrean dipertahankan sampai server mengonfirmasi.
-  return;
-}
+function syncPending(){return syncHistoryToSheets();}
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
@@ -406,16 +403,18 @@ function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txH
 let historySource='local';
 function renderHistory(){
  const date=$('historyDate').value||today();
- $('localCount').textContent=data.transactions.filter(t=>t.date===date).length;
+ const localPending=data.transactions.filter(t=>t.date===date&&t.syncStatus!=='synced');
+ $('localCount').textContent=localPending.length;
  $('cloudCount').textContent=cloudTransactions.filter(t=>t.date===date).length;
  document.querySelectorAll('[data-history-source]').forEach(b=>b.classList.toggle('active',b.dataset.historySource===historySource));
  if(historySource==='local'){
-  const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled');
-  $('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)} · Perangkat ini</span><h2>${rupiah(total(active))}</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>${tx.length}</h2></div></div><div class="sub">${itemCount(active)} produk aktif · ${tx.filter(t=>t.status==='cancelled').length} dibatalkan</div>`;
-  $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat lokal pada tanggal ini.</div>';
+  const tx=localPending.sort((a,b)=>String(b.time||'').localeCompare(String(a.time||''))), active=tx.filter(t=>t.status!=='cancelled'&&t.status!=='canceled');
+  $('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)} · Perangkat ini</span><h2>${rupiah(total(active))}</h2></div><div style="text-align:right"><span class="sub">Belum tersinkron</span><h2>${tx.length}</h2></div></div><div class="sub">${itemCount(active)} item aktif belum tersinkron · ${tx.filter(t=>t.status==='cancelled'||t.status==='canceled').length} pembatalan menunggu sinkronisasi</div>`;
+  $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada transaksi yang menunggu sinkronisasi pada tanggal ini.</div>';
  }else{
-  $('historySummary').innerHTML='<div class="sub">Riwayat server belum tersedia</div><p>Data lintas perangkat baru akan tampil setelah backend dikonfigurasi dan koneksi server terverifikasi.</p>';
-  $('historyList').innerHTML='<div class="empty">Belum terhubung ke server.</div>';
+  const tx=cloudTransactions.filter(t=>t.date===date).sort((a,b)=>String(b.time||'').localeCompare(String(a.time||'')));
+  $('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)} · Google Sheets</span><h2>${rupiah(total(tx.filter(t=>t.status!=='DIBATALKAN'&&t.status!=='cancelled')))}</h2></div><div style="text-align:right"><span class="sub">Riwayat server</span><h2>${tx.length}</h2></div></div><div class="sub">Data yang dibaca langsung dari tab RIWAYAT TRANSAKSI</div>`;
+  $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat server untuk tanggal ini. Tekan Perbarui riwayat server.</div>';
  }
 }
 function renderProducts(){const owner=!!(currentUser&&currentUser.role==='owner');$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>'}
@@ -469,7 +468,7 @@ async function cancelTx(id){
  } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
-async function syncPending(){
+async function syncHistoryToSheets(){
  // Sinkronisasi transaksi ke spreadsheet kedua. ID event deterministik mencegah duplikasi saat retry.
  if(!sheetsToken||!data?.transactions?.length)return;
  if(window.__nongkiHistorySyncRunning)return;
