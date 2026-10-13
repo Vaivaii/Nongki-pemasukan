@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v28-default-url-fallback-1';
+const CACHE_NAME = 'v29-staff-sync-fixed-1';
 const CORE_FILES = [
   './',
   './index.html',
