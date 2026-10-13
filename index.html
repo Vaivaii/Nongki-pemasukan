@@ -228,6 +228,13 @@ main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}@media(min-width:5
 /* Final staff-only navigation fix: override legacy .tabs display:flex!important rules. */
 .tabs.hidden, body.staff-mode .tabs { display: none !important; visibility: hidden !important; pointer-events: none !important; }
 body.staff-mode .sync-fab { bottom: calc(24px + env(safe-area-inset-bottom)) !important; right: 20px !important; }
+/* Pegawai: tombol sync tetap pada koordinat viewport yang konsisten di HP. */
+body.staff-mode .sync-fab {
+  position: fixed !important;
+  bottom: 16px !important;
+  right: 16px !important;
+  z-index: 9999 !important;
+}
 </style>
 </head>
 <body>
@@ -825,7 +832,7 @@ async function syncPending(){
 }
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
 window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
-$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}if(!appScriptConfigured()){toast('URL atau token Apps Script belum tersimpan dengan benar. Minta Owner memeriksa pengaturan.');setGlobalSyncStatus('error','Konfigurasi Apps Script belum lengkap');return}button.disabled=true;button.textContent='↻';try{await syncPending()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
+$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
 
 // Save endpoint and token locally; never write the token into the repository source.
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',()=>{
