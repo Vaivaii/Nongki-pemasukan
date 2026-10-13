@@ -384,12 +384,23 @@ function queueDailySync(date) {
 }
 
 function showToast(message){
- const el=document.getElementById('toast');
- if(!el){console.log('[Nongki]',message);return;}
- el.textContent=String(message??'');
- el.classList.add('show');
- clearTimeout(window.__nongkiToastTimer);
- window.__nongkiToastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+ const toastElement=document.getElementById('toast');
+ const text=String(message??'');
+ if(!toastElement){console.log('[Nongki]',text);return false;}
+ try{
+  toastElement.textContent=text;
+  toastElement.classList.add('show');
+  clearTimeout(window.__nongkiToastTimer);
+  window.__nongkiToastTimer=setTimeout(()=>{
+   const currentToast=document.getElementById('toast');
+   if(currentToast)currentToast.classList.remove('show');
+  },2600);
+  return true;
+ }catch(error){
+  console.warn('[Nongki] Toast tidak dapat ditampilkan:',error);
+  console.log('[Nongki]',text);
+  return false;
+ }
 }
 
 function appScriptConfigured(){
@@ -845,12 +856,12 @@ async function syncHistoryToSheets(){
    }
    t.syncStatus='synced';save();
   }
-  $('sheetsConnectionStatus').textContent='Rekap omzet harian dan riwayat transaksi berhasil disinkronkan.';render();return true;
+  const status=$('sheetsConnectionStatus');if(status)status.textContent='Rekap omzet harian dan riwayat transaksi berhasil disinkronkan.';render();return true;
  }catch(error){
   console.error('Sinkronisasi Nongki gagal:',error);
   data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});
   save();render();
-  $('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');
+  const status=$('sheetsConnectionStatus');if(status)status.textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');
   showToast('Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet'));
   return false;
  }finally{window.__nongkiHistorySyncRunning=false;}
