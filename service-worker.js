@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v9-google-sheets-ui';
+const CACHE_NAME = 'nongki-income-v10-apps-script-token-ui';
 const CORE_FILES = [
   './',
   './index.html',
