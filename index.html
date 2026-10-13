@@ -438,7 +438,7 @@ function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
-function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayGlobal').textContent='Belum terhubung';$('todayItems').textContent=itemCount(tx)}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayItems').textContent=itemCount(tx)}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -733,6 +733,55 @@ function appScriptConfigured(){
  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(String(APPS_SCRIPT_URL||'')) &&
         APPS_SCRIPT_TOKEN && APPS_SCRIPT_TOKEN!=='SET_TOKEN_LOCALLY';
 }
+
+// Ambil akumulasi penjualan hari ini dari Apps Script. Endpoint harus mengembalikan
+// JSON sukses berisi total/totalPenjualan/totalHariIni (angka rupiah), bukan teks status saja.
+let globalTotalFetchPromise=null;
+function extractGlobalTotal(result){
+ if(!result||typeof result!=='object')return null;
+ if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')return null;
+ const candidates=[result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.total,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.total,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan,result.result?.total];
+ for(const value of candidates){
+  if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0)return Number(value);
+ }
+ return null;
+}
+async function fetchGlobalTotal(){
+ if(globalTotalFetchPromise)return globalTotalFetchPromise;
+ loadAppsScriptSettings();
+ if(!navigator.onLine){setGlobalSyncStatus('offline','Offline · total global belum diperbarui');return false}
+ if(!appScriptConfigured()){setGlobalSyncStatus('offline','Server belum dikonfigurasi');return false}
+ globalTotalFetchPromise=(async()=>{
+  const display=$('todayGlobal');
+  try{
+   if(display&&display.textContent==='Belum terhubung')display.textContent='Memuat…';
+   const controller=typeof AbortController!=='undefined'?new AbortController():null;
+   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+   let response,raw;
+   try{
+    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalTotal',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
+    raw=await response.text();
+   }finally{if(timer)clearTimeout(timer)}
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data total.');
+   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons Apps Script bukan JSON.')}
+   if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')throw new Error(String(result.message||result.error||'Apps Script menolak permintaan total.'));
+   const amount=extractGlobalTotal(result);
+   if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
+   if(display)display.textContent=rupiah(amount);
+   setGlobalSyncStatus('connected','Total global diperbarui · '+dateText(today()));
+   return true;
+  }catch(error){
+   console.warn('Total penjualan global belum dapat diambil:',error);
+   if(display&&display.textContent==='Memuat…')display.textContent='Belum terhubung';
+   const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
+   setGlobalSyncStatus('error',label);
+   const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
+   return false;
+  }finally{globalTotalFetchPromise=null}
+ })();
+ return globalTotalFetchPromise;
+}
 function localTimestamp(value){
  const d=value?new Date(value):new Date();
  if(Number.isNaN(d.getTime()))return new Date().toISOString().slice(0,19).replace('T',' ');
@@ -892,7 +941,7 @@ async function syncPending(){
 }
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
 window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
-$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
+$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending();await fetchGlobalTotal()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
 
 // Save endpoint and token locally; never write the token into the repository source.
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',async()=>{
@@ -908,6 +957,7 @@ $('saveAppsScriptSettingsBtn')?.addEventListener('click',async()=>{
   const status=$('sheetsConnectionStatus');if(status)status.textContent='Pengaturan tersimpan di perangkat ini · siap sinkronisasi.';
   toast('Pengaturan tersimpan. Memulai sinkronisasi antrean…');
   await syncPending();
+  await fetchGlobalTotal();
  }catch(error){toast('Pengaturan gagal disimpan di browser.');console.error(error);}
 });
 
@@ -918,7 +968,7 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
    $('appsScriptTokenInput')?.focus();
    return;
   }
- try{await syncPending();}
+ try{await syncPending();await fetchGlobalTotal();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
 load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
@@ -928,7 +978,7 @@ let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pendi
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();applyRole();setGlobalSyncStatus(navigator.onLine?'syncing':'offline',navigator.onLine?'Memeriksa koneksi server…':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
 // Konfigurasi lokal dibaca ulang sebelum mencoba mengirim antrean yang tersimpan.
-loadAppsScriptSettings();syncPending();
+loadAppsScriptSettings();syncPending();fetchGlobalTotal();
 })();
 </script>
 <script>
