@@ -716,6 +716,9 @@ async function postToAppsScript(payload){
   // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
   let result=null;
   try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
+  if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw)){
+   throw new Error('Apps Script mengembalikan halaman HTML, bukan konfirmasi data. Periksa akses Web App; antrean dipertahankan.');
+  }
   if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
    throw new Error(String(result.message||result.error||'Apps Script menolak transaksi. Antrean dipertahankan.'));
   }
