@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v23-silent-history-error';
+const CACHE_NAME = 'v27-3profil-pin';
 const CORE_FILES = [
   './',
   './index.html',
