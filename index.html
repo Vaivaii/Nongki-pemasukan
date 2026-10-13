@@ -410,11 +410,6 @@ function queueDailySync(date) {
   sheetsSyncTimer = setTimeout(() => syncPending(), 700);
 }
 
-async function syncPending() {
-  // Tidak ada backend yang dikonfigurasi; antrean dipertahankan sampai server mengonfirmasi.
-  return;
-}
-
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
@@ -512,11 +507,6 @@ async function cancelTx(id){
  } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
-function syncPending(){
- // Sengaja tidak mengubah status sinkronisasi tanpa konfirmasi backend.
-}
-window.addEventListener('online',syncPending);
-
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts();if(id==='reportsView')renderReports()}
@@ -588,6 +578,8 @@ function applyRole(){
  $('loginOverlay').classList.toggle('hidden',!!currentUser);
  $('userAdminPanel')?.classList.add('hidden');
  $('manageBtn').classList.toggle('hidden',staff);
+ // Pegawai hanya perlu layar kasir dan tombol sync bulat; sembunyikan tab Catat yang besar di nav bawah.
+ document.querySelector('.tabs [data-view="salesView"]')?.classList.toggle('hidden',staff);
  $('seeHistory').classList.toggle('hidden',staff);
  document.querySelectorAll('.tabs [data-view]').forEach(tab=>{
   const view=tab.dataset.view;
@@ -757,9 +749,11 @@ async function enqueueLegacyPendingTransactions(outbox){
 }
 async function syncPending(){
  if(appScriptSyncPromise)return appScriptSyncPromise;
+ // Baca ulang konfigurasi dari localStorage setiap kali sinkronisasi dimulai.
+ loadAppsScriptSettings();
  if(!navigator.onLine){setGlobalSyncStatus('offline','Offline · menunggu koneksi');return false}
  if(!appScriptConfigured()){const status=$('sheetsConnectionStatus');if(status)status.textContent='Antrean lokal aktif · isi URL Apps Script dan token pada profil Owner.';setGlobalSyncStatus('offline','Server belum dikonfigurasi');return false}
- setGlobalSyncStatus('syncing','Sedang menyinkronkan…');
+ setGlobalSyncStatus('syncing','Mencoba terhubung ke server…');
  appScriptSyncPromise=(async()=>{
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
@@ -844,9 +838,9 @@ load();loadCloudPreview();ensureProfilePicker();$('historyDate').value=today();c
 let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pending'){t.syncStatus='pending';resetSyncStatus=true}});if(resetSyncStatus)save();
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
-render();applyRole();setGlobalSyncStatus('offline',navigator.onLine?'Belum ada konfirmasi data server':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
-// Antrean dipertahankan sampai backend nyata memberikan konfirmasi.
-syncPending();
+render();applyRole();setGlobalSyncStatus(navigator.onLine?'syncing':'offline',navigator.onLine?'Memeriksa koneksi server…':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
+// Konfigurasi lokal dibaca ulang sebelum mencoba mengirim antrean yang tersimpan.
+loadAppsScriptSettings();syncPending();
 })();
 </script>
 <script>
