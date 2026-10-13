@@ -469,7 +469,7 @@ async function cancelTx(id){
 }
 
 async function syncHistoryToSheets(){
- // Sinkronkan total harian ke INCOME LOG (satu baris per tanggal),
+ // Sinkronkan rekap harian ke kolom yang benar pada template INCOME LOG,
  // lalu kirim detail/event transaksi ke spreadsheet riwayat.
  if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
  if(window.__nongkiHistorySyncRunning)return false;
@@ -478,32 +478,78 @@ async function syncHistoryToSheets(){
  const apiBase=id=>'https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(id);
  const quote=name=>"'"+name.replace(/'/g,"''")+"'";
  const readRows=async(id,name,cols)=>{const r=await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(quote(name)+'!A:'+cols)+'?majorDimension=ROWS');return Array.isArray(r.values)?r.values:[];};
- const append=async(id,name,cols,values,mode='RAW')=>{if(!values.length)return;const range=quote(name)+'!A:'+cols;await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(range)+':append?valueInputOption='+mode+'&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});};
+ const append=async(id,name,cols,values,mode='RAW')=>{if(!values.length)return null;const range=quote(name)+'!A:'+cols;return await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(range)+':append?valueInputOption='+mode+'&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});};
+ const appendRange=async(id,name,range,values,mode='USER_ENTERED')=>await sheetsFetch(apiBase(id)+'/values/'+encodeURIComponent(range)+':append?valueInputOption='+mode+'&insertDataOption=INSERT_ROWS',{method:'POST',body:JSON.stringify({majorDimension:'ROWS',values})});
+ const normalizeDate=value=>{
+  const v=String(value??'').trim();
+  let m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  m=v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  if(m){
+   let a=Number(m[1]),b=Number(m[2]),y=m[3];
+   // Spreadsheet lokal Indonesia umumnya menampilkan DD/MM/YYYY.
+   if(a>12)return y+'-'+String(b).padStart(2,'0')+'-'+String(a).padStart(2,'0');
+   if(b>12)return y+'-'+String(a).padStart(2,'0')+'-'+String(b).padStart(2,'0');
+   return y+'-'+String(a).padStart(2,'0')+'-'+String(b).padStart(2,'0');
+  }
+  return '';
+ };
+ const writeIncomeRow=async(row,date,amount)=>{
+  const marker='NONGKI_DAILY_TOTAL:'+date;
+  const range=quote(NONGKI_SHEETS.sheetName)+'!B'+row+':K'+row;
+  const values=[[date,'Penjualan Nongki',"='FIRST - READ ME!'!$F$16",amount,'','Total omzet harian Nongki',marker,'','=IF(B'+row+'="", "", MONTH(B'+row+'))','=IF(B'+row+'="", "", YEAR(B'+row+'))']];
+  await sheetsFetch(apiBase(incomeId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values})});
+ };
  try{
   const [detailRows,eventRows,incomeRows]=await Promise.all([
    readRows(historyId,'DETAIL PRODUK','O'),
    readRows(historyId,'RIWAYAT TRANSAKSI','L'),
-   readRows(incomeId,NONGKI_SHEETS.sheetName,'B')
+   readRows(incomeId,NONGKI_SHEETS.sheetName,'K')
   ]);
-  // INCOME LOG hanya menerima tanggal dan total omzet harian di kolom A:B.
-  const incomeDateRows=new Map();
-  for(let i=1;i<incomeRows.length;i++){
-   const key=String(incomeRows[i][0]||'').trim();
-   if(key)incomeDateRows.set(key,i+1);
+  // Header INCOME LOG berada di baris 6; data mulai baris 7.
+  // Tanggal di B, kategori di C, formula akun di D, nominal di E,
+  // deskripsi di G, penanda sinkronisasi di H, bulan/tahun di J:K.
+  const incomeDateRows=new Map(), legacyMalformedRows=new Map();
+  for(let i=6;i<incomeRows.length;i++){
+   const r=incomeRows[i]||[], rowNum=i+1;
+   const marker=String(r[7]||'').trim();
+   const markerMatch=marker.match(/^NONGKI_DAILY_TOTAL:(\d{4}-\d{2}-\d{2})$/);
+   if(markerMatch)incomeDateRows.set(markerMatch[1],rowNum);
+   const dateB=normalizeDate(r[1]);
+   if(dateB&&String(r[2]||'').trim()==='Penjualan Nongki'&&marker.startsWith('NONGKI_DAILY_TOTAL:'))incomeDateRows.set(dateB,rowNum);
+   // Migrasi baris salah format yang dibuat commit sebelumnya: tanggal di A,
+   // angka di B, dan kolom C:K kosong. Baris itu dipakai ulang, bukan digandakan.
+   const dateA=normalizeDate(r[0]);
+   const restEmpty=r.slice(2,11).every(v=>v===undefined||v===null||String(v).trim()==='');
+   if(dateA&&r[1]!==undefined&&String(r[1]).trim()!==''&&Number.isFinite(Number(String(r[1]).replace(/,/g,'')))&&restEmpty){
+    legacyMalformedRows.set(dateA,rowNum);
+   }
   }
-  const dates=new Set(data.transactions.map(t=>String(t.date||'')).filter(Boolean));
-  dates.add(String(($('historyDate')?.value)||today()));
-  dates.add(today());
+  const dates=new Set(data.transactions.map(t=>String(t.date||'')).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)));
+  // Jangan membuat baris omzet nol untuk tanggal yang belum ada transaksi.
   for(const date of dates){
    const amount=total(data.transactions.filter(t=>String(t.date||'')===date&&t.status!=='cancelled'&&t.status!=='canceled'));
-   const row=incomeDateRows.get(date);
-   const values=[[date,amount]];
+   let row=incomeDateRows.get(date);
+   if(!row)row=legacyMalformedRows.get(date);
    if(row){
-    const range=quote(NONGKI_SHEETS.sheetName)+'!A'+row+':B'+row;
-    await sheetsFetch(apiBase(incomeId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values})});
+    await writeIncomeRow(row,date,amount);
+    if(legacyMalformedRows.get(date)===row){
+     const clearRange=quote(NONGKI_SHEETS.sheetName)+'!A'+row;
+     await sheetsFetch(apiBase(incomeId)+'/values/'+encodeURIComponent(clearRange)+':clear',{method:'POST',body:JSON.stringify({})});
+    }
    }else{
-    await append(incomeId,NONGKI_SHEETS.sheetName,'B',values);
-    incomeDateRows.set(date,incomeRows.length+1);
+    const marker='NONGKI_DAILY_TOTAL:'+date;
+    const range=quote(NONGKI_SHEETS.sheetName)+'!B:I';
+    const result=await appendRange(incomeId,NONGKI_SHEETS.sheetName,range,[[date,'Penjualan Nongki',"='FIRST - READ ME!'!$F$16",amount,'','Total omzet harian Nongki',marker,'']]);
+    let rowNum=Number(String(result?.updates?.updatedRange||'').match(/!B(\d+):I\d+/)?.[1]||0);
+    if(!rowNum){
+     const refreshed=await readRows(incomeId,NONGKI_SHEETS.sheetName,'K');
+     for(let i=6;i<refreshed.length;i++)if(String(refreshed[i]?.[7]||'').trim()===marker){rowNum=i+1;break;}
+    }
+    if(!rowNum)throw new Error('Baris INCOME LOG sudah ditambahkan, tetapi nomor barisnya tidak dapat diverifikasi. Tekan sinkronkan lagi untuk memeriksa.');
+    const formulaRange=quote(NONGKI_SHEETS.sheetName)+'!J'+rowNum+':K'+rowNum;
+    await sheetsFetch(apiBase(incomeId)+'/values/'+encodeURIComponent(formulaRange)+'?valueInputOption=USER_ENTERED',{method:'PUT',body:JSON.stringify({range:formulaRange,majorDimension:'ROWS',values:[['=IF(B'+rowNum+'="", "", MONTH(B'+rowNum+'))','=IF(B'+rowNum+'="", "", YEAR(B'+rowNum+'))']]})});
+    incomeDateRows.set(date,rowNum);
    }
   }
   const detailIndex=new Map();
@@ -523,7 +569,7 @@ async function syncHistoryToSheets(){
    const detail=[txId,itemId,date,String(t.time||''),name,String(t.category||'Produk'),qty,Number(t.unitPrice)||0,amount,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','TERSINKRON',canceled?canceledId:createdId,canceled?'Dibatalkan dari riwayat Nongki':''];
    if(detailIndex.has(key)){
     const n=detailIndex.get(key),range=quote('DETAIL PRODUK')+'!A'+n+':O'+n;
-    await sheetsFetch(apiBase(historyId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values:[detail]} )});
+    await sheetsFetch(apiBase(historyId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW',{method:'PUT',body:JSON.stringify({range,majorDimension:'ROWS',values:[detail]})});
    }else{
     await append(historyId,'DETAIL PRODUK','O',[detail]);
     detailIndex.set(key,-1);
@@ -538,12 +584,13 @@ async function syncHistoryToSheets(){
    }
    t.syncStatus='synced';save();
   }
-  $('sheetsConnectionStatus').textContent='Total harian dan riwayat transaksi berhasil disinkronkan.';render();return true;
+  $('sheetsConnectionStatus').textContent='Rekap omzet harian dan riwayat transaksi berhasil disinkronkan.';render();return true;
  }catch(error){
   console.error('Sinkronisasi Nongki gagal:',error);
   data.transactions.forEach(t=>{if(t.syncStatus!=='synced')t.syncStatus='failed';});
   save();render();
   $('sheetsConnectionStatus').textContent='Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet');
+  toast('Sinkronisasi gagal: '+(error.message||'periksa akses spreadsheet'));
   return false;
  }finally{window.__nongkiHistorySyncRunning=false;}
 }
