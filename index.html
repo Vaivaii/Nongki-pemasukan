@@ -606,12 +606,13 @@ async function loadGlobalIncome(){
   if(!response.ok)throw new Error('Apps Script HTTP '+response.status);
   const body=await response.json();
   if(body&&typeof body==='object'&&(body.success===false||body.ok===false||body.error))throw new Error(String(body.message||body.error?.message||body.error||'Gagal mengambil pemasukan global.'));
-  const candidates=[body?.nominal,body?.total,body?.income,body?.globalIncome,body?.global_income,body?.amount,body?.data?.nominal,body?.data?.total,body?.data?.income,body?.data?.globalIncome,body?.data?.amount,typeof body?.data==='number'?body.data:undefined,typeof body==='number'?body:undefined];
-  const value=candidates.find(v=>v!==undefined&&v!==null&&v!=='');
-  if(value===undefined)throw new Error('Respons getGlobalIncome tidak memuat nominal yang dikenali.');
+  const value=body?.penjualan_global;
+  if(value===undefined||value===null||value==='')throw new Error('Respons getGlobalIncome tidak memuat penjualan_global.');
   let amount=typeof value==='number'?value:Number(String(value).trim().replace(/[^0-9,.-]/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.'));
   if(!Number.isFinite(amount))throw new Error('Nominal pemasukan global tidak valid.');
   globalIncomeValue=amount;
+  const globalElement=$('todayGlobal');
+  if(globalElement)globalElement.textContent=rupiah(amount);
   renderHeader();
  }catch(error){
   console.warn('[Nongki] Gagal memuat pemasukan global:',error);
