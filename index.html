@@ -872,7 +872,7 @@ $('saveProduct').addEventListener('click',()=>{if(!currentUser||currentUser.role
 $('cancelEdit').addEventListener('click',resetForm);
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&sheetsToken){try{await loadServerHistory()}catch(e){console.error(e);showToast(e.message||'Riwayat server gagal dimuat.')}}}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'){try{await loadServerHistory()}catch(e){console.error('Gagal memuat Riwayat Server:',e);const status=$('sheetsConnectionStatus');if(status)status.textContent='Riwayat server gagal dimuat: '+(e.message||'periksa koneksi Apps Script');showToast('Riwayat server gagal dimuat: '+(e.message||'periksa koneksi'));}}}));
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){showToast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
@@ -939,21 +939,64 @@ async function sheetsFetch(url,opts={}){
  return body;
 }
 async function loadServerHistory(){
- if(!sheetsToken)throw new Error('Hubungkan akun Google terlebih dahulu.');
- const base='https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(NONGKI_SHEETS.historySpreadsheetId);
- const range=encodeURIComponent("'RIWAYAT TRANSAKSI'!A:L");
- const res=await sheetsFetch(base+'/values/'+range+'?majorDimension=ROWS');
- const rows=Array.isArray(res.values)?res.values:[];
- cloudTransactions=rows.slice(1).filter(r=>r[0]).map(r=>{
-  const eventId=String(r[0]||''), txId=String(r[1]||''), stamp=String(r[2]||'');
-  const match=stamp.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)/);
-  const date=match?match[1]:(stamp.slice(0,10));
-  const time=match?match[2]:'';
-  const kind=String(r[3]||'');
-  return {id:eventId,transactionId:txId,date,time,name:String(r[4]||kind),qty:Number(r[5])||1,total:Number(r[6])||0,unitPrice:Number(r[6])||0,status:String(r[9]||''),syncStatus:'synced',category:kind==='DIBATALKAN'?'Pembatalan':'Riwayat'};
- });
+ const status=$('sheetsConnectionStatus');
+ if(!String(APPS_SCRIPT_URL||'').trim())throw new Error('URL Apps Script belum diatur.');
+ if(status)status.textContent='Memuat riwayat dari Apps Script…';
+ const response=await fetch(APPS_SCRIPT_URL,{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
+ if(!response.ok)throw new Error('Apps Script gagal (HTTP '+response.status+').');
+ let body;
+ try{body=await response.json();}catch(e){throw new Error('Respons Apps Script bukan JSON yang valid. Pastikan doGet() mengembalikan JSON.');}
+ if(body&&typeof body==='object'&&!Array.isArray(body)&&body.error)throw new Error(String(body.error.message||body.error));
+ let rows=Array.isArray(body)?body:(Array.isArray(body?.data)?body.data:(Array.isArray(body?.values)?body.values:(Array.isArray(body?.rows)?body.rows:null)));
+ if(!rows)throw new Error('Format respons tidak dikenali. doGet() harus mengembalikan array atau objek berisi data/values/rows.');
+ const normalizeKey=value=>String(value??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const header=Array.isArray(rows[0])?rows[0].map(normalizeKey):null;
+ const hasHeader=!!(header&&header.some(v=>['id_event','idevent','eventid','idtransaksi','tanggal','waktu','jenis_event','jenisevent'].includes(v)));
+ if(hasHeader)rows=rows.slice(1);
+ const get=(row,keys,index,fallback='')=>{
+  if(Array.isArray(row))return row[index]??fallback;
+  if(row&&typeof row==='object'){
+   const entries=Object.entries(row),wanted=keys.map(normalizeKey);
+   const found=entries.find(([key])=>wanted.includes(normalizeKey(key)));
+   return found?found[1]:fallback;
+  }
+  return fallback;
+ };
+ const parseAmount=value=>{
+  if(typeof value==='number')return Number.isFinite(value)?value:0;
+  let raw=String(value??'').trim().replace(/[^0-9,.-]/g,'');
+  if(!raw)return 0;
+  if(raw.includes(',')&&raw.includes('.'))raw=raw.lastIndexOf(',')>raw.lastIndexOf('.')?raw.replace(/\./g,'').replace(',','.'):raw.replace(/,/g,'');
+  else if(raw.includes(',')){const p=raw.split(',');raw=p[p.length-1].length===3?p.join(''):raw.replace(',','.');}
+  else if(raw.includes('.')){const p=raw.split('.');if(p.length>1&&p[p.length-1].length===3)raw=p.join('');}
+  const n=Number(raw);return Number.isFinite(n)?n:0;
+ };
+ const normalizeDateTime=(stamp,row)=>{
+  const raw=String(stamp??'').trim();
+  let m=raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m)return {date:m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'),time:m[4]?m[4].padStart(2,'0')+':'+m[5]+(m[6]?':'+m[6]:''):''};
+  m=raw.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m)return {date:m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'),time:m[4]?m[4].padStart(2,'0')+':'+m[5]+(m[6]?':'+m[6]:''):''};
+  return {date:String(get(row,['tanggal','date','businessDate'],12,'')).slice(0,10),time:String(get(row,['jam','time'],13,''))};
+ };
+ cloudTransactions=rows.filter(row=>row&&((Array.isArray(row)&&row.some(v=>String(v??'').trim()!=='') )||(!Array.isArray(row)&&typeof row==='object'))).map(row=>{
+  const eventId=String(get(row,['id_event','idevent','eventid','event_id','id'],0,''));
+  const txId=String(get(row,['id_transaksi','idtransaksi','transactionid','transaction_id'],1,eventId));
+  const stamp=get(row,['waktu','timestamp','datetime','createdat','created_at'],2,'');
+  const {date,time}=normalizeDateTime(stamp,row);
+  const kind=String(get(row,['jenis_event','jenisevent','eventtype','jenis','type'],3,'Riwayat'));
+  const name=String(get(row,['ringkasan_produk','ringkasanproduk','produk','product','productname','nama_produk','nama'],4,kind||'Transaksi'));
+  const qtyRaw=get(row,['jumlah_item','jumlahitem','qty','quantity','jumlah'],5,1);
+  const amount=parseAmount(get(row,['nominal','total','amount','jumlah_uang','nilai'],6,0));
+  const statusValue=get(row,['status','status_transaksi','statustransaksi'],9,kind==='DIBATALKAN'?'DIBATALKAN':'AKTIF');
+  const status=String(statusValue|| (kind==='DIBATALKAN'?'DIBATALKAN':'AKTIF'));
+  const user=String(get(row,['pengguna','user','staff','nama_pengguna'],7,''));
+  const device=String(get(row,['perangkat','device'],8,''));
+  const notes=String(get(row,['keterangan','catatan','notes','deskripsi'],10,''));
+  return {id:eventId||txId,transactionId:txId,date:date||'',time:time||'',name,qty:parseAmount(qtyRaw)||1,total:amount,unitPrice:amount,icon:'🧾',status,syncStatus:'synced',category:kind,user,device,notes};
+ }).filter(t=>t.id||t.transactionId||t.name);
  saveCloudPreview();renderHistory();
- $('sheetsConnectionStatus').textContent='Riwayat server diperbarui · '+cloudTransactions.length+' event';
+ if(status)status.textContent='Riwayat server diperbarui · '+cloudTransactions.length+' event';
  return cloudTransactions.length;
 }
 async function syncSelectedDailyTotal(){
