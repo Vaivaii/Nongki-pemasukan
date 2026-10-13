@@ -579,7 +579,7 @@ function applyRole(){
  $('userAdminPanel')?.classList.add('hidden');
  $('manageBtn').classList.toggle('hidden',staff);
  // Pegawai hanya perlu layar kasir dan tombol sync bulat; sembunyikan tab Catat yang besar di nav bawah.
- document.querySelector('.tabs [data-view="salesView"]')?.classList.toggle('hidden',staff);
+ document.querySelector('.tabs')?.classList.toggle('hidden',staff);
  $('seeHistory').classList.toggle('hidden',staff);
  document.querySelectorAll('.tabs [data-view]').forEach(tab=>{
   const view=tab.dataset.view;
@@ -799,6 +799,12 @@ async function syncPending(){
   }finally{
    if(button)button.disabled=false;
    appScriptSyncPromise=null;
+   // Retry otomatis antrean yang tersisa selama perangkat online dan konfigurasi tersedia.
+   if(navigator.onLine&&appScriptConfigured()){
+    getAllRecords('outbox').then(remaining=>{
+     if(remaining.length){clearTimeout(sheetsSyncTimer);sheetsSyncTimer=setTimeout(()=>syncPending(),failed?30000:1200);}
+    }).catch(error=>console.warn('Antrean belum dapat diperiksa untuk retry:',error));
+   }
   }
  })();
  return appScriptSyncPromise;
