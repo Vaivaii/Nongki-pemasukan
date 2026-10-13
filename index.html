@@ -519,23 +519,105 @@ $('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(
 function download(content,name,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
 
-const USER_KEY='nongki_users_v1';
-let users=[];try{const saved=JSON.parse(localStorage.getItem(USER_KEY)||'[]');if(Array.isArray(saved))users=saved;}catch{}
+// Profil lokal 3 peran. Ini pembatasan UI, bukan autentikasi aman terhadap pengguna yang menguasai browser.
+const SESSION_KEY='nongki_profile_session_v1';
+const PROFILE_LIST=[
+ {id:'owner',name:'Owner',role:'owner'},
+ {id:'wife',name:'Istri',role:'wife'},
+ {id:'staff',name:'Pegawai',role:'staff'}
+];
+const PROFILE_PINS={owner:'1234',wife:'5678'};
 let currentUser=null;
-const hashPin=async pin=>{const bytes=new TextEncoder().encode(String(pin));const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')};
-function saveUsers(){localStorage.setItem(USER_KEY,JSON.stringify(users))}
-function updateLoginMode(){const first=users.length===0;$('loginHeading').textContent=first?'Buat akun pemilik':'Masuk ke Nongki';$('loginDescription').textContent=first?'Buat akun pemilik untuk mengamankan aplikasi pada perangkat ini. Simpan User ID dan PIN baik-baik.':'Masukkan User ID dan PIN akun yang sudah dibuat.';$('loginBtn').textContent=first?'Buat akun & masuk':'Masuk';$('loginUserId').placeholder=first?'Buat User ID pemilik':'Masukkan User ID';$('loginPin').placeholder=first?'Buat PIN minimal 4 angka':'Masukkan PIN';const note=$('loginLocalNote');if(note)note.textContent='Akun ini tersimpan pada browser/perangkat ini. Login dan sinkronisasi lintas perangkat memerlukan backend.'}
-function renderUsers(){const box=$('previewUserList');if(!box)return;box.innerHTML=users.map((u,i)=>`<div class="user-row"><div><b>${esc(u.id)} · ${esc(u.name)}</b><small>${u.role==='owner'?'Pemilik':'Pegawai'} · ${u.active?'Aktif':'Nonaktif'}</small></div><button class="btn" data-user-toggle="${i}">${u.active?'Nonaktifkan':'Aktifkan'}</button></div>`).join('')}
-function applyRole(){const owner=!!(currentUser&&currentUser.role==='owner');$('userAdminPanel').classList.toggle('hidden',!owner);$('manageBtn').classList.toggle('hidden',!owner);$('activeRoleName').textContent='Login sebagai '+(currentUser?currentUser.name:'—');$('activeRoleBadge').textContent=owner?'PEMILIK':'PEGAWAI';$('rolePreviewText').textContent=owner?'Akun pemilik dapat melihat laporan dan mengelola produk.':'Akun pegawai dapat mencatat penjualan dan melihat laporan.';renderReports();renderProducts();renderUsers()}
-$('loginBtn').addEventListener('click',async()=>{const id=$('loginUserId').value.trim().toUpperCase(),pin=$('loginPin').value;if(!id||pin.length<4){alert('Masukkan User ID dan PIN minimal 4 karakter.');return}if(users.length===0){const user={id,name:'Pemilik',pinHash:await hashPin(pin),role:'owner',active:true};users.push(user);saveUsers();currentUser=user;$('loginOverlay').classList.add('hidden');updateLoginMode();applyRole();toast('Akun pemilik berhasil dibuat pada perangkat ini');return}const pinHash=await hashPin(pin),user=users.find(u=>u.id===id&&u.pinHash===pinHash&&u.active);if(!user){alert('User ID atau PIN salah, atau akun nonaktif.');return}currentUser=user;$('loginOverlay').classList.add('hidden');applyRole();toast('Berhasil masuk sebagai '+user.name)});
-function openLogoutPin(){if(!currentUser){toast('Tidak ada akun yang sedang masuk');return}$('logoutPinInput').value='';$('logoutPinError').style.display='none';$('logoutPinOverlay').classList.remove('hidden');setTimeout(()=>{try{$('logoutPinInput').focus({preventScroll:true})}catch(e){$('logoutPinInput').focus()}},120)}
-function cancelLogoutPin(){$('logoutPinOverlay').classList.add('hidden');$('logoutPinInput').value='';$('logoutPinError').style.display='none'}
-async function verifyAndLogout(){const entered=$('logoutPinInput').value;if(!currentUser||await hashPin(entered)!==currentUser.pinHash){$('logoutPinError').style.display='block';$('logoutPinInput').value='';$('logoutPinInput').focus();return}cancelLogoutPin();currentUser=null;$('loginUserId').value='';$('loginPin').value='';$('loginOverlay').classList.remove('hidden');$('loginOverlay').scrollTop=0;updateLoginMode();applyRole();setTimeout(()=>{try{$('loginUserId').focus({preventScroll:true})}catch(e){$('loginUserId').focus()}},120)}
-$('logoutBtn').addEventListener('click',openLogoutPin);$('cancelLogoutBtn').addEventListener('click',cancelLogoutPin);$('confirmLogoutBtn').addEventListener('click',verifyAndLogout);$('logoutPinInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyAndLogout()}if(e.key==='Escape')cancelLogoutPin()});
-['loginUserId','loginPin'].forEach(id=>{const el=$(id);el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('loginBtn').click()}});el.addEventListener('focus',()=>{const overlay=$('loginOverlay');setTimeout(()=>{if(document.activeElement===el){const r=el.getBoundingClientRect();if(r.bottom>window.innerHeight-30||r.top<0)el.scrollIntoView({block:'center',behavior:'auto'});}},180)});});
-$('addPreviewUser').addEventListener('click',async()=>{if(!currentUser||currentUser.role!=='owner'){toast('Hanya pemilik yang dapat menambah pengguna');return}const id=$('newUserId').value.trim().toUpperCase(),name=$('newUserName').value.trim(),pin=$('newUserPin').value,role='staff';if(!id||!name||!pin){toast('Lengkapi User ID, nama, dan PIN');return}if(users.some(u=>u.id===id)){toast('User ID sudah digunakan');return}users.push({id,name,pinHash:await hashPin(pin),role,active:true});saveUsers();$('newUserId').value='';$('newUserName').value='';$('newUserPin').value='';renderUsers();toast('Pengguna berhasil ditambahkan')});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-user-toggle]');if(!b)return;const u=users[Number(b.dataset.userToggle)];if(u&&u.role!=='owner'){u.active=!u.active;saveUsers();renderUsers();toast(u.active?'Akun diaktifkan':'Akun dinonaktifkan')}});
-
+function readProfileSession(){
+ try{
+  const raw=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+  return PROFILE_LIST.find(p=>p.id===raw?.profileId)||null;
+ }catch{return null}
+}
+function saveProfileSession(profile){
+ if(profile)localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:profile.id,savedAt:new Date().toISOString()}));
+ else localStorage.removeItem(SESSION_KEY);
+}
+function ensureProfilePicker(){
+ const old=$('loginUserId');
+ if(old&&old.tagName!=='SELECT'){
+  const select=document.createElement('select');
+  select.id='loginUserId';select.setAttribute('aria-label','Pilih profil');select.innerHTML='<option value="owner">Owner</option><option value="wife">Istri</option><option value="staff">Pegawai</option>';
+  old.replaceWith(select);
+ }
+ const label=document.querySelector('label[for="loginUserId"]');
+ if(label)label.textContent='Profil';
+ $('loginHeading').textContent='Masuk ke Nongki';
+ $('loginDescription').textContent='Pilih profil. Owner dan Istri menggunakan PIN; Pegawai dapat masuk tanpa PIN.';
+ $('loginBtn').textContent='Masuk';
+ $('loginPin').placeholder='PIN profil (tidak diperlukan untuk Pegawai)';
+ $('loginPin').inputMode='numeric';$('loginPin').maxLength=8;
+ const note=$('loginLocalNote');
+ if(note)note.textContent='Sesi profil disimpan di perangkat ini. Profil Pegawai tidak memakai PIN.';
+}
+function roleName(profile=currentUser){
+ return profile?.role==='owner'?'Owner':profile?.role==='wife'?'Istri':'Pegawai';
+}
+function renderUsers(){}
+function applyRole(){
+ const role=currentUser?.role||'staff';
+ const owner=role==='owner', wife=role==='wife', staff=role==='staff';
+ $('loginOverlay').classList.toggle('hidden',!!currentUser);
+ $('userAdminPanel')?.classList.add('hidden');
+ $('manageBtn').classList.toggle('hidden',staff);
+ $('seeHistory').classList.toggle('hidden',staff);
+ document.querySelectorAll('.tabs [data-view]').forEach(tab=>{
+  const view=tab.dataset.view;
+  const allowed=owner|| (wife&&['salesView','historyView','productsView','reportsView'].includes(view)) || (staff&&view==='salesView');
+  tab.classList.toggle('hidden',!allowed);
+ });
+ // Pegawai hanya kasir; Istri dapat melihat riwayat/laporan dan mengelola menu tanpa hak Owner.
+ document.getElementById('historyView').classList.toggle('hidden',staff);
+ document.getElementById('reportsView').classList.toggle('hidden',staff);
+ document.getElementById('productsView').classList.toggle('hidden',staff);
+ $('googleSheetsPanel')?.classList.toggle('hidden',!owner);
+ $('exportCsv')?.classList.toggle('hidden',!owner);
+ $('backupBtn')?.classList.toggle('hidden',!owner);
+ $('restoreBtn')?.classList.toggle('hidden',!owner);
+ $('productAdminForm').classList.toggle('hidden',staff);
+ $('productAdminNote').textContent=owner?'Owner dapat mengelola semua produk dan harga.':'Istri dapat mengelola menu dan harga. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.';
+ $('activeRoleName').textContent='Login sebagai '+(currentUser?currentUser.name:'—');
+ $('activeRoleBadge').textContent=roleName().toUpperCase();
+ $('rolePreviewText').textContent=owner?'Owner: akses penuh, termasuk sinkronisasi dan backup.':wife?'Istri: catat penjualan, riwayat, laporan, dan pengaturan menu.':'Pegawai: hanya mencatat penjualan.';
+ // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
+ renderReports();renderProducts();
+}
+function attemptProfileLogin(){
+ const id=$('loginUserId').value;
+ const profile=PROFILE_LIST.find(p=>p.id===id);
+ const pin=String($('loginPin').value||'');
+ if(!profile){toast('Pilih profil yang valid.');return}
+ if(profile.role!=='staff'&&pin!==PROFILE_PINS[profile.id]){
+  alert('PIN salah.');$('loginPin').value='';$('loginPin').focus();return;
+ }
+ currentUser=profile;saveProfileSession(profile);$('loginPin').value='';
+ showView('salesView');applyRole();toast('Masuk sebagai '+profile.name);
+}
+$('loginBtn').addEventListener('click',attemptProfileLogin);
+function openLogoutPin(){
+ if(!currentUser){toast('Tidak ada profil yang aktif');return}
+ if(!confirm('Ganti profil atau keluar dari Nongki?'))return;
+ currentUser=null;saveProfileSession(null);$('loginPin').value='';
+ $('loginOverlay').classList.remove('hidden');ensureProfilePicker();applyRole();
+}
+function cancelLogoutPin(){$('logoutPinOverlay').classList.add('hidden');}
+async function verifyAndLogout(){openLogoutPin();}
+$('logoutBtn').addEventListener('click',openLogoutPin);
+$('cancelLogoutBtn').addEventListener('click',cancelLogoutPin);
+$('confirmLogoutBtn').addEventListener('click',verifyAndLogout);
+$('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();attemptProfileLogin()}});
+$('loginUserId').addEventListener('change',()=>{$('loginPin').value='';$('loginPin').disabled=$('loginUserId').value==='staff';$('loginPin').placeholder=$('loginPin').disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil'});
+$('loginUserId').value='owner';$('loginPin').disabled=false;
+document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-user-toggle]');
+ if(b){toast('Manajemen akun dinonaktifkan pada mode 3 profil lokal.');}
+});
 // Google Apps Script bridge; configuration is declared at the top of the application script.
 let appScriptSyncPromise=null;
 function queueDailySync(date){
@@ -722,12 +804,12 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
  try{await syncPending();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
-load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
+load();loadCloudPreview();ensureProfilePicker();$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){$('loginUserId').value=currentUser.id;$('loginPin').disabled=currentUser.role==='staff';}else{$('loginOverlay').classList.remove('hidden');$('loginPin').disabled=false;}
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
 let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pending'){t.syncStatus='pending';resetSyncStatus=true}});if(resetSyncStatus)save();
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
-render();
+render();applyRole();
 // Antrean dipertahankan sampai backend nyata memberikan konfirmasi.
 syncPending();
 })();
