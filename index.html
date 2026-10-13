@@ -641,8 +641,12 @@ function renderHistory(){
   $('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)} · Perangkat ini</span><h2>${rupiah(total(active))}</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>${tx.length}</h2></div></div><div class="sub">${itemCount(active)} produk aktif · ${tx.filter(t=>t.status==='cancelled').length} dibatalkan</div>`;
   $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat lokal pada tanggal ini.</div>';
  }else{
-  $('historySummary').innerHTML='<div class="sub">Riwayat server belum tersedia</div><p>Data lintas perangkat baru akan tampil setelah backend dikonfigurasi dan koneksi server terverifikasi.</p>';
-  $('historyList').innerHTML='<div class="empty">Belum terhubung ke server.</div>';
+  const tx=cloudTransactions.filter(t=>t.date===date).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
+  const amount=tx.reduce((sum,t)=>sum+(Number(t.total)||0),0);
+  $('historySummary').innerHTML=tx.length
+   ?`<div class="section-head"><div><span class="sub">${dateText(date)} · Server</span><h2>${rupiah(amount)}</h2></div><div style="text-align:right"><span class="sub">Catatan server</span><h2>${tx.length}</h2></div></div>`
+   :'<div class="sub">Riwayat server belum tersedia untuk tanggal ini.</div>';
+  $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada riwayat server untuk tanggal ini.</div>';
  }
 }
 function renderProducts(){const owner=!!(currentUser&&currentUser.role==='owner');$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>'}
@@ -934,7 +938,7 @@ $('saveProduct').addEventListener('click',()=>{if(!currentUser||currentUser.role
 $('cancelEdit').addEventListener('click',resetForm);
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'){try{await loadServerHistory()}catch(e){console.error('Gagal memuat Riwayat Server:',e);const status=$('sheetsConnectionStatus');if(status)status.textContent='Riwayat server gagal dimuat: '+(e.message||'periksa koneksi Apps Script');showToast('Riwayat server gagal dimuat: '+(e.message||'periksa koneksi'));}}}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;if(historySource==='local'){renderHistory();return;}if(cloudTransactions.length)renderHistory();else{document.querySelectorAll('[data-history-source]').forEach(x=>x.classList.toggle('active',x.dataset.historySource===historySource));}try{await loadServerHistory()}catch(e){console.error('Gagal memuat Riwayat Server:',e);}}));
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){showToast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
