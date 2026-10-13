@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v13-login-syntax-fix';
+const CACHE_NAME = 'nongki-income-v14-apps-script-get-history';
 const CORE_FILES = [
   './',
   './index.html',
