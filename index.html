@@ -254,8 +254,9 @@ header {
 <div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
 <div class="panel" id="googleSheetsPanel">
   <div class="section-head"><div><h3>Sinkronisasi Nongki · Apps Script</h3><span class="sub" id="sheetsConnectionStatus">Antrean lokal aktif · endpoint belum dikonfigurasi</span></div></div>
-  <div class="toolbar"><button class="btn primary" id="syncGoogleSheetsBtn" type="button">Sinkronkan antrean</button></div>
-  <p class="note">Transaksi disimpan terlebih dahulu di IndexedDB. Saat online, antrean dikirim ke Google Apps Script Web App. Pastikan APPS_SCRIPT_URL dan token sudah diatur, serta backend memakai id_event untuk mencegah duplikasi antarperangkat.</p>
+  <div class="form-grid"><div><label for="appsScriptUrlInput">URL Apps Script Web App</label><input id="appsScriptUrlInput" type="url" autocomplete="url" placeholder="https://script.google.com/macros/s/.../exec"/></div><div><label for="appsScriptTokenInput">Token API</label><input id="appsScriptTokenInput" type="password" autocomplete="new-password" placeholder="Masukkan token Apps Script"/></div></div>
+  <div class="toolbar"><button class="btn" id="saveAppsScriptSettingsBtn" type="button">Simpan pengaturan</button><button class="btn primary" id="syncGoogleSheetsBtn" type="button">Sinkronkan antrean</button></div>
+  <p class="note">URL dan token disimpan di penyimpanan lokal browser perangkat ini. Jangan gunakan token ini sebagai rahasia kuat: pengguna yang menguasai perangkat/browser tetap dapat mengaksesnya. Antrean transaksi tetap disimpan di IndexedDB sampai server mengonfirmasi.</p>
 </div>
 <div class="panel" id="historySummary"></div>
 <div class="panel" id="historyList"></div>
@@ -315,9 +316,23 @@ async function migrateLegacyLocalData(){return {products:0,transactions:0,skippe
 (async function(){
 const KEY='nongki_income_v1';
 // Google Apps Script configuration. Do not commit a real shared secret to a public repository.
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwI1iljZk48cwbUzCBdImBjJkVR8h99IwS-7FkVtdybQZUi9AMJjp-zVymci8wpomo/exec';
-const APPS_SCRIPT_TOKEN='SET_TOKEN_LOCALLY';
+const APPS_SCRIPT_SETTINGS_KEY='nongki_apps_script_settings_v1';
+const APPS_SCRIPT_DEFAULT_URL='https://script.google.com/macros/s/AKfycbwI1iljZk48cwbUzCBdImBjJkVR8h99IwS-7FkVtdybQZUi9AMJjp-zVymci8wpomo/exec';
+let APPS_SCRIPT_URL=APPS_SCRIPT_DEFAULT_URL;
+let APPS_SCRIPT_TOKEN='';
 const APPS_SCRIPT_TIMEOUT_MS=20000;
+function loadAppsScriptSettings(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(APPS_SCRIPT_SETTINGS_KEY)||'{}');
+  if(typeof saved.url==='string'&&saved.url.trim())APPS_SCRIPT_URL=saved.url.trim();
+  if(typeof saved.token==='string')APPS_SCRIPT_TOKEN=saved.token;
+ }catch(error){console.warn('Pengaturan Apps Script tidak dapat dibaca:',error);}
+ const urlInput=document.getElementById('appsScriptUrlInput');
+ const tokenInput=document.getElementById('appsScriptTokenInput');
+ if(urlInput)urlInput.value=APPS_SCRIPT_URL;
+ if(tokenInput)tokenInput.value=APPS_SCRIPT_TOKEN;
+}
+loadAppsScriptSettings();
 
 const CLOUD_PREVIEW_KEY='nongki_cloud_history_preview_v1';
 let cloudTransactions=[];
@@ -681,8 +696,29 @@ async function syncPending(){
 }
 window.addEventListener('online',()=>syncPending());
 
+// Save endpoint and token locally; never write the token into the repository source.
+$('saveAppsScriptSettingsBtn')?.addEventListener('click',()=>{
+ const url=String($('appsScriptUrlInput')?.value||'').trim();
+ const token=String($('appsScriptTokenInput')?.value||'').trim();
+ if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(url)){
+  toast('URL Apps Script tidak valid. Gunakan URL Web App yang berakhiran /exec.');return;
+ }
+ if(!token){toast('Token API belum diisi.');return;}
+ try{
+  localStorage.setItem(APPS_SCRIPT_SETTINGS_KEY,JSON.stringify({url,token,savedAt:new Date().toISOString()}));
+  APPS_SCRIPT_URL=url;APPS_SCRIPT_TOKEN=token;
+  const status=$('sheetsConnectionStatus');if(status)status.textContent='Pengaturan tersimpan di perangkat ini · siap sinkronisasi.';
+  toast('Pengaturan Apps Script tersimpan di perangkat ini.');
+ }catch(error){toast('Pengaturan gagal disimpan di browser.');console.error(error);}
+});
+
 // Manual sync button; no Google OAuth or Direct Sheets API is used.
 $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
+  if(!appScriptConfigured()){
+   toast('Simpan URL Apps Script dan token terlebih dahulu.');
+   $('appsScriptTokenInput')?.focus();
+   return;
+  }
  try{await syncPending();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
