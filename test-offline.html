@@ -40,7 +40,13 @@ document.querySelector('#test').onclick=()=>run(async()=>{
   const saved=(await getAllRecords('transactions')).find(t=>t.id===tx.id);
   if(saved?.status!=='canceled')throw Error('Pembatalan gagal disimpan');
   if((await getPendingOutbox()).length!==before+2)throw Error('Event pembatalan tidak masuk antrean');
-  alert('Uji dasar lulus: pencatatan, total, pembatalan, dan antrean lokal.');
+  const summary=await getSalesSummary({fromDate:tx.businessDate,toDate:tx.businessDate});
+  if(summary.netRevenue < 0 || summary.products.some(p=>p.productId==='test')) {
+    throw Error('Transaksi batal masih masuk ringkasan penjualan');
+  }
+  const history=(await getAllRecords('transactions')).find(t=>t.id===tx.id);
+  if(!history || history.status!=='canceled')throw Error('Transaksi batal hilang dari riwayat');
+  alert('Uji dasar lulus: pencatatan, total, pembatalan, riwayat tetap ada, ringkasan mengecualikan transaksi batal, dan antrean lokal.');
 });
 show().catch(e=>output.textContent='ERROR: '+e.message);
 </script></main></body></html>
