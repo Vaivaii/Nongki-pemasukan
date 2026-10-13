@@ -7,7 +7,8 @@ const CORE_FILES = [
   './icon-192.png',
   './icon-512.png',
   './src/db.js',
-  './src/sync.js'
+  './src/sync.js',
+  './src/legacy-adapter.js'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(
