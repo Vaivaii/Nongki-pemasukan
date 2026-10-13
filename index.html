@@ -555,6 +555,7 @@ async function syncPending(){
    if(failed)showToast('Sinkronisasi tertunda: '+lastError);
    else if(sent)showToast(sent+' event berhasil dikirim ke Apps Script.');
    if(sent)render();
+   await loadGlobalIncome();
    return failed===0;
   }catch(error){
    const status=$('sheetsConnectionStatus');
@@ -575,7 +576,33 @@ function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
-function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayGlobal').textContent='Belum terhubung';$('todayItems').textContent=itemCount(tx)}
+let globalIncomeValue=null;
+let globalIncomeLoading=false;
+async function loadGlobalIncome(){
+ if(globalIncomeLoading)return;
+ globalIncomeLoading=true;
+ const target=$('todayGlobal');
+ try{
+  const url=String(APPS_SCRIPT_URL||'').trim();
+  if(!url)throw new Error('URL Apps Script belum diatur.');
+  const endpoint=url+(url.includes('?')?'&':'?')+'action=getGlobalIncome';
+  const response=await fetch(endpoint,{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
+  if(!response.ok)throw new Error('Apps Script HTTP '+response.status);
+  const body=await response.json();
+  if(body&&typeof body==='object'&&(body.success===false||body.ok===false||body.error))throw new Error(String(body.message||body.error?.message||body.error||'Gagal mengambil pemasukan global.'));
+  const candidates=[body?.nominal,body?.total,body?.income,body?.globalIncome,body?.global_income,body?.amount,body?.data?.nominal,body?.data?.total,body?.data?.income,body?.data?.globalIncome,body?.data?.amount,typeof body?.data==='number'?body.data:undefined,typeof body==='number'?body:undefined];
+  const value=candidates.find(v=>v!==undefined&&v!==null&&v!=='');
+  if(value===undefined)throw new Error('Respons getGlobalIncome tidak memuat nominal yang dikenali.');
+  let amount=typeof value==='number'?value:Number(String(value).trim().replace(/[^0-9,.-]/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.'));
+  if(!Number.isFinite(amount))throw new Error('Nominal pemasukan global tidak valid.');
+  globalIncomeValue=amount;
+  renderHeader();
+ }catch(error){
+  console.warn('[Nongki] Gagal memuat pemasukan global:',error);
+  if(globalIncomeValue===null&&target)target.textContent='Belum terhubung';
+ }finally{globalIncomeLoading=false;}
+}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayGlobal').textContent=globalIncomeValue===null?'Belum terhubung':rupiah(globalIncomeValue);$('todayItems').textContent=itemCount(tx)}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -1087,6 +1114,8 @@ load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();
+// Muat angka global saat aplikasi dibuka, lalu perbarui lagi setelah sinkronisasi.
+loadGlobalIncome();
 // Antrean dipertahankan sampai backend nyata memberikan konfirmasi.
 syncPending();
 })();
