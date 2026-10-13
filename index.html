@@ -492,7 +492,7 @@ async function syncPending(){
    const eventTime=t.cancelledAt||new Date().toISOString();
    const itemId=txId+':ITEM:1';
    const key=txId+'|'+itemId;
-   const detailValues=[txId,itemId,String(t.date||today()),String(t.time||''),String(t.name||'Produk'),String(t.category||'Produk'),Number(t.qty)||1,Number(t.unitPrice)||0,Number(t.total)||0,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','MENUNGGU SINKRONISASI',canceled?txId+':CANCELED':txId+':CREATED',canceled?'Dibatalkan dari riwayat Nongki':''];
+   const detailValues=[txId,itemId,String(t.date||today()),String(t.time||''),String(t.name||'Produk'),String(t.category||'Produk'),Number(t.qty)||1,Number(t.unitPrice)||0,Number(t.total)||0,staffName(),device(),canceled?'DIBATALKAN':'AKTIF','TERSINKRON',canceled?txId+':CANCELED':txId+':CREATED',canceled?'Dibatalkan dari riwayat Nongki':''];
    if(detailIndex.has(key)){
     const rowNo=detailIndex.get(key);
     const range=quote('DETAIL PRODUK')+'!A'+rowNo+':O'+rowNo;
