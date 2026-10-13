@@ -634,9 +634,7 @@ async function cancelTx(id){
  } catch(error) { console.error(error);showToast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
-function syncPending(){
- // Sengaja tidak mengubah status sinkronisasi tanpa konfirmasi backend.
-}
+// Legacy no-op syncPending removed: the Apps Script outbox implementation above is authoritative.
 
 window.addEventListener('online',()=>syncPending());
 
