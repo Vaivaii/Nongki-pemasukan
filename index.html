@@ -24,6 +24,11 @@ input,select{font:inherit;border:1px solid #dfe5dc;background:white;border-radiu
 .toast{position:fixed;bottom:83px;left:50%;transform:translateX(-50%);background:#203b2b;color:white;padding:11px 16px;border-radius:30px;font-size:12px;box-shadow:0 6px 25px #0002;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}
 .note{font-size:11px;line-height:1.5;color:var(--muted);margin:10px 2px}.danger{color:var(--red)}.separator{height:1px;background:var(--line);margin:13px 0}
 @media(min-width:520px){.product-group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.google-sync-panel{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 16px 14px;background:#123f32;color:#f7f0df}
+.google-sync-panel button{border:1px solid #d7b66b;background:#d7b66b;color:#173c30;border-radius:999px;padding:9px 15px;font-weight:700;cursor:pointer}
+.google-sync-panel button:disabled{opacity:.65;cursor:wait}
+.google-sync-status{font-size:12px;opacity:.95;text-align:center}
 </style>
 </head>
 <body>
@@ -33,6 +38,11 @@ input,select{font:inherit;border:1px solid #dfe5dc;background:white;border-radiu
  <div class="total-label">Total pemasukan hari ini</div><div class="total" id="todayTotal">Rp0</div>
  <div class="stats"><div class="stat"><span>Transaksi hari ini</span><b id="todayCount">0</b></div><div class="stat"><span>Produk terjual</span><b id="todayItems">0</b></div></div>
 </header>
+<div class="google-sync-panel" id="googleSyncPanel">
+  <button id="googleConnectBtn" type="button">Hubungkan Google Sheets</button>
+  <button id="googleSyncTodayBtn" type="button" disabled>Sinkronkan pemasukan hari ini</button>
+  <span class="google-sync-status" id="googleSyncStatus" role="status" aria-live="polite">Belum terhubung</span>
+</div>
 <main>
  <section id="salesView" class="view active">
   <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
@@ -266,6 +276,69 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
+</script>
+
+
+<script type="module">
+import { NONGKI_GOOGLE_CONFIG, connectGoogleSheets, getGoogleSheetsConnection, disconnectGoogleSheets, upsertDailyIncome } from './src/google-sheets.js';
+const connectButton = document.getElementById('googleConnectBtn');
+const syncButton = document.getElementById('googleSyncTodayBtn');
+const status = document.getElementById('googleSyncStatus');
+function setStatus(message) { status.textContent = message; }
+connectButton.addEventListener('click', async () => {
+  if (connectButton.dataset.connected === 'true') {
+    disconnectGoogleSheets();
+    connectButton.dataset.connected = 'false';
+    connectButton.textContent = 'Hubungkan Google Sheets';
+    syncButton.disabled = true;
+    setStatus('Koneksi Google diputus.');
+    return;
+  }
+  connectButton.disabled = true;
+  setStatus('Membuka login Google…');
+  try {
+    const connection = await connectGoogleSheets({
+      clientId: NONGKI_GOOGLE_CONFIG.clientId,
+      allowedEmail: NONGKI_GOOGLE_CONFIG.allowedEmail
+    });
+    syncButton.disabled = false;
+    connectButton.textContent = 'Putuskan Google';
+    connectButton.dataset.connected = 'true';
+    setStatus('Terhubung sebagai ' + connection.email + '.');
+  } catch (error) {
+    setStatus('Gagal terhubung: ' + (error?.message || 'Kesalahan tidak diketahui'));
+  } finally {
+    connectButton.disabled = false;
+  }
+});
+syncButton.addEventListener('click', async () => {
+  if (!getGoogleSheetsConnection()) {
+    setStatus('Hubungkan akun Google terlebih dahulu.');
+    syncButton.disabled = true;
+    return;
+  }
+  syncButton.disabled = true;
+  setStatus('Mengirim total pemasukan hari ini…');
+  try {
+    const raw = localStorage.getItem('nongki_income_v1');
+    const data = raw ? JSON.parse(raw) : null;
+    if (!data || !Array.isArray(data.transactions)) throw new Error('Data transaksi lokal tidak ditemukan.');
+    const now = new Date();
+    const date = [now.getFullYear(), String(now.getMonth()+1).padStart(2,'0'), String(now.getDate()).padStart(2,'0')].join('-');
+    const amount = data.transactions.filter(tx => tx.date === date).reduce((sum, tx) => sum + (Number(tx.total) || 0), 0);
+    await upsertDailyIncome({
+      spreadsheetId: NONGKI_GOOGLE_CONFIG.spreadsheetId,
+      sheetName: NONGKI_GOOGLE_CONFIG.sheetName,
+      date,
+      amount
+    });
+    setStatus('Berhasil mengirim total ' + new Intl.NumberFormat('id-ID', {style:'currency',currency:'IDR',maximumFractionDigits:0}).format(amount) + ' untuk ' + date + '.');
+  } catch (error) {
+    setStatus('Sinkronisasi gagal: ' + (error?.message || 'Kesalahan tidak diketahui'));
+  } finally {
+    syncButton.disabled = false;
+  }
+});
 </script>
 
 </body>
