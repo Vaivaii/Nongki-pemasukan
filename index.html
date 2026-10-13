@@ -667,7 +667,7 @@ $('refreshServerHistoryBtn')?.addEventListener('click',async()=>{
 });
 load();loadCloudPreview();updateLoginMode();$('historyDate').value=today();
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
-let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pending'){t.syncStatus='pending';resetSyncStatus=true}});if(resetSyncStatus)save();
+// Status sinkronisasi tersimpan dipertahankan; hanya transaksi baru atau gagal yang dicoba ulang.
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();
