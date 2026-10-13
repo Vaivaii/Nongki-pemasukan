@@ -541,7 +541,7 @@ $('saveProduct').addEventListener('click',()=>{if(!currentUser||currentUser.role
 $('cancelEdit').addEventListener('click',resetForm);
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory()}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',async()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&sheetsToken){try{await loadServerHistory()}catch(e){console.error(e);toast(e.message||'Riwayat server gagal dimuat.')}}}));
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
