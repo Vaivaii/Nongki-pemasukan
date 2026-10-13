@@ -7,7 +7,7 @@
 <button id="create">Catat 1 Es Kopi Susu (Rp10.000)</button><button id="cancel">Batalkan transaksi terakhir</button><button id="refresh">Lihat data lokal</button><button id="test">Jalankan uji otomatis</button>
 <p><small>Setelah mencatat, coba refresh halaman atau matikan internet. Data seharusnya tetap ada.</small></p><pre id="output">Memuat...</pre>
 <script type="module">
-import { recordTransaction, cancelTransaction, getAllRecords, getPendingOutbox } from './src/db.js';
+import { recordTransaction, cancelTransaction, getAllRecords, getPendingOutbox, getSalesSummary } from './src/db.js';
 const output = document.querySelector('#output');
 let latestId = null;
 async function show() {
