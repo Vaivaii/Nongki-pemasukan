@@ -33,7 +33,8 @@ document.querySelector('#cancel').onclick=()=>run(async()=>{if(!latestId)throw E
 document.querySelector('#refresh').onclick=()=>run(async()=>{});
 document.querySelector('#test').onclick=()=>run(async()=>{
   const before=(await getPendingOutbox()).length;
-  const tx=await recordTransaction({userId:'test',items:[{productId:'test',productName:'Tes',quantity:2,unitPrice:3000}]});
+  const testProductId='test-'+crypto.randomUUID();
+  const tx=await recordTransaction({userId:'test',items:[{productId:testProductId,productName:'Tes',quantity:2,unitPrice:3000}]});
   if(tx.total!==6000)throw Error('Perhitungan total salah');
   if((await getPendingOutbox()).length!==before+1)throw Error('Event pencatatan tidak masuk antrean');
   await cancelTransaction(tx.id,{userId:'test'});
@@ -41,7 +42,7 @@ document.querySelector('#test').onclick=()=>run(async()=>{
   if(saved?.status!=='canceled')throw Error('Pembatalan gagal disimpan');
   if((await getPendingOutbox()).length!==before+2)throw Error('Event pembatalan tidak masuk antrean');
   const summary=await getSalesSummary({fromDate:tx.businessDate,toDate:tx.businessDate});
-  if(summary.netRevenue < 0 || summary.products.some(p=>p.productId==='test')) {
+  if(summary.netRevenue < 0 || summary.products.some(p=>p.productId===testProductId)) {
     throw Error('Transaksi batal masih masuk ringkasan penjualan');
   }
   const history=(await getAllRecords('transactions')).find(t=>t.id===tx.id);
