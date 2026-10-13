@@ -225,6 +225,9 @@ header {
 .stat-note{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.sync-dot{display:inline-block;width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#9aa39d;box-shadow:0 0 0 3px #9aa39d20}.sync-dot.status-syncing{background:#eab308;box-shadow:0 0 0 3px #eab30826;animation:syncPulse 1.2s ease-in-out infinite}.sync-dot.status-connected{background:#22a447;box-shadow:0 0 0 3px #22a44724}.sync-dot.status-offline{background:#9aa39d;box-shadow:0 0 0 3px #9aa39d20}.sync-dot.status-error{background:#dc4545;box-shadow:0 0 0 3px #dc454526}@keyframes syncPulse{50%{opacity:.45}}
 .sync-fab{position:fixed;right:17px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:8;width:46px;height:46px;border:1px solid #ffffffb8;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font-size:22px;box-shadow:0 7px 20px #173d2c38;cursor:pointer}.sync-fab:active{transform:scale(.95)}.sync-fab[hidden]{display:none}.sync-fab:disabled{opacity:.7;cursor:progress}.sync-fab .sync-count{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:20px;display:grid;place-items:center;background:#d94343;color:#fff;border:2px solid var(--cream);font-size:10px;font-weight:850;line-height:1}.sync-fab .sync-count[hidden]{display:none}
 main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}@media(min-width:520px){.sync-fab{right:max(22px,calc((100vw - 720px)/2 + 18px))}}
+/* Final staff-only navigation fix: override legacy .tabs display:flex!important rules. */
+.tabs.hidden, body.staff-mode .tabs { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+body.staff-mode .sync-fab { bottom: calc(18px + env(safe-area-inset-bottom)) !important; }
 </style>
 </head>
 <body>
@@ -575,6 +578,8 @@ function renderUsers(){}
 function applyRole(){
  const role=currentUser?.role||'staff';
  const owner=role==='owner', wife=role==='wife', staff=role==='staff';
+ // Pegawai tidak memakai navigasi balok; tombol sinkronisasi bulat diposisikan di sudut bawah.
+ document.body.classList.toggle('staff-mode',staff);
  $('loginOverlay').classList.toggle('hidden',!!currentUser);
  $('userAdminPanel')?.classList.add('hidden');
  $('manageBtn').classList.toggle('hidden',staff);
