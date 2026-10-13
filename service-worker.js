@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nongki-income-v21-global-income-field';
+const CACHE_NAME = 'v22-fix-global-income';
 const CORE_FILES = [
   './',
   './index.html',
