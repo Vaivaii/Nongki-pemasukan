@@ -340,10 +340,14 @@ let APPS_SCRIPT_URL=APPS_SCRIPT_DEFAULT_URL;
 let APPS_SCRIPT_TOKEN='';
 const APPS_SCRIPT_TIMEOUT_MS=20000;
 function loadAppsScriptSettings(){
+ // URL Web App tersedia sebagai fallback publik; token tetap harus disimpan privat di perangkat.
+ APPS_SCRIPT_URL=APPS_SCRIPT_DEFAULT_URL;
+ APPS_SCRIPT_TOKEN='';
  try{
   const saved=JSON.parse(localStorage.getItem(APPS_SCRIPT_SETTINGS_KEY)||'{}');
-  if(typeof saved.url==='string'&&saved.url.trim())APPS_SCRIPT_URL=saved.url.trim();
-  if(typeof saved.token==='string')APPS_SCRIPT_TOKEN=saved.token;
+  const savedUrl=typeof saved.url==='string'?saved.url.trim():'';
+  if(/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/.test(savedUrl))APPS_SCRIPT_URL=savedUrl;
+  if(typeof saved.token==='string')APPS_SCRIPT_TOKEN=saved.token.trim();
  }catch(error){console.warn('Pengaturan Apps Script tidak dapat dibaca:',error);}
  const urlInput=document.getElementById('appsScriptUrlInput');
  const tokenInput=document.getElementById('appsScriptTokenInput');
