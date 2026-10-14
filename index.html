@@ -750,6 +750,7 @@ function safeProfileUiRefresh(){
  try{applyRole();}catch(error){console.error('UI profil belum sepenuhnya diperbarui:',error);}
  try{const overlay=$('loginOverlay');if(overlay)overlay.classList.toggle('hidden',!!currentUser);}catch(error){console.warn('Overlay login tidak tersedia:',error);}
  try{const name=$('headerProfileName');if(name)name.textContent=currentUser?'Profil: '+currentUser.name:'Belum masuk';}catch(error){}
+ try{const switchBtn=$('profileAvatarBtn');if(switchBtn)switchBtn.textContent=currentUser?roleName(currentUser):'Switch Profile';}catch(error){console.warn('Label tombol profil tidak dapat diperbarui:',error);}
  try{const glyph=$('profileAvatarGlyph');if(glyph)glyph.textContent=currentUser?.role==='owner'?'👑':currentUser?.role==='wife'?'⭐':'🧢';}catch(error){}
  try{const menu=$('profileDropdown');if(menu)menu.hidden=true;const btn=$('profileAvatarBtn');if(btn)btn.setAttribute('aria-expanded','false');}catch(error){}
 }
