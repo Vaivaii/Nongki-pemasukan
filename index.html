@@ -732,7 +732,7 @@ async function publishSharedMenu(){
  if(!products.length){toast('Menu kosong, tidak dikirim.');return false;}
  try{
   sharedMenuStatus('Mengirim menu…');
-  const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveMenu',token:APPS_SCRIPT_TOKEN,products}),cache:'no-store'});
+  const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveMenu',token:APPS_SCRIPT_TOKEN,updatedBy:currentUser?.name||currentUser?.id||'Owner/Istri',products}),cache:'no-store'});
   const raw=await response.text();let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons Apps Script bukan JSON.')}
   if(!response.ok||!result||result.success!==true)throw new Error(String(result?.error||result?.message||('HTTP '+response.status)));
   localStorage.removeItem(SHARED_MENU_PENDING_KEY);
