@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v35-global-income-action';;;
+const CACHE_NAME = 'v36-targetdatekey-batched-sync';;;
 const CORE_FILES = [
   './',
   './index.html',
