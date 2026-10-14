@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v36-targetdatekey-batched-sync';;;
+const CACHE_NAME = 'v37-force-fix-targetdatekey';;;
 const CORE_FILES = [
   './',
   './index.html',
