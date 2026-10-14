@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v37-force-fix-targetdatekey';;;
+const CACHE_NAME = 'v38-safe-local-sync-refresh';;;
 const CORE_FILES = [
   './',
   './index.html',
