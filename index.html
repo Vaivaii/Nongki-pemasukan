@@ -888,6 +888,8 @@ async function syncPending(){
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
   let sent=0,failed=0,lastError='';
+  // Deklarasi pada scope fungsi agar tidak ada referensi targetDateKey yang keluar dari block scope.
+  let targetDateKey=today();
   try{
    let outbox=await getAllRecords('outbox');
    await enqueueLegacyPendingTransactions(outbox);
@@ -901,7 +903,7 @@ async function syncPending(){
      try{
       const payload=outboxToPayload(item);
       // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
-      const targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
+      targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
       await postToAppsScript(payload);
       await removeOutboxItem(item.id);
