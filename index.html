@@ -431,6 +431,20 @@ body:not(.staff-mode) #todayLabel{text-align:center!important;width:100%!importa
 body:not(.staff-mode) .staff-income-summary{width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;margin-left:auto!important;margin-right:auto!important}
 body:not(.staff-mode) .staff-income-summary .total-label,
 body:not(.staff-mode) .staff-income-summary .total{width:100%!important;text-align:center!important}
+
+/* V77: center the Nongki logo; align date and income text to the menu-card inset. */
+body:not(.staff-mode) header{padding-left:12px!important;padding-right:12px!important}
+body:not(.staff-mode) .brand{width:100%!important;justify-content:center!important}
+body:not(.staff-mode) .brand-logo-card{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important;display:flex!important;justify-content:center!important}
+body:not(.staff-mode) .brand-logo-card img{display:block!important;margin-left:auto!important;margin-right:auto!important}
+body:not(.staff-mode) #todayLabel{text-align:left!important;width:100%!important;margin:5px 0 0!important;padding:0!important}
+body:not(.staff-mode) .staff-income-summary{width:100%!important;max-width:100%!important;box-sizing:border-box!important;align-items:flex-start!important;justify-content:flex-start!important;text-align:left!important;margin:0!important;padding:8px 0!important}
+body:not(.staff-mode) .staff-income-summary .total-label,
+body:not(.staff-mode) .staff-income-summary .total{width:100%!important;text-align:left!important;margin-left:0!important;padding-left:0!important}
+/* V77: remove the manually added before-arrow; use exactly one stateful summary arrow. */
+.settings-accordion>summary::before{content:none!important;display:none!important}
+.settings-accordion>summary::after{content:"▶"!important;display:inline-block!important;order:-1!important;flex:0 0 auto!important;margin-left:0!important;margin-right:0!important;font-size:12px!important;line-height:1!important}
+.settings-accordion[open]>summary::after{content:"▼"!important}
 </style>
 </head>
 <body>
