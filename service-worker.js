@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'v72-settings-accordion-bottom';
+const CACHE_NAME = 'v74-remove-gear-icon-keep-arrow';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
