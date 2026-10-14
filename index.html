@@ -321,7 +321,8 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 @media(max-width:768px){.toolbar{align-items:center;overflow:visible!important}.toolbar .profile-menu-wrap{flex:0 0 auto;width:auto;min-width:0;order:2}.toolbar #profileAvatarBtn{width:auto;height:auto;min-width:0;flex:0 0 auto;padding:11px 13px;}}
 
 /* V62: perbaikan dropdown Switch Profile agar solid dan bebas teks berbayang/bertumpuk. */
-.toolbar .profile-menu-wrap{isolation:isolate!important;z-index:99998!important;}
+/* Jangan mengangkat toolbar di atas modal login; dropdown tetap berada di lapisan atas toolbar saat aplikasi terbuka. */
+.toolbar .profile-menu-wrap{isolation:auto!important;z-index:4!important;}
 .toolbar #profileDropdown{
   position:absolute!important;bottom:100%!important;top:auto!important;right:0!important;left:auto!important;
   transform:none!important;z-index:99999!important;
@@ -351,6 +352,13 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 .toolbar #profileDropdown .profile-option small{color:#657168!important;font-size:11px!important;line-height:1.35!important;margin-top:3px!important;}
 .toolbar #profileDropdown .profile-option .profile-emoji{display:inline-grid!important;flex:0 0 25px!important;place-items:center!important;}
 .toolbar #profileDropdown[hidden]{display:none!important;}
+
+/* V64: cegah tombol Switch Profile menembus modal login. */
+#loginOverlay{z-index:100000!important;}
+#loginOverlay.hidden{display:none!important;}
+#loginOverlay .login-card{position:relative;z-index:1;}
+.toolbar .profile-menu-wrap{z-index:4!important;isolation:auto!important;}
+.toolbar #profileDropdown{z-index:99999!important;background:#fff!important;background-color:#fff!important;opacity:1!important;}
 </style>
 </head>
 <body>
