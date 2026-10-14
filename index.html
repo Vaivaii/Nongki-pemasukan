@@ -892,24 +892,34 @@ async function syncPending(){
    let outbox=await getAllRecords('outbox');
    await enqueueLegacyPendingTransactions(outbox);
    outbox=(await getAllRecords('outbox')).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
-   for(const item of outbox){
-    try{
-     const payload=outboxToPayload(item);
-     await postToAppsScript(payload);
-     await removeOutboxItem(item.id);
-     const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
-     if(tx){
-      // Only mark the event as synced after the backend acknowledges it.
-      const stillPending=(await getAllRecords('outbox')).some(q=>String(q.entityId)===String(item.entityId));
-      tx.syncStatus=stillPending?'pending':'synced';
-      save();
+   // Batch kecil menjaga permintaan tetap terkendali. Item di dalam batch tetap FIFO.
+   const BATCH_SIZE=4;
+   let stopQueue=false;
+   for(let offset=0;offset<outbox.length&&!stopQueue;offset+=BATCH_SIZE){
+    const batch=outbox.slice(offset,offset+BATCH_SIZE);
+    for(const item of batch){
+     try{
+      const payload=outboxToPayload(item);
+      // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
+      const targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
+      if(payload.transaction)payload.transaction.tanggal=targetDateKey;
+      await postToAppsScript(payload);
+      await removeOutboxItem(item.id);
+      const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
+      if(tx){
+       // Tandai tersinkron hanya setelah server mengonfirmasi dan tidak ada event lain untuk transaksi ini.
+       const stillPending=(await getAllRecords('outbox')).some(q=>String(q.entityId)===String(item.entityId));
+       tx.syncStatus=stillPending?'pending':'synced';
+       save();
+      }
+      sent++;
+     }catch(error){
+      failed++;lastError=String(error?.message||error);
+      try{await updateOutboxError(item,error);}catch(queueError){console.error('Gagal memperbarui status antrean:',queueError);}
+      // Pertahankan FIFO: jangan kirim item setelah event yang gagal.
+      stopQueue=true;
+      break;
      }
-     sent++;
-    }catch(error){
-     failed++;lastError=String(error?.message||error);
-     await updateOutboxError(item,error);
-     // Preserve FIFO: do not send newer events ahead of a failed event.
-     break;
     }
    }
    const remaining=(await getAllRecords('outbox')).length;
@@ -929,7 +939,7 @@ async function syncPending(){
   }finally{
    if(button)button.disabled=false;
    appScriptSyncPromise=null;
-   // Retry otomatis antrean yang tersisa selama perangkat online dan konfigurasi tersedia.
+   // Retry otomatis antrean tersisa; catatan lokal/outbox tidak dihapus ketika gagal.
    if(navigator.onLine&&appScriptConfigured()){
     getAllRecords('outbox').then(remaining=>{
      if(remaining.length){clearTimeout(sheetsSyncTimer);sheetsSyncTimer=setTimeout(()=>syncPending(),failed?30000:1200);}
