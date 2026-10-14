@@ -319,6 +319,38 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 .toolbar .profile-menu-wrap .profile-menu-label{display:none!important;}
 .toolbar #profileAvatarBtn::before{content:none!important;}
 @media(max-width:768px){.toolbar{align-items:center;overflow:visible!important}.toolbar .profile-menu-wrap{flex:0 0 auto;width:auto;min-width:0;order:2}.toolbar #profileAvatarBtn{width:auto;height:auto;min-width:0;flex:0 0 auto;padding:11px 13px;}}
+
+/* V62: perbaikan dropdown Switch Profile agar solid dan bebas teks berbayang/bertumpuk. */
+.toolbar .profile-menu-wrap{isolation:isolate!important;z-index:99998!important;}
+.toolbar #profileDropdown{
+  position:absolute!important;bottom:100%!important;top:auto!important;right:0!important;left:auto!important;
+  transform:none!important;z-index:99999!important;
+  background-color:#ffffff!important;background-image:none!important;opacity:1!important;
+  color:#1e2923!important;border:1px solid #dfe6dc!important;border-radius:8px!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.15)!important;
+  overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  text-shadow:none!important;mix-blend-mode:normal!important;isolation:isolate!important;
+  padding:6px!important;
+}
+.toolbar #profileDropdown .profile-option{
+  position:relative!important;display:flex!important;align-items:center!important;gap:10px!important;
+  width:100%!important;min-height:44px!important;margin:0!important;padding:10px 12px!important;
+  background:#ffffff!important;background-image:none!important;color:#1e2923!important;
+  border:0!important;border-radius:6px!important;box-shadow:none!important;
+  opacity:1!important;text-shadow:none!important;mix-blend-mode:normal!important;
+  white-space:normal!important;line-height:1.35!important;
+}
+.toolbar #profileDropdown .profile-option:hover,
+.toolbar #profileDropdown .profile-option:focus{background:#f4f6f2!important;color:#1e2923!important;}
+.toolbar #profileDropdown .profile-option b,
+.toolbar #profileDropdown .profile-option small,
+.toolbar #profileDropdown .profile-option span{
+  color:inherit!important;opacity:1!important;text-shadow:none!important;mix-blend-mode:normal!important;
+  position:static!important;transform:none!important;filter:none!important;
+}
+.toolbar #profileDropdown .profile-option small{color:#657168!important;font-size:11px!important;line-height:1.35!important;margin-top:3px!important;}
+.toolbar #profileDropdown .profile-option .profile-emoji{display:inline-grid!important;flex:0 0 25px!important;place-items:center!important;}
+.toolbar #profileDropdown[hidden]{display:none!important;}
 </style>
 </head>
 <body>
