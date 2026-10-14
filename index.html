@@ -1088,7 +1088,7 @@ async function fetchSharedMenu({quiet=false}={}){
 }
 function startSharedMenuPolling(){
  clearInterval(sharedMenuPollTimer);
- sharedMenuPollTimer=setInterval(()=>{if(document.visibilityState==='visible')fetchSharedMenu({quiet:true});},SHARED_MENU_POLL_MS);
+ sharedMenuPollTimer=setInterval(()=>{void fetchSharedMenu({quiet:true});},SHARED_MENU_POLL_MS);
 }
 window.addEventListener('online',()=>fetchSharedMenu({quiet:true}));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fetchSharedMenu({quiet:true});});
