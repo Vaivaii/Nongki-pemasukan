@@ -228,13 +228,15 @@ main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}@media(min-width:5
 /* Final staff-only navigation fix: override legacy .tabs display:flex!important rules. */
 .tabs.hidden, body.staff-mode .tabs { display: none !important; visibility: hidden !important; pointer-events: none !important; }
 body.staff-mode .sync-fab { bottom: calc(24px + env(safe-area-inset-bottom)) !important; right: 20px !important; }
-/* Pegawai: tombol sync tetap pada koordinat viewport yang konsisten di HP. */
-body.staff-mode .sync-fab {
-  position: fixed !important;
-  bottom: 16px !important;
-  right: 16px !important;
-  z-index: 9999 !important;
-}
+/* Mode Pegawai: satu layar kasir, tanpa kartu omzet global atau tombol sinkron manual. */
+body.staff-mode .global-sales-stat { display:none !important; }
+body.staff-mode .staff-sync-strip { display:flex !important; }
+body.staff-mode .sync-fab { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+.staff-sync-strip { display:none; align-items:center; gap:8px; margin:12px 2px 0; padding:9px 12px; border:1px solid #ffffff35; border-radius:12px; color:#e6efe8; background:#ffffff0c; font-size:12px; }
+.staff-sync-strip .sync-dot { background:#eab308; box-shadow:0 0 0 3px #eab30826; }
+.staff-sync-strip .sync-dot.status-connected { background:#22a447; box-shadow:0 0 0 3px #22a44724; }
+.staff-sync-strip .sync-dot.status-syncing { background:#2585e8; box-shadow:0 0 0 3px #2585e826; }
+.staff-sync-strip .sync-dot.status-error,.staff-sync-strip .sync-dot.status-offline { background:#eab308; box-shadow:0 0 0 3px #eab30826; }
 </style>
 </head>
 <body>
@@ -259,7 +261,7 @@ body.staff-mode .sync-fab {
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
 <button class="profile-option" data-profile-choice="staff" role="menuitem" type="button"><span class="profile-emoji">🧢</span><span><b>Pegawai</b><small>Catat penjualan</small></span></button></div>
 <button class="hidden" id="roleSwitchBtn" type="button" aria-hidden="true" tabindex="-1">Ganti profil</button></div>
-<div class="stats"><div class="stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><small class="stat-note"><span aria-label="Status: Menunggu" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span id="globalSyncText">Status: Menunggu</span></small></div><div class="stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><small class="stat-note">Di perangkat ini</small></div></div>
+<div class="stats"><div class="stat global-sales-stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><small class="stat-note"><span aria-label="Status: Menunggu" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span id="globalSyncText">Status: Menunggu</span></small></div><div class="stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><small class="stat-note">Di perangkat ini</small></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite"><span class="sync-dot status-waiting" id="staffSyncDot"></span><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
 </header>
 <main>
 <section class="view active" id="salesView">
@@ -493,7 +495,7 @@ function renderReports(){
  const staff=!!(currentUser&&currentUser.role==='staff');$('rolePreviewText').textContent=staff?'Akun pegawai dapat mencatat penjualan dan melihat laporan.':'Akun pemilik dapat melihat laporan dan mengelola produk.';
 }
 function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
-function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':'waiting';const statusText=normalized==='connected'?'Status: Terkirim':normalized==='syncing'?'Status: Menyinkronkan...':normalized==='error'?'Status: Gagal':'Status: Menunggu';if(dot){dot.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');dot.classList.add('status-'+normalized);dot.setAttribute('aria-label',statusText)}if(text)text.textContent=statusText}
+function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const staffDot=$('staffSyncDot'),staffText=$('staffSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':state==='offline'?'offline':'waiting';const statusText=normalized==='connected'?'Status: Tersinkron':normalized==='syncing'?'Status: Menyinkronkan…':normalized==='error'?'Status: Gagal sinkron':normalized==='offline'?'Status: Offline · antrean disimpan':'Status: Menunggu sinkronisasi';[dot,staffDot].forEach(el=>{if(el){el.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');el.classList.add('status-'+normalized);el.setAttribute('aria-label',statusText)}});if(text)text.textContent=statusText;if(staffText)staffText.textContent=statusText}
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -503,7 +505,7 @@ async function record(id){
  try {
    const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
    const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
+   data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());void syncPending();render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · sinkronisasi otomatis');
  } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
 }
 
@@ -602,7 +604,7 @@ function renderUsers(){}
 function applyRole(){
  const role=currentUser?.role||'staff';
  const owner=role==='owner', wife=role==='wife', staff=role==='staff';
- // Pegawai tidak memakai navigasi balok; tombol sinkronisasi bulat diposisikan di sudut bawah.
+ // Pegawai hanya memakai kasir dan indikator status; sinkronisasi berjalan otomatis.
  document.body.classList.toggle('staff-mode',staff);
  $('loginOverlay').classList.toggle('hidden',!!currentUser);
  $('userAdminPanel')?.classList.add('hidden');
@@ -628,7 +630,7 @@ function applyRole(){
  $('activeRoleName').textContent='Login sebagai '+(currentUser?currentUser.name:'—');$('headerProfileName').textContent=currentUser?'Profil: '+currentUser.name:'Belum masuk';
  $('roleSwitchBtn').classList.add('hidden');$('profileAvatarBtn')?.classList.toggle('hidden',!currentUser);
  const avatarGlyph=$('profileAvatarGlyph');if(avatarGlyph)avatarGlyph.textContent=currentUser?.role==='owner'?'👑':currentUser?.role==='wife'?'⭐':'🧢';
- const syncFab=$('staffSyncFab');if(syncFab)syncFab.hidden=!(currentUser&&currentUser.role==='staff');refreshStaffSyncBadge();
+ const syncFab=$('staffSyncFab');if(syncFab)syncFab.hidden=true;refreshStaffSyncBadge();
  $('activeRoleBadge').textContent=roleName().toUpperCase();
  $('rolePreviewText').textContent=owner?'Owner: akses penuh, termasuk sinkronisasi dan backup.':wife?'Istri: catat penjualan, riwayat, laporan, dan pengaturan menu.':'Pegawai: hanya mencatat penjualan.';
  // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
@@ -1056,9 +1058,11 @@ async function syncPending(){
  })();
  return appScriptSyncPromise;
 }
-window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
+window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending();fetchGlobalTotal()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&navigator.onLine){void syncPending();void fetchGlobalTotal();}});
+window.addEventListener('focus',()=>{if(navigator.onLine)void syncPending();});
 window.addEventListener('offline',()=>refreshGlobalCardStatus());
-$('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending();await fetchGlobalTotal()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
+// Tombol sinkron manual pegawai dihapus; pengiriman antrean dipicu otomatis.
 
 // Save endpoint and token locally; never write the token into the repository source.
 $('saveAppsScriptSettingsBtn')?.addEventListener('click',async()=>{
