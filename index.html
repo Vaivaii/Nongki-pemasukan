@@ -290,6 +290,9 @@ body.staff-mode .sync-fab { display:none !important; visibility:hidden !importan
 
 /* Semua profil: sembunyikan label profil dan jangkar dropdown pada tombol toolbar. */
 .profile-menu-label {display:none!important;}
+/* Ikon switch konsisten sebagai user; glyph profil lama tidak ditampilkan. */
+.profile-avatar-btn span {display:none!important;}
+.profile-avatar-btn::before {content:'👤';font-size:20px;line-height:1;}
 .local-items-stat .sync-dot {display:none!important;}
 body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 .toolbar {position:relative;overflow:visible!important;}
@@ -330,8 +333,7 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <div class="products" id="productGrid"></div>
-<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><div class="profile-menu-label"><b id="headerProfileName">Profil belum masuk</b><small>Profil lokal perangkat ini</small></div>
-<button aria-label="Buka menu profil" aria-expanded="false" aria-haspopup="menu" class="profile-avatar-btn" id="profileAvatarBtn" type="button"><span id="profileAvatarGlyph">👑</span></button>
+<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Buka menu profil" aria-expanded="false" aria-haspopup="menu" class="profile-avatar-btn" id="profileAvatarBtn" type="button"><span id="profileAvatarGlyph">👑</span></button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner</b><small>Kelola seluruh aplikasi</small></span></button>
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
