@@ -748,7 +748,11 @@ async function fetchSharedMenu({quiet=false}={}){
   try{
    // Jika ada perubahan menu Owner/Istri yang belum terkirim, kirim snapshot itu dahulu agar tidak tertimpa data server.
    let pending=null;try{pending=JSON.parse(localStorage.getItem(SHARED_MENU_PENDING_KEY)||'null')}catch{}
-   if(pending&&Array.isArray(pending.products)&&currentUser&&['owner','wife'].includes(currentUser.role)){
+   if(pending&&Array.isArray(pending.products)){
+    if(!currentUser||!['owner','wife'].includes(currentUser.role)){
+     sharedMenuStatus('Ada perubahan menu lokal yang menunggu Owner/Istri');
+     return false;
+    }
     const snapshot=data.products;data.products=sharedMenuRows(pending.products);const sent=await publishSharedMenu();if(!sent){data.products=snapshot;return false;}
    }
    const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getMenu');url.searchParams.set('_',String(Date.now()));
