@@ -832,15 +832,19 @@ async function postToAppsScript(payload){
   });
   const raw=await response.text();
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
-  // Validasi respons dilonggarkan: respons teks/non-JSON diterima bila HTTP sukses.
-  // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
   let result=null;
-  try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
+  try{result=JSON.parse(raw);}catch{
+   throw new Error('Respons Apps Script bukan JSON yang dapat diverifikasi. Antrean tetap disimpan.');
+  }
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw)){
    throw new Error('Apps Script mengembalikan halaman HTML, bukan konfirmasi data. Periksa akses Web App; antrean dipertahankan.');
   }
-  if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
-   throw new Error(String(result.message||result.error||'Apps Script menolak transaksi. Antrean dipertahankan.'));
+  const confirmed=result&&(
+   result.success===true ||
+   String(result.status||'').toLowerCase()==='success'
+  );
+  if(!confirmed){
+   throw new Error(String(result?.message||result?.error||'Apps Script belum mengonfirmasi keberhasilan. Antrean dipertahankan.'));
   }
   return {httpStatus:response.status,response:result,raw};
  }catch(error){
@@ -888,9 +892,8 @@ async function syncPending(){
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
   let sent=0,failed=0,lastError='';
-  // Satu kunci tanggal acuan per proses sinkronisasi; targetDateKey selalu terdefinisi pada scope fungsi.
+  // Kunci tanggal acuan disediakan pada scope fungsi; tiap item mendapat targetDateKey lokalnya sendiri.
   const todayKey=today();
-  let targetDateKey=todayKey;
   try{
    let outbox=await getAllRecords('outbox');
    await enqueueLegacyPendingTransactions(outbox);
@@ -903,8 +906,8 @@ async function syncPending(){
     for(const item of batch){
      try{
       const payload=outboxToPayload(item);
-      // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
-      targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||todayKey).slice(0,10);
+      // Variabel tanggal dideklarasikan di scope item, sebelum dipakai atau dikirim.
+      const targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||todayKey).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
       await postToAppsScript(payload);
       await removeOutboxItem(item.id);
