@@ -403,6 +403,23 @@ body.staff-mode .toolbar .btn-switch-profile{width:auto!important;min-width:0!im
 body.staff-mode .action-buttons-container{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;flex-wrap:initial!important;gap:10px!important;}
 body.staff-mode .action-buttons-container #undoBtn,
 body.staff-mode .action-buttons-container #profileAvatarBtn{width:100%!important;min-width:0!important;flex:initial!important;}
+
+/* V71: header Owner/Istri lebih ringkas; struktur dan urutan elemen tetap sama. */
+body:not(.staff-mode) header{padding:12px 16px!important;}
+body:not(.staff-mode) .brand-logo-card img{max-height:48px!important;width:auto!important;max-width:100%!important;object-fit:contain;}
+body:not(.staff-mode) .brand-logo-card{padding:7px 10px!important;}
+body:not(.staff-mode) .date{font-size:12px!important;line-height:1.2!important;margin-top:5px!important;}
+body:not(.staff-mode) .staff-income-summary{padding:8px 10px!important;border-radius:10px!important;}
+body:not(.staff-mode) .total-label{font-size:12px!important;line-height:1.2!important;}
+body:not(.staff-mode) .total{font-size:clamp(19px,4.8vw,24px)!important;line-height:1.15!important;margin-top:2px!important;}
+body:not(.staff-mode) .stats{gap:8px!important;margin-top:10px!important;}
+body:not(.staff-mode) .stats .stat{position:relative!important;min-width:0!important;padding:8px 10px!important;border-radius:10px!important;}
+body:not(.staff-mode) .stats .stat span:not(.sync-dot){font-size:10px!important;line-height:1.2!important;}
+body:not(.staff-mode) .stats .stat b{font-size:14px!important;line-height:1.15!important;margin-top:3px!important;white-space:normal!important;overflow-wrap:anywhere!important;}
+body:not(.staff-mode) .stats .stat-note{display:none!important;}
+body:not(.staff-mode) .global-sales-stat .sync-dot{position:absolute!important;top:8px!important;right:8px!important;display:block!important;width:8px!important;height:8px!important;min-width:8px!important;margin:0!important;z-index:2!important;}
+body:not(.staff-mode) .global-sync-text-legacy,
+body:not(.staff-mode) .legacy-local-sync-dot{display:none!important;}
 </style>
 </head>
 <body>
@@ -421,7 +438,7 @@ body.staff-mode .action-buttons-container #profileAvatarBtn{width:100%!important
 <div class="date" id="todayLabel">Hari ini</div>
 <div class="staff-income-summary"><div class="total-label">Pemasukan hari ini</div><div class="total" id="todayTotal">Rp0</div></div>
 
-<div class="stats"><div class="stat global-sales-stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><small class="stat-note"><span aria-label="Status: Menunggu" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span id="globalSyncText">Status: Menunggu</span></small></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><small class="stat-note">Di perangkat ini</small><span class="sync-dot status-waiting" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
+<div class="stats"><div class="stat global-sales-stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><span aria-label="Status sinkronisasi" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span class="global-sync-text-legacy" id="globalSyncText" aria-hidden="true"></span></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><span class="sync-dot status-waiting legacy-local-sync-dot" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
 </header>
 <main>
 <section class="view active" id="salesView">
