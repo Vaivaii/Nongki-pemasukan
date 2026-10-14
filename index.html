@@ -929,6 +929,7 @@ async function syncPending(){
   }finally{
    if(button)button.disabled=false;
    appScriptSyncPromise=null;
+   refreshGlobalCardStatus();
    // Retry otomatis antrean tersisa; catatan lokal/outbox tidak dihapus ketika gagal.
    if(navigator.onLine&&appScriptConfigured()){
     getAllRecords('outbox').then(remaining=>{
