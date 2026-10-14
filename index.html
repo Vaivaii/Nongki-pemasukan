@@ -420,7 +420,7 @@ body:not(.staff-mode) .stats .stat-note{display:none!important;}
 body:not(.staff-mode) .global-sales-stat .sync-dot{position:absolute!important;top:8px!important;right:8px!important;display:block!important;width:8px!important;height:8px!important;min-width:8px!important;margin:0!important;z-index:2!important;}
 body:not(.staff-mode) .global-sync-text-legacy,
 body:not(.staff-mode) .legacy-local-sync-dot{display:none!important;}
-</style>
+\n/* Settings accordion: isolated presentation-only addition. */\n.settings-accordion{padding:0;overflow:hidden}\n.settings-accordion>summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:48px;padding:14px;font-weight:800;color:var(--green);font-size:14px}\n.settings-accordion>summary::-webkit-details-marker{display:none}\n.settings-accordion>summary::after{content:"＋";margin-left:auto;font-size:18px;color:var(--green2)}\n.settings-accordion[open]>summary::after{content:"−"}\n.settings-accordion-content{padding:0 12px 12px}\n.settings-accordion-content>.panel{margin-top:10px}\n</style>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -461,6 +461,13 @@ body:not(.staff-mode) .legacy-local-sync-dot{display:none!important;}
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
 <div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
+<div class="panel" id="historySummary"></div>
+<div class="panel" id="historyList"></div>
+<div class="toolbar"><button class="btn" id="exportCsv">Ekspor CSV</button></div>
+<p class="note">Riwayat lokal disimpan di perangkat. Sinkronisasi ke spreadsheet dikerjakan oleh Apps Script backend.</p>
+<details class="panel settings-accordion" id="settingsAccordion">
+  <summary>⚙️ Setting</summary>
+  <div class="settings-accordion-content">
 <div class="panel hidden" id="profilePinPanel">
   <div class="section-head"><div><h3>Setelan Keamanan Profil</h3><span class="sub" id="profilePinOwnerLabel">Ubah PIN profil aktif</span></div></div>
   <p class="note">PIN hanya berlaku untuk profil yang sedang masuk. Gunakan 4–8 angka dan jangan bagikan PIN kepada pegawai.</p>
@@ -473,10 +480,13 @@ body:not(.staff-mode) .legacy-local-sync-dot{display:none!important;}
   <div class="toolbar"><button class="btn" id="saveAppsScriptSettingsBtn" type="button">Simpan pengaturan</button><button class="btn primary" id="syncGoogleSheetsBtn" type="button">Sinkronkan antrean</button></div>
   <p class="note">URL dan token disimpan di penyimpanan lokal browser perangkat ini. Jangan gunakan token ini sebagai rahasia kuat: pengguna yang menguasai perangkat/browser tetap dapat mengaksesnya. Antrean transaksi tetap disimpan di IndexedDB sampai server mengonfirmasi.</p>
 </div>
-<div class="panel" id="historySummary"></div>
-<div class="panel" id="historyList"></div>
-<div class="toolbar"><button class="btn" id="exportCsv">Ekspor CSV</button><button class="btn" id="backupBtn">Backup data</button><button class="btn" id="restoreBtn">Pulihkan</button><input accept="application/json,.json" hidden="" id="restoreFile" type="file"/></div>
-<p class="note">Riwayat lokal disimpan di perangkat. Sinkronisasi ke spreadsheet dikerjakan oleh Apps Script backend.</p>
+
+    <div class="panel" id="backupRestorePanel">
+      <div class="section-head"><div><h3>Backup &amp; Restore Data</h3><span class="sub">Cadangkan atau pulihkan data lokal</span></div></div>
+      <div class="toolbar"><button class="btn" id="backupBtn">Backup data</button><button class="btn" id="restoreBtn">Pulihkan</button><input accept="application/json,.json" hidden="" id="restoreFile" type="file"/></div>
+    </div>
+  </div>
+</details>
 </section>
 <section class="view" id="productsView">
 <div class="section-head"><h2>Daftar produk</h2><span class="sub">Nama dan harga jual</span></div>
@@ -795,6 +805,7 @@ function renderUsers(){}
 function applyRole(){
  const role=currentUser?.role||'staff';
  const owner=role==='owner', wife=role==='wife', staff=role==='staff';
+ const settingsAccordion=$('settingsAccordion');if(settingsAccordion)settingsAccordion.style.display=(owner||wife)?'':'none';
  // Pegawai hanya memakai kasir dan indikator status; sinkronisasi berjalan otomatis.
  document.body.classList.toggle('staff-mode',staff);
  $('loginOverlay').classList.toggle('hidden',!!currentUser);
