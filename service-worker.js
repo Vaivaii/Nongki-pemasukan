@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'v77-fix-logo-center-text-left-and-single-arrow';
+const CACHE_NAME = 'v78-final-header-and-single-arrow';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
