@@ -11,7 +11,7 @@ semua aksi tulis tetap melewati pemeriksaan body.token yang sudah ada.
 */
 
 // 1) Di doGet(e), setelah membuat p dan SEBELUM pemeriksaan token:
-// if (p.action === 'getMenu') return getMasterMenuResponse_();
+// if (['getMenu','getProducts','getMasterMenu'].includes(p.action)) return getMasterMenuResponse_();
 
 // 2) Di doPost(e), setelah JSON.parse dan pemeriksaan body.token,
 // sebelum aksi transaksi:
@@ -23,11 +23,15 @@ function getMasterMenuResponse_() {
     const sheet = ss.getSheetByName('MASTER MENU');
     if (!sheet || sheet.getLastRow() < 2) return jsonResponse({success:true,data:[]});
     const rows = sheet.getRange(2,1,sheet.getLastRow()-1,9).getValues();
-    const data = rows.filter(r => String(r[1] || '').trim()).map(r => ({
+    // Sertakan hanya baris yang statusnya secara eksplisit Aktif/AKTIF/Active/1/true.
+    const data = rows.filter(r => {
+      const name=String(r[1] || '').trim();
+      const status=String(r[5] || '').trim().toLowerCase();
+      return !!name && ['aktif','active','1','true'].includes(status);
+    }).map(r => ({
       id:String(r[0] || ''), name:String(r[1] || '').trim(),
       category:String(r[2] || 'Lainnya'), price:Math.max(0,Number(r[3]) || 0),
-      icon:String(r[4] || '🥤'),
-      active:!/^(nonaktif|non-aktif|0|false)$/i.test(String(r[5] || 'AKTIF').trim())
+      icon:String(r[4] || '🥤'), active:true
     }));
     return jsonResponse({success:true,data:data});
   } catch (err) {
