@@ -375,6 +375,34 @@ body.staff-mode .toolbar{display:flex!important;flex-wrap:nowrap!important;gap:8
 body.staff-mode .toolbar #undoBtn{flex:1 1 auto!important;min-width:0!important;}
 body.staff-mode .toolbar .profile-menu-wrap{flex:0 1 auto!important;width:auto!important;min-width:0!important;}
 body.staff-mode .toolbar .btn-switch-profile{width:auto!important;min-width:0!important;flex:1 1 auto!important;padding:10px 12px!important;font-size:13px!important;}
+
+/* V66: dua tombol aksi bawah selalu memakai grid 50/50, sejajar dengan lebar konten. */
+.action-buttons-container{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;
+  margin-top:12px!important;margin-bottom:12px!important;align-items:stretch!important;
+}
+.action-buttons-container #undoBtn,
+.action-buttons-container #profileAvatarBtn{
+  width:100%!important;min-width:0!important;max-width:100%!important;height:100%!important;
+  min-height:44px!important;box-sizing:border-box!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;text-align:center!important;
+  white-space:normal!important;overflow-wrap:anywhere!important;
+}
+.action-buttons-container .profile-menu-wrap{
+  display:flex!important;position:relative!important;align-self:stretch!important;
+  align-items:stretch!important;justify-content:stretch!important;flex:initial!important;
+  width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;padding:0!important;
+}
+.action-buttons-container .btn-switch-profile{
+  width:100%!important;min-width:0!important;max-width:100%!important;height:100%!important;
+  flex:1 1 auto!important;display:flex!important;box-sizing:border-box!important;
+  align-items:center!important;justify-content:center!important;text-align:center!important;
+  padding:10px 8px!important;font-size:14px!important;
+}
+body.staff-mode .action-buttons-container{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;flex-wrap:initial!important;gap:10px!important;}
+body.staff-mode .action-buttons-container #undoBtn,
+body.staff-mode .action-buttons-container #profileAvatarBtn{width:100%!important;min-width:0!important;flex:initial!important;}
 </style>
 </head>
 <body>
@@ -399,7 +427,7 @@ body.staff-mode .toolbar .btn-switch-profile{width:auto!important;min-width:0!im
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <div class="products" id="productGrid"></div>
-<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
+<div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner</b><small>Kelola seluruh aplikasi</small></span></button>
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
