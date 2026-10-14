@@ -279,6 +279,12 @@ body.staff-mode .sync-fab { display:none !important; visibility:hidden !importan
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
 <div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
+<div class="panel hidden" id="profilePinPanel">
+  <div class="section-head"><div><h3>Setelan Keamanan Profil</h3><span class="sub" id="profilePinOwnerLabel">Ubah PIN profil aktif</span></div></div>
+  <p class="note">PIN hanya berlaku untuk profil yang sedang masuk. Gunakan 4–8 angka dan jangan bagikan PIN kepada pegawai.</p>
+  <div class="form-grid"><div><label for="currentProfilePin">PIN saat ini</label><input id="currentProfilePin" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password" placeholder="PIN saat ini"/></div><div><label for="newProfilePin">PIN baru</label><input id="newProfilePin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="4–8 angka"/></div><div><label for="confirmProfilePin">Ulangi PIN baru</label><input id="confirmProfilePin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="Ulangi PIN baru"/></div></div>
+  <div class="toolbar"><button class="btn primary" id="changeProfilePinBtn" type="button">Ubah PIN</button></div>
+</div>
 <div class="panel" id="googleSheetsPanel">
   <div class="section-head"><div><h3>Sinkronisasi Nongki · Apps Script</h3><span class="sub" id="sheetsConnectionStatus">Antrean lokal aktif · endpoint belum dikonfigurasi</span></div></div>
   <div class="form-grid"><div><label for="appsScriptUrlInput">URL Apps Script Web App</label><input id="appsScriptUrlInput" type="url" autocomplete="url" placeholder="https://script.google.com/macros/s/.../exec"/></div><div><label for="appsScriptTokenInput">Token API</label><input id="appsScriptTokenInput" type="password" autocomplete="new-password" placeholder="Masukkan token Apps Script"/></div></div>
@@ -556,7 +562,9 @@ const PROFILE_LIST=[
  {id:'wife',name:'Istri',role:'wife'},
  {id:'staff',name:'Pegawai',role:'staff'}
 ];
-const PROFILE_PINS={owner:'1234',wife:'5678'};
+const PROFILE_PIN_STORAGE_KEY='nongki_profile_pins_v1';
+const PROFILE_PINS={owner:'1212',wife:'2323'};
+try{const storedPins=JSON.parse(localStorage.getItem(PROFILE_PIN_STORAGE_KEY)||'{}');if(typeof storedPins.owner==='string'&&/^\d{4,8}$/.test(storedPins.owner))PROFILE_PINS.owner=storedPins.owner;if(typeof storedPins.wife==='string'&&/^\d{4,8}$/.test(storedPins.wife))PROFILE_PINS.wife=storedPins.wife;}catch(error){console.warn('PIN profil tersimpan tidak dapat dibaca; menggunakan PIN awal.',error);}
 let currentUser=null;
 function readProfileSession(){
  // Jangan pulihkan role dari localStorage: data profileId bukan bukti autentikasi PIN.
@@ -622,6 +630,8 @@ function applyRole(){
  document.getElementById('reportsView').classList.toggle('hidden',staff);
  document.getElementById('productsView').classList.toggle('hidden',staff);
  $('googleSheetsPanel')?.classList.toggle('hidden',!owner);
+ $('profilePinPanel')?.classList.toggle('hidden',!(owner||wife));
+ const pinOwnerLabel=$('profilePinOwnerLabel');if(pinOwnerLabel)pinOwnerLabel.textContent=owner?'Ubah PIN Owner':wife?'Ubah PIN Istri':'PIN tidak tersedia untuk Pegawai';
  $('exportCsv')?.classList.toggle('hidden',!owner);
  $('backupBtn')?.classList.toggle('hidden',!owner);
  $('restoreBtn')?.classList.toggle('hidden',!owner);
@@ -695,6 +705,23 @@ function attemptProfileLogin(){
  }
 }
 $('loginBtn')?.addEventListener('click',attemptProfileLogin);
+function changeCurrentProfilePin(){
+ const role=currentUser?.role;
+ if(!['owner','wife'].includes(role)){toast('Menu ubah PIN hanya untuk Owner dan Istri.');return;}
+ const oldPin=String($('currentProfilePin')?.value||'');
+ const newPin=String($('newProfilePin')?.value||'');
+ const confirmPin=String($('confirmProfilePin')?.value||'');
+ if(oldPin!==PROFILE_PINS[role]){alert('PIN saat ini salah.');$('currentProfilePin')?.focus();return;}
+ if(!/^\d{4,8}$/.test(newPin)){alert('PIN baru harus terdiri dari 4–8 angka.');$('newProfilePin')?.focus();return;}
+ if(newPin!==confirmPin){alert('Konfirmasi PIN baru tidak cocok.');$('confirmProfilePin')?.focus();return;}
+ if(newPin===oldPin){alert('PIN baru harus berbeda dari PIN saat ini.');return;}
+ PROFILE_PINS[role]=newPin;
+ try{localStorage.setItem(PROFILE_PIN_STORAGE_KEY,JSON.stringify(PROFILE_PINS));}
+ catch(error){alert('PIN gagal disimpan di perangkat ini. Periksa penyimpanan browser lalu coba lagi.');return;}
+ ['currentProfilePin','newProfilePin','confirmProfilePin'].forEach(id=>{const el=$(id);if(el)el.value='';});
+ toast('PIN '+(role==='owner'?'Owner':'Istri')+' berhasil diubah di perangkat ini.');
+}
+$('changeProfilePinBtn')?.addEventListener('click',changeCurrentProfilePin);
 function openLogoutPin(){
  try{
   if(!currentUser){toast('Tidak ada profil yang aktif');return}
@@ -732,9 +759,10 @@ document.addEventListener('click',e=>{
 $('cancelLogoutBtn')?.addEventListener('click',cancelLogoutPin);
 $('confirmLogoutBtn')?.addEventListener('click',verifyAndLogout);
 $('loginPin')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();attemptProfileLogin();}});
-document.addEventListener('change',ev=>{if(ev.target?.id!=='loginUserId')return;try{const pin=$('loginPin'),selector=$('loginUserId');if(!pin||!selector)return;pin.value='';pin.disabled=selector.value==='staff';pin.placeholder=pin.disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}catch(error){console.warn('Kontrol PIN tidak tersedia:',error);}});
+document.addEventListener('change',ev=>{if(ev.target?.id!=='loginUserId')return;try{const pin=$('loginPin'),selector=$('loginUserId'),label=document.querySelector('label[for="loginPin"]');if(!pin||!selector)return;pin.value='';const staff=selector.value==='staff';pin.hidden=staff;pin.disabled=staff;if(label)label.hidden=staff;pin.placeholder=staff?'':'Masukkan PIN profil';}catch(error){console.warn('Kontrol PIN tidak tersedia:',error);}});
 if($('loginUserId'))$('loginUserId').value='owner';
-if($('loginPin'))$('loginPin').disabled=false;
+if($('loginPin')){$('loginPin').disabled=false;$('loginPin').hidden=false;}
+const loginPinLabel=document.querySelector('label[for="loginPin"]');if(loginPinLabel)loginPinLabel.hidden=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
 document.addEventListener('click',e=>{
  const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
