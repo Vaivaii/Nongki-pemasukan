@@ -916,7 +916,11 @@ async function syncPending(){
    if(failed){setGlobalSyncStatus('error','Gagal tersambung ke server');toast('Sinkronisasi tertunda: '+lastError)}
    else if(sent){setGlobalSyncStatus('connected','Server merespons · transaksi terkirim');toast(sent+' event berhasil dikirim ke Apps Script.')}
    else setGlobalSyncStatus('offline','Belum ada konfirmasi data server');
-   if(sent)render();await refreshStaffSyncBadge();
+   if(sent)render();
+   // Refresh cloud total only after the server confirms queued events.
+   // This reads Income Log; it does not create or resend a transaction.
+   if(sent>0&&failed===0)await fetchGlobalTotal();
+   await refreshStaffSyncBadge();
    return failed===0;
   }catch(error){
    const status=$('sheetsConnectionStatus');if(status)status.textContent='Antrean lokal aman · '+String(error?.message||error);setGlobalSyncStatus('error','Gagal tersambung ke server');console.error('Sinkronisasi Apps Script gagal:',error);
