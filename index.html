@@ -417,22 +417,6 @@ async function persistProducts(){for(const p of data.products){if(!p?.id||!p?.na
 let sheetsSyncRunning = false;
 let sheetsSyncTimer = null;
 
-function queueDailySync(date) {
-  try {
-    const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
-    // Simpan total terbaru untuk tanggal ini. Satu antrean per tanggal.
-    pending[date] = total(dayTx(date));
-    localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-  } catch (error) {
-    console.error('Antrean sinkronisasi gagal disimpan:', error);
-    return;
-  }
-
-  // Gabungkan beberapa perubahan berdekatan agar tidak membanjiri Apps Script.
-  clearTimeout(sheetsSyncTimer);
-  sheetsSyncTimer = setTimeout(() => syncPending(), 700);
-}
-
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
@@ -548,7 +532,7 @@ $('seeHistory').addEventListener('click',()=>showView('historyView'));
 $('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory()}));
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
-$('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\\r\\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
+$('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
 $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
 $('restoreFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.transactions))throw Error();if(confirm('Pulihkan backup? Data saat ini akan diganti.')){data=d;save();render();toast('Backup berhasil dipulihkan')}}catch(err){alert('File backup tidak valid.')}e.target.value=''});
@@ -713,7 +697,7 @@ document.addEventListener('click',e=>{
 $('cancelLogoutBtn')?.addEventListener('click',cancelLogoutPin);
 $('confirmLogoutBtn')?.addEventListener('click',verifyAndLogout);
 $('loginPin')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();attemptProfileLogin();}});
-$('loginUserId')?.addEventListener('change',()=>{try{const pin=$('loginPin'),selector=$('loginUserId');if(!pin||!selector)return;pin.value='';pin.disabled=selector.value==='staff';pin.placeholder=pin.disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}catch(error){console.warn('Kontrol PIN tidak tersedia:',error);}});
+document.addEventListener('change',ev=>{if(ev.target?.id!=='loginUserId')return;try{const pin=$('loginPin'),selector=$('loginUserId');if(!pin||!selector)return;pin.value='';pin.disabled=selector.value==='staff';pin.placeholder=pin.disabled?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}catch(error){console.warn('Kontrol PIN tidak tersedia:',error);}});
 if($('loginUserId'))$('loginUserId').value='owner';
 if($('loginPin'))$('loginPin').disabled=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
@@ -832,19 +816,15 @@ async function postToAppsScript(payload){
   });
   const raw=await response.text();
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
+  // Validasi respons dilonggarkan: respons teks/non-JSON diterima bila HTTP sukses.
+  // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
   let result=null;
-  try{result=JSON.parse(raw);}catch{
-   throw new Error('Respons Apps Script bukan JSON yang dapat diverifikasi. Antrean tetap disimpan.');
-  }
+  try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw)){
    throw new Error('Apps Script mengembalikan halaman HTML, bukan konfirmasi data. Periksa akses Web App; antrean dipertahankan.');
   }
-  const confirmed=result&&(
-   result.success===true ||
-   String(result.status||'').toLowerCase()==='success'
-  );
-  if(!confirmed){
-   throw new Error(String(result?.message||result?.error||'Apps Script belum mengonfirmasi keberhasilan. Antrean dipertahankan.'));
+  if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
+   throw new Error(String(result.message||result.error||'Apps Script menolak transaksi. Antrean dipertahankan.'));
   }
   return {httpStatus:response.status,response:result,raw};
  }catch(error){
@@ -892,8 +872,8 @@ async function syncPending(){
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
   let sent=0,failed=0,lastError='';
-  // Kunci tanggal acuan disediakan pada scope fungsi; tiap item mendapat targetDateKey lokalnya sendiri.
-  const todayKey=today();
+  // Deklarasi pada scope fungsi agar tidak ada referensi targetDateKey yang keluar dari block scope.
+  let targetDateKey=today();
   try{
    let outbox=await getAllRecords('outbox');
    await enqueueLegacyPendingTransactions(outbox);
@@ -906,8 +886,8 @@ async function syncPending(){
     for(const item of batch){
      try{
       const payload=outboxToPayload(item);
-      // Variabel tanggal dideklarasikan di scope item, sebelum dipakai atau dikirim.
-      const targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||todayKey).slice(0,10);
+      // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
+      targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
       await postToAppsScript(payload);
       await removeOutboxItem(item.id);
@@ -955,34 +935,6 @@ async function syncPending(){
  })();
  return appScriptSyncPromise;
 }
-// Deteksi transaksi lokal yang belum memperoleh konfirmasi sinkronisasi.
-async function hasPendingLocalTransactions(){
- const localPending=Array.isArray(data.transactions)&&data.transactions.some(t=>t&&['pending','failed'].includes(String(t.syncStatus||'').toLowerCase()));
- const queued=await getAllRecords('outbox');
- return localPending||queued.length>0;
-}
-// Jika modul pemuatan data cloud tersedia, jangan jalankan sebelum antrean lokal aman.
-// Fungsi ini sengaja tidak menimpa data: refresh cloud dilewati bila masih ada antrean.
-async function refreshGoogleSheetsAfterPendingSync(){
- if(typeof fetchFromGoogleSheets!=='function')return false;
- try{
-  if(await hasPendingLocalTransactions()){
-   await syncPending();
-   if(await hasPendingLocalTransactions()){
-    const status=$('sheetsConnectionStatus');
-    if(status)status.textContent='Pembaruan cloud ditunda · transaksi lokal masih menunggu sinkronisasi.';
-    console.warn('Refresh Google Sheets dilewati karena transaksi lokal masih pending.');
-    return false;
-   }
-  }
-  await fetchFromGoogleSheets();
-  return true;
- }catch(error){
-  console.error('Refresh Google Sheets aman gagal:',error);
-  toast('Pembaruan cloud ditunda. Data lokal tetap dipertahankan.');
-  return false;
- }
-}
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
 window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
 $('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending();await fetchGlobalTotal()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
@@ -1017,12 +969,13 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
 });
 load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
-let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pending'){t.syncStatus='pending';resetSyncStatus=true}});if(resetSyncStatus)save();
+// Status sinkron dipertahankan antar sesi; server menolak duplikat berdasarkan id_transaksi.
+
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();applyRole();setGlobalSyncStatus(navigator.onLine?'syncing':'offline',navigator.onLine?'Memeriksa koneksi server…':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
 // Konfigurasi lokal dibaca ulang sebelum mencoba mengirim antrean yang tersimpan.
-loadAppsScriptSettings();syncPending();refreshGoogleSheetsAfterPendingSync();fetchGlobalTotal();
+loadAppsScriptSettings();syncPending();fetchGlobalTotal();
 })();
 </script>
 <script>
