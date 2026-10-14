@@ -309,6 +309,16 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
  border-radius:14px!important; box-shadow:0 10px 28px rgba(16,42,28,.24)!important;
 }
 .toolbar .profile-dropdown[hidden] {display:none!important;}
+
+/* Switch Profile: samakan persis gaya tombol Atur produk lama; dropdown melayang di atasnya. */
+#manageBtn{display:none!important;}
+.toolbar .profile-menu-wrap{display:flex;position:relative;align-items:center;justify-content:flex-start;gap:0;margin:0!important;z-index:1000;overflow:visible!important;}
+.toolbar #profileAvatarBtn{font:inherit;font-size:12px;font-weight:650;line-height:normal;border-radius:12px;padding:11px 13px;white-space:nowrap;min-height:0;min-width:0;flex:0 0 auto;box-shadow:none;}
+.toolbar #profileDropdown{position:absolute!important;bottom:100%!important;top:auto!important;right:0!important;left:auto!important;transform:none!important;width:min(230px,calc(100vw - 24px))!important;min-width:190px!important;max-width:calc(100vw - 24px)!important;max-height:min(60dvh,360px)!important;overflow-y:auto!important;overscroll-behavior:contain;z-index:9999!important;margin:0 0 6px!important;padding:7px!important;background:#fff!important;color:var(--ink)!important;border:1px solid #dfe6dc!important;border-radius:14px!important;box-shadow:0 10px 28px rgba(16,42,28,.24)!important;}
+.toolbar #profileDropdown[hidden]{display:none!important;}
+.toolbar .profile-menu-wrap .profile-menu-label{display:none!important;}
+.toolbar #profileAvatarBtn::before{content:none!important;}
+@media(max-width:768px){.toolbar{align-items:center;overflow:visible!important}.toolbar .profile-menu-wrap{flex:0 0 auto;width:auto;min-width:0;order:2}.toolbar #profileAvatarBtn{width:auto;height:auto;min-width:0;flex:0 0 auto;padding:11px 13px;}}
 </style>
 </head>
 <body>
@@ -333,12 +343,12 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <div class="products" id="productGrid"></div>
-<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Buka menu profil" aria-expanded="false" aria-haspopup="menu" class="profile-avatar-btn" id="profileAvatarBtn" type="button"><span id="profileAvatarGlyph">👑</span></button>
+<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn gold" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner</b><small>Kelola seluruh aplikasi</small></span></button>
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
 <button class="profile-option" data-profile-choice="staff" role="menuitem" type="button"><span class="profile-emoji">🧢</span><span><b>Pegawai</b><small>Catat penjualan</small></span></button></div>
-<button class="hidden" id="roleSwitchBtn" type="button" aria-hidden="true" tabindex="-1">Ganti profil</button></div><button class="btn gold" id="manageBtn">⚙ Atur produk</button></div>
+<button class="hidden" id="roleSwitchBtn" type="button" aria-hidden="true" tabindex="-1">Ganti profil</button><button class="hidden" id="manageBtn" type="button" aria-hidden="true" tabindex="-1">Atur produk</button></div>
 <div class="section-head"><h2>Transaksi terbaru</h2><button class="btn" id="seeHistory">Lihat semua</button></div>
 <div class="panel" id="recentList"></div><p class="note">Salah ketuk produk? Batalkan transaksi yang keliru. Total pemasukan berkurang, tetapi riwayat tetap tersimpan dengan status pembatalan.</p>
 </section>
