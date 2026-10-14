@@ -420,7 +420,7 @@ body:not(.staff-mode) .stats .stat-note{display:none!important;}
 body:not(.staff-mode) .global-sales-stat .sync-dot{position:absolute!important;top:8px!important;right:8px!important;display:block!important;width:8px!important;height:8px!important;min-width:8px!important;margin:0!important;z-index:2!important;}
 body:not(.staff-mode) .global-sync-text-legacy,
 body:not(.staff-mode) .legacy-local-sync-dot{display:none!important;}
-\n/* Settings accordion: isolated presentation-only addition. */\n.settings-accordion{padding:0;overflow:hidden}\n.settings-accordion>summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:48px;padding:14px;font-weight:800;color:var(--green);font-size:14px}\n.settings-accordion>summary::-webkit-details-marker{display:none}\n.settings-accordion>summary::after{content:"＋";margin-left:auto;font-size:18px;color:var(--green2)}\n.settings-accordion[open]>summary::after{content:"−"}\n.settings-accordion-content{padding:0 12px 12px}\n.settings-accordion-content>.panel{margin-top:10px}\n
+\n/* Settings accordion: isolated presentation-only addition. */\n.settings-accordion{padding:0;overflow:hidden}\n.settings-accordion>summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:48px;padding:14px;font-weight:800;color:var(--green);font-size:14px}\n.settings-accordion>summary{list-style:revert;cursor:pointer;display:list-item;min-height:48px;padding:14px;font-weight:800;color:var(--green);font-size:14px}\n.settings-accordion-content{padding:0 12px 12px}\n.settings-accordion-content>.panel{margin-top:10px}\n
 /* V74: label Setting tanpa ikon gear. */
 /* Owner and wife: center the date and income label/value on one shared axis. */
 body:not(.staff-mode) #todayLabel{text-align:center!important;width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -450,7 +450,7 @@ body:not(.staff-mode) .owner-header-meta .total-label,
 body:not(.staff-mode) .owner-header-meta .total{display:block!important;width:100%!important;margin-left:0!important;padding-left:0!important;text-align:left!important}
 /* Pegawai mempertahankan susunan header lamanya. */
 body.staff-mode .owner-header-meta{display:contents!important}
-/* Setting: restore the native <details>/<summary> disclosure marker; no CSS/JS arrow glyph. */
+/* V79: only the native browser disclosure marker; no custom arrow pseudo-elements. */
 .settings-accordion>summary{display:list-item!important;list-style:revert!important;cursor:pointer}
 .settings-accordion>summary::-webkit-details-marker{display:list-item!important}
 .settings-accordion>summary::before,
