@@ -296,6 +296,11 @@ body.staff-mode .sync-fab {
 <div class="form-actions"><button class="btn primary" id="saveProduct">Tambah produk</button><button class="btn" id="cancelEdit" style="display:none">Batal edit</button></div>
 </div>
 <div class="panel" id="productList"></div>
+<div class="panel" id="sharedMenuPanel">
+ <div class="section-head"><h2>Menu bersama</h2><span class="sub" id="sharedMenuStatus">Belum diperiksa</span></div>
+ <p class="note" style="margin-top:0">Menu tersimpan di Google Sheets dan dibagikan ke semua perangkat. Pegawai dapat mengambil menu tanpa memasukkan token.</p>
+ <div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="publishSharedMenuBtn">Kirim menu ke semua perangkat</button><button class="btn" id="refreshSharedMenuBtn">Ambil menu terbaru</button></div>
+</div>
 <p class="note" id="productAdminNote">Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.</p>
 <div class="panel admin-user-panel" id="userAdminPanel"><div class="section-head"><h2>Kelola User ID</h2><span class="sub">Khusus pemilik</span></div>
 <div class="form-grid"><div><label for="newUserId">User ID pegawai</label><input id="newUserId" placeholder="STAFF002"/></div><div><label for="newUserName">Nama pegawai</label><input id="newUserName" placeholder="Nama pegawai"/></div></div>
@@ -522,12 +527,14 @@ document.addEventListener('click',e=>{
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
-let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan')}return}
-let rem=e.target.closest('[data-remove-product]');if(rem){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===rem.dataset.removeProduct);if(p&&confirm('Hapus produk '+p.name+' dari daftar? Riwayat lama tidak ikut terhapus.')){data.products=data.products.filter(x=>x.id!==p.id);save();render();toast('Produk dihapus')}return}
+let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
+let rem=e.target.closest('[data-remove-product]');if(rem){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===rem.dataset.removeProduct);if(p&&confirm('Hapus produk '+p.name+' dari daftar? Riwayat lama tidak ikut terhapus.')){data.products=data.products.filter(x=>x.id!==p.id);markSharedMenuPending();save();render();toast('Produk dihapus');publishSharedMenu()}return}
 let tab=e.target.closest('[data-view]');if(tab){showView(tab.dataset.view);return}
 });
-$('saveProduct').addEventListener('click',()=>{if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let name=$('productName').value.trim(),price=Number($('productPrice').value);if(!name){toast('Nama produk harus diisi');return}if(!Number.isFinite(price)||price<0||$('productPrice').value===''){toast('Masukkan harga yang valid');return}if(editingId){let p=data.products.find(x=>x.id===editingId);if(p){p.name=name;p.price=price;p.icon=$('productIcon').value;p.category=$('productCategory').value}toast('Produk diperbarui')}else{data.products.push({id:'p'+Date.now(),name,price,icon:$('productIcon').value,category:$('productCategory').value,active:true});toast('Produk ditambahkan')}save();resetForm();render()});
+$('saveProduct').addEventListener('click',()=>{if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let name=$('productName').value.trim(),price=Number($('productPrice').value);if(!name){toast('Nama produk harus diisi');return}if(!Number.isFinite(price)||price<0||$('productPrice').value===''){toast('Masukkan harga yang valid');return}if(editingId){let p=data.products.find(x=>x.id===editingId);if(p){p.name=name;p.price=price;p.icon=$('productIcon').value;p.category=$('productCategory').value}toast('Produk diperbarui')}else{data.products.push({id:'p'+Date.now(),name,price,icon:$('productIcon').value,category:$('productCategory').value,active:true});toast('Produk ditambahkan')}markSharedMenuPending();save();resetForm();render();publishSharedMenu()});
 $('cancelEdit').addEventListener('click',resetForm);
+$('publishSharedMenuBtn')?.addEventListener('click',()=>publishSharedMenu());
+$('refreshSharedMenuBtn')?.addEventListener('click',()=>fetchSharedMenu());
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
 $('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory()}));
@@ -708,6 +715,69 @@ document.addEventListener('click',e=>{
  if(b){toast('Manajemen akun dinonaktifkan pada mode 3 profil lokal.');}
 });
 // Google Apps Script bridge; configuration is declared at the top of the application script.
+
+const SHARED_MENU_PENDING_KEY='nongki_shared_menu_pending_v1';
+const SHARED_MENU_POLL_MS=60000;
+let sharedMenuPromise=null;
+let sharedMenuPollTimer=null;
+function sharedMenuStatus(text){const n=$('sharedMenuStatus');if(n)n.textContent=String(text||'');}
+function sharedMenuRows(products){return products.filter(p=>p&&String(p.name||'').trim()).map((p,i)=>({id:String(p.id||('p'+(i+1))),name:String(p.name).trim(),price:Math.max(0,Number(p.price)||0),category:String(p.category||'Lainnya'),icon:String(p.icon||'🥤'),active:p.active!==false}));}
+function markSharedMenuPending(){try{localStorage.setItem(SHARED_MENU_PENDING_KEY,JSON.stringify({products:sharedMenuRows(data.products),updatedAt:new Date().toISOString(),by:currentUser?.id||'unknown'}));}catch(e){console.error('Menu lokal belum dapat ditandai untuk sinkronisasi:',e);}}
+async function publishSharedMenu(){
+ if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Hanya Owner/Istri yang dapat mengirim menu.');return false;}
+ loadAppsScriptSettings();
+ if(!navigator.onLine){sharedMenuStatus('Offline · menunggu');toast('Menu disimpan lokal. Sambungkan internet untuk membagikan menu.');return false;}
+ if(!appScriptConfigured()){sharedMenuStatus('Token belum diatur pada perangkat Owner/Istri');toast('Atur token API di panel Google Sheets pada perangkat Owner/Istri terlebih dahulu.');return false;}
+ const products=sharedMenuRows(data.products);
+ if(!products.length){toast('Menu kosong, tidak dikirim.');return false;}
+ try{
+  sharedMenuStatus('Mengirim menu…');
+  const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveMenu',token:APPS_SCRIPT_TOKEN,products}),cache:'no-store'});
+  const raw=await response.text();let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons Apps Script bukan JSON.')}
+  if(!response.ok||!result||result.success!==true)throw new Error(String(result?.error||result?.message||('HTTP '+response.status)));
+  localStorage.removeItem(SHARED_MENU_PENDING_KEY);
+  sharedMenuStatus('Terkirim · '+products.length+' produk');
+  toast('Menu bersama diperbarui untuk semua perangkat.');
+  return true;
+ }catch(error){sharedMenuStatus('Gagal · perubahan lokal dipertahankan');console.error('Sinkronisasi menu gagal:',error);toast('Menu belum terkirim: '+String(error?.message||error));return false;}
+}
+async function fetchSharedMenu({quiet=false}={}){
+ if(sharedMenuPromise)return sharedMenuPromise;
+ if(!navigator.onLine){if(!quiet)sharedMenuStatus('Offline · memakai menu lokal');return false;}
+ sharedMenuPromise=(async()=>{
+  try{
+   // Jika ada perubahan menu Owner/Istri yang belum terkirim, kirim snapshot itu dahulu agar tidak tertimpa data server.
+   let pending=null;try{pending=JSON.parse(localStorage.getItem(SHARED_MENU_PENDING_KEY)||'null')}catch{}
+   if(pending&&Array.isArray(pending.products)&&currentUser&&['owner','wife'].includes(currentUser.role)){
+    const snapshot=data.products;data.products=sharedMenuRows(pending.products);const sent=await publishSharedMenu();if(!sent){data.products=snapshot;return false;}
+   }
+   const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getMenu');url.searchParams.set('_',String(Date.now()));
+   const response=await fetch(url.toString(),{method:'GET',cache:'no-store'});
+   const raw=await response.text();let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons menu bukan JSON.')}
+   if(!response.ok||!result||result.success!==true)throw new Error(String(result?.error||result?.message||('HTTP '+response.status)));
+   const rows=sharedMenuRows(Array.isArray(result.data)?result.data:(result.products||[]));
+   if(rows.length){
+    data.products=rows;
+    localStorage.setItem(KEY,JSON.stringify(data));
+    await persistProducts();render();
+    sharedMenuStatus('Terbaru · '+rows.length+' produk');
+   }else{
+    sharedMenuStatus('Server belum memiliki menu');
+    if(currentUser&&['owner','wife'].includes(currentUser.role))await publishSharedMenu();
+   }
+   return true;
+  }catch(error){sharedMenuStatus('Gagal mengambil menu · memakai data lokal');if(!quiet)console.warn('Menu bersama belum dapat diambil:',error);return false;}
+  finally{sharedMenuPromise=null;}
+ })();
+ return sharedMenuPromise;
+}
+function startSharedMenuPolling(){
+ clearInterval(sharedMenuPollTimer);
+ sharedMenuPollTimer=setInterval(()=>{if(document.visibilityState==='visible')fetchSharedMenu({quiet:true});},SHARED_MENU_POLL_MS);
+}
+window.addEventListener('online',()=>fetchSharedMenu({quiet:true}));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fetchSharedMenu({quiet:true});});
+
 let appScriptSyncPromise=null;
 function queueDailySync(date){
  // IndexedDB outbox is the durable queue; this timer only coalesces network attempts.
@@ -987,6 +1057,7 @@ render();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
 const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
+fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
 </script>
 <script>
