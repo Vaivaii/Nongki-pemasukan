@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'v40-refresh-global-after-sync';
+const CACHE_NAME = 'v44-remove-source-text';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
