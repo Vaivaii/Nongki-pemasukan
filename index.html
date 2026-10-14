@@ -222,7 +222,7 @@ header {
 .product-group{margin-bottom:15px}.product-group-title{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin:0 0 9px;cursor:pointer;box-shadow:0 2px 8px #173d2c08}.product-group-title .category-label{font-size:13px;font-weight:800;color:var(--green)}.product-group-title .category-chevron{font-size:11px;color:var(--muted);font-weight:800}.product-group-grid.is-collapsed{display:none}
 .profile-menu-wrap{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:12px;z-index:4}.profile-menu-label{min-width:0;flex:1}.profile-menu-label b{font-size:12px;display:block}.profile-menu-label small{display:block;color:#d5e0d8;font-size:10px;margin-top:2px}.profile-avatar-btn{width:40px;height:40px;flex:0 0 40px;border:1px solid #ffffff45;border-radius:50%;background:#ffffff16;color:#fff;display:grid;place-items:center;font-size:20px;cursor:pointer;box-shadow:0 2px 8px #00000012}.profile-avatar-btn:focus-visible,.profile-option:focus-visible,.product-group-title:focus-visible,.sync-fab:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .profile-dropdown{position:absolute;right:0;top:48px;min-width:190px;padding:7px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:15px;box-shadow:0 12px 32px #102a1c25;z-index:30}.profile-dropdown[hidden]{display:none}.profile-option{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:12px;text-align:left;cursor:pointer}.profile-option:hover{background:#f1f5ef}.profile-option .profile-emoji{font-size:18px;width:25px;text-align:center}.profile-option small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
-.stat-note{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.sync-dot{display:inline-block;width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#9aa39d;box-shadow:0 0 0 3px #9aa39d20}.sync-dot.status-syncing{background:#eab308;box-shadow:0 0 0 3px #eab30826;animation:syncPulse 1.2s ease-in-out infinite}.sync-dot.status-connected{background:#22a447;box-shadow:0 0 0 3px #22a44724}.sync-dot.status-offline{background:#9aa39d;box-shadow:0 0 0 3px #9aa39d20}.sync-dot.status-error{background:#dc4545;box-shadow:0 0 0 3px #dc454526}@keyframes syncPulse{50%{opacity:.45}}
+.stat-note{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.sync-dot{display:inline-block;width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#9aa39d;box-shadow:0 0 0 3px #9aa39d20}.sync-dot.status-waiting{background:#eab308;box-shadow:0 0 0 3px #eab30826}.sync-dot.status-syncing{background:#2585e8;box-shadow:0 0 0 3px #2585e826;animation:syncPulse 1.2s ease-in-out infinite}.sync-dot.status-connected{background:#22a447;box-shadow:0 0 0 3px #22a44724}.sync-dot.status-offline{background:#eab308;box-shadow:0 0 0 3px #eab30826}.sync-dot.status-error{background:#dc4545;box-shadow:0 0 0 3px #dc454526}@keyframes syncPulse{50%{opacity:.45}}
 .sync-fab{position:fixed;right:17px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:8;width:46px;height:46px;border:1px solid #ffffffb8;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font-size:22px;box-shadow:0 7px 20px #173d2c38;cursor:pointer}.sync-fab:active{transform:scale(.95)}.sync-fab[hidden]{display:none}.sync-fab:disabled{opacity:.7;cursor:progress}.sync-fab .sync-count{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:20px;display:grid;place-items:center;background:#d94343;color:#fff;border:2px solid var(--cream);font-size:10px;font-weight:850;line-height:1}.sync-fab .sync-count[hidden]{display:none}
 main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}@media(min-width:520px){.sync-fab{right:max(22px,calc((100vw - 720px)/2 + 18px))}}
 /* Final staff-only navigation fix: override legacy .tabs display:flex!important rules. */
@@ -259,7 +259,7 @@ body.staff-mode .sync-fab {
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
 <button class="profile-option" data-profile-choice="staff" role="menuitem" type="button"><span class="profile-emoji">🧢</span><span><b>Pegawai</b><small>Catat penjualan</small></span></button></div>
 <button class="hidden" id="roleSwitchBtn" type="button" aria-hidden="true" tabindex="-1">Ganti profil</button></div>
-<div class="stats"><div class="stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><small class="stat-note"><span aria-label="Offline / belum terhubung" class="sync-dot status-offline" id="globalSyncDot" role="status"></span><span>Sumber: server cloud</span><span id="globalSyncText">Offline / belum terhubung</span></small></div><div class="stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><small class="stat-note">Di perangkat ini</small></div></div>
+<div class="stats"><div class="stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><small class="stat-note"><span aria-label="Status: Menunggu" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span id="globalSyncText">Status: Menunggu</span></small></div><div class="stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><small class="stat-note">Di perangkat ini</small></div></div>
 </header>
 <main>
 <section class="view active" id="salesView">
@@ -488,7 +488,8 @@ function renderReports(){
  const staff=!!(currentUser&&currentUser.role==='staff');$('rolePreviewText').textContent=staff?'Akun pegawai dapat mencatat penjualan dan melihat laporan.':'Akun pemilik dapat melihat laporan dan mengelola produk.';
 }
 function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
-function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');if(dot){dot.classList.remove('status-connected','status-syncing','status-offline','status-error');dot.classList.add(state==='connected'?'status-connected':state==='syncing'?'status-syncing':state==='error'?'status-error':'status-offline');dot.setAttribute('aria-label',label)}if(text)text.textContent=label}
+function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':'waiting';const statusText=normalized==='connected'?'Status: Terkirim':normalized==='syncing'?'Status: Menyinkronkan...':normalized==='error'?'Status: Gagal':'Status: Menunggu';if(dot){dot.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');dot.classList.add('status-'+normalized);dot.setAttribute('aria-label',statusText)}if(text)text.textContent=statusText}
+async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function record(id){
@@ -497,7 +498,7 @@ async function record(id){
  try {
    const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
    const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});save();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
+   data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · menunggu sinkronisasi');
  } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
 }
 
@@ -510,7 +511,7 @@ async function cancelTx(id){
    if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
    t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
    const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-   save();saveCloudPreview();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
+   save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
  } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
@@ -721,6 +722,7 @@ function appScriptConfigured(){
 // Ambil akumulasi penjualan hari ini dari Apps Script. Endpoint harus mengembalikan
 // JSON sukses berisi total/totalPenjualan/totalHariIni (angka rupiah), bukan teks status saja.
 let globalTotalFetchPromise=null;
+let globalServerConfirmed=false;
 function extractGlobalTotal(result){
  if(!result||typeof result!=='object')return null;
  if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')return null;
@@ -753,13 +755,15 @@ async function fetchGlobalTotal(){
    const amount=extractGlobalTotal(result);
    if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
    if(display)display.textContent=rupiah(amount);
-   setGlobalSyncStatus('connected','Total global diperbarui · '+dateText(today()));
+   globalServerConfirmed=true;
+    await refreshGlobalCardStatus();
    return true;
   }catch(error){
    console.warn('Total penjualan global belum dapat diambil:',error);
    if(display&&display.textContent==='Memuat…')display.textContent='Belum terhubung';
    const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
-   setGlobalSyncStatus('error',label);
+   globalServerConfirmed=false;
+    setGlobalSyncStatus('error',label);
    const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
    return false;
   }finally{globalTotalFetchPromise=null}
@@ -867,7 +871,7 @@ async function syncPending(){
  loadAppsScriptSettings();
  if(!navigator.onLine){setGlobalSyncStatus('offline','Offline · menunggu koneksi');return false}
  if(!appScriptConfigured()){const status=$('sheetsConnectionStatus');if(status)status.textContent='Antrean lokal aktif · isi URL Apps Script dan token pada profil Owner.';setGlobalSyncStatus('offline','Server belum dikonfigurasi');return false}
- setGlobalSyncStatus('syncing','Mencoba terhubung ke server…');
+ setGlobalSyncStatus('syncing');
  appScriptSyncPromise=(async()=>{
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
@@ -913,17 +917,18 @@ async function syncPending(){
    if(status)status.textContent=failed
     ?'Sinkronisasi tertunda · '+remaining+' antrean tersisa · '+lastError
     :'Sinkronisasi selesai · '+sent+' event dikirim · '+remaining+' antrean tersisa.';
-   if(failed){setGlobalSyncStatus('error','Gagal tersambung ke server');toast('Sinkronisasi tertunda: '+lastError)}
-   else if(sent){setGlobalSyncStatus('connected','Server merespons · transaksi terkirim');toast(sent+' event berhasil dikirim ke Apps Script.')}
-   else setGlobalSyncStatus('offline','Belum ada konfirmasi data server');
+   if(failed){setGlobalSyncStatus('error');toast('Sinkronisasi tertunda: '+lastError)}
+   else if(sent){globalServerConfirmed=true;toast(sent+' event berhasil dikirim ke Apps Script.')}
+   else await refreshGlobalCardStatus();
    if(sent)render();
    // Refresh cloud total only after the server confirms queued events.
    // This reads Income Log; it does not create or resend a transaction.
    if(sent>0&&failed===0)await fetchGlobalTotal();
+   await refreshGlobalCardStatus();
    await refreshStaffSyncBadge();
    return failed===0;
   }catch(error){
-   const status=$('sheetsConnectionStatus');if(status)status.textContent='Antrean lokal aman · '+String(error?.message||error);setGlobalSyncStatus('error','Gagal tersambung ke server');console.error('Sinkronisasi Apps Script gagal:',error);
+   const status=$('sheetsConnectionStatus');if(status)status.textContent='Antrean lokal aman · '+String(error?.message||error);setGlobalSyncStatus('error');console.error('Sinkronisasi Apps Script gagal:',error);
    toast('Sinkronisasi gagal. Data tetap tersimpan lokal.');
    return false;
   }finally{
@@ -941,7 +946,7 @@ async function syncPending(){
  return appScriptSyncPromise;
 }
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
-window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
+window.addEventListener('offline',()=>refreshGlobalCardStatus());
 $('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending();await fetchGlobalTotal()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
 
 // Save endpoint and token locally; never write the token into the repository source.
@@ -978,9 +983,10 @@ load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('
 
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
-render();applyRole();setGlobalSyncStatus(navigator.onLine?'syncing':'offline',navigator.onLine?'Memeriksa koneksi server…':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
-// Konfigurasi lokal dibaca ulang sebelum mencoba mengirim antrean yang tersimpan.
-loadAppsScriptSettings();syncPending();fetchGlobalTotal();
+render();applyRole();refreshStaffSyncBadge();
+// Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
+const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
 })();
 </script>
 <script>
