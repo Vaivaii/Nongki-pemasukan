@@ -359,6 +359,22 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 #loginOverlay .login-card{position:relative;z-index:1;}
 .toolbar .profile-menu-wrap{z-index:4!important;isolation:auto!important;}
 .toolbar #profileDropdown{z-index:99999!important;background:#fff!important;background-color:#fff!important;opacity:1!important;}
+
+/* V65: tombol Switch Profile konsisten penuh dengan tombol aksi di sebelahnya. */
+.toolbar{display:flex!important;gap:8px!important;align-items:stretch!important;}
+.toolbar #undoBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:42px;}
+.toolbar .profile-menu-wrap{display:flex!important;flex:0 1 auto!important;width:auto!important;min-width:0!important;align-self:stretch!important;align-items:stretch!important;justify-content:stretch!important;margin:0!important;padding:0!important;}
+.toolbar .btn-switch-profile{
+  background-color:#fdfbf7!important;border:1px solid #e0dcd3!important;border-radius:12px!important;
+  padding:10px 16px!important;font-size:14px!important;font-weight:600!important;color:#5c4d3c!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  height:100%!important;min-height:42px!important;width:auto!important;flex:1 1 auto!important;
+  white-space:nowrap!important;box-shadow:0 1px 3px rgba(0,0,0,.05)!important;
+}
+body.staff-mode .toolbar{display:flex!important;flex-wrap:nowrap!important;gap:8px!important;align-items:stretch!important;}
+body.staff-mode .toolbar #undoBtn{flex:1 1 auto!important;min-width:0!important;}
+body.staff-mode .toolbar .profile-menu-wrap{flex:0 1 auto!important;width:auto!important;min-width:0!important;}
+body.staff-mode .toolbar .btn-switch-profile{width:auto!important;min-width:0!important;flex:1 1 auto!important;padding:10px 12px!important;font-size:13px!important;}
 </style>
 </head>
 <body>
@@ -383,7 +399,7 @@ body.staff-mode .local-items-stat .sync-dot {display:block!important;}
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <div class="products" id="productGrid"></div>
-<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn gold" id="profileAvatarBtn" type="button">Switch Profile</button>
+<div class="toolbar"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner</b><small>Kelola seluruh aplikasi</small></span></button>
 <button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
