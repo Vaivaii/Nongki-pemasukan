@@ -1055,10 +1055,19 @@ async function fetchSharedMenu({quiet=false}={}){
     }
     const snapshot=data.products;data.products=sharedMenuRows(pending.products);const sent=await publishSharedMenu();if(!sent){data.products=snapshot;return false;}
    }
-   const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getMasterMenu');url.searchParams.set('_',String(Date.now()));
-   const response=await fetch(url.toString(),{method:'GET',cache:'no-store'});
-   const raw=await response.text();let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons menu bukan JSON.')}
-   if(!response.ok||!result||result.success!==true)throw new Error(String(result?.error||result?.message||('HTTP '+response.status)));
+   let result=null,lastError='Endpoint menu tidak merespons';
+   // Kompatibel dengan deployment Apps Script lama maupun baru.
+   for(const action of ['getMasterMenu','getProducts','getMenu']){
+    const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action',action);url.searchParams.set('_',String(Date.now()));
+    const response=await fetch(url.toString(),{method:'GET',cache:'no-store'});
+    const raw=await response.text();let candidate=null;try{candidate=JSON.parse(raw)}catch{lastError='Respons menu bukan JSON';continue;}
+    const candidateRows=Array.isArray(candidate?.data)?candidate.data:(Array.isArray(candidate?.products)?candidate.products:null);
+    if(response.ok&&candidate?.success===true&&candidateRows){
+     result=candidate;
+     if(candidateRows.length>0||action==='getMenu')break;
+    }else lastError=String(candidate?.error||candidate?.message||('HTTP '+response.status));
+   }
+   if(!result)throw new Error(lastError);
    const serverRows=Array.isArray(result.data)?result.data:(result.products||[]);
    const activeRows=serverRows.filter(p=>p&&(p.active===true||p.active===1||String(p.active).toLowerCase()==='true'||['aktif','active','1','true'].includes(String(p.status||p.statusProduk||'').trim().toLowerCase())));
    const rows=sharedMenuRows(activeRows);
