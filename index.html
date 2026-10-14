@@ -980,7 +980,7 @@ function openLogoutPin(){
 function cancelLogoutPin(){try{$('logoutPinOverlay')?.classList.add('hidden');}catch(error){console.warn(error);}}
 async function verifyAndLogout(){openLogoutPin();}
 $('logoutBtn')?.addEventListener('click',openLogoutPin);
-$('profileAvatarBtn')?.addEventListener('click',()=>{try{const menu=$('profileDropdown'),btn=$('profileAvatarBtn'),open=!!menu?.hidden;if(menu)menu.hidden=!open;btn?.setAttribute('aria-expanded',String(open));}catch(error){console.warn('Menu profil tidak dapat dibuka:',error);}});
+$('profileAvatarBtn')?.addEventListener('click',()=>{try{const menu=$('profileDropdown'),btn=$('profileAvatarBtn'),open=!!menu?.hidden;if(menu)menu.hidden=!open;btn?.setAttribute('aria-expanded',String(open));void fetchSharedMenu({quiet:true});}catch(error){console.warn('Menu profil tidak dapat dibuka:',error);}});
 document.addEventListener('click',e=>{
  try{
   if(!e.target?.closest?.('.profile-menu-wrap')){const menu=$('profileDropdown');if(menu)menu.hidden=true;$('profileAvatarBtn')?.setAttribute('aria-expanded','false');}
@@ -1043,6 +1043,7 @@ async function publishSharedMenu(){
 async function fetchSharedMenu({quiet=false}={}){
  if(sharedMenuPromise)return sharedMenuPromise;
  if(!navigator.onLine){if(!quiet)sharedMenuStatus('Offline · memakai menu lokal');return false;}
+ loadAppsScriptSettings();
  sharedMenuPromise=(async()=>{
   try{
    // Jika ada perubahan menu Owner/Istri yang belum terkirim, kirim snapshot itu dahulu agar tidak tertimpa data server.
@@ -1054,11 +1055,13 @@ async function fetchSharedMenu({quiet=false}={}){
     }
     const snapshot=data.products;data.products=sharedMenuRows(pending.products);const sent=await publishSharedMenu();if(!sent){data.products=snapshot;return false;}
    }
-   const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getMenu');url.searchParams.set('_',String(Date.now()));
+   const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getMasterMenu');url.searchParams.set('_',String(Date.now()));
    const response=await fetch(url.toString(),{method:'GET',cache:'no-store'});
    const raw=await response.text();let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons menu bukan JSON.')}
    if(!response.ok||!result||result.success!==true)throw new Error(String(result?.error||result?.message||('HTTP '+response.status)));
-   const rows=sharedMenuRows(Array.isArray(result.data)?result.data:(result.products||[]));
+   const serverRows=Array.isArray(result.data)?result.data:(result.products||[]);
+   const activeRows=serverRows.filter(p=>p&&(p.active===true||p.active===1||String(p.active).toLowerCase()==='true'||['aktif','active','1','true'].includes(String(p.status||p.statusProduk||'').trim().toLowerCase())));
+   const rows=sharedMenuRows(activeRows);
    if(rows.length){
     data.products=rows;
     localStorage.setItem(KEY,JSON.stringify(data));
