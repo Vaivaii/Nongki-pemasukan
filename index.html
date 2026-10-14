@@ -238,76 +238,106 @@ body.staff-mode .sync-fab { display:none !important; visibility:hidden !importan
 .staff-sync-strip .sync-dot.status-syncing { background:#2585e8; box-shadow:0 0 0 3px #2585e826; }
 .staff-sync-strip .sync-dot.status-error,.staff-sync-strip .sync-dot.status-offline { background:#eab308; box-shadow:0 0 0 3px #eab30826; }
 
-/* Header Pegawai: dua baris horizontal, tanpa status menimpa tombol profil. */
-@media (max-width: 700px) {
+/* Header Pegawai mobile: dua baris flex yang stabil. */
+@media (max-width: 768px) {
  body.staff-mode header {
-  display:flex !important; flex-direction:row !important; flex-wrap:wrap !important;
-  align-items:center !important; justify-content:space-between !important;
-  column-gap:6px; row-gap:7px;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:wrap !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:8px 7px;
   padding:calc(7px + env(safe-area-inset-top, 0px)) 10px 9px !important;
-  max-height:128px; overflow:hidden; border-radius:0 0 15px 15px !important;
+  max-height:132px;
+  overflow:hidden;
+  border-radius:0 0 15px 15px !important;
  }
+ /* Baris 1: logo di kiri; tanggal dan avatar di kanan. */
  body.staff-mode .brand {
-  order:1; flex:1 1 calc(42% - 6px); width:auto; min-width:0;
+  order:1; flex:1 1 40%; width:auto; min-width:0;
   justify-content:flex-start; margin:0!important; gap:0;
  }
- body.staff-mode .brand-logo-card {width:100%;max-width:124px;justify-content:flex-start;}
- body.staff-mode .brand-logo-card img {display:block;width:100%;height:auto;max-height:36px;object-fit:contain;object-position:left center;}
+ body.staff-mode .brand-logo-card {width:100%;max-width:118px;justify-content:flex-start;flex-shrink:1;}
+ body.staff-mode .brand-logo-card img {display:block;width:100%;height:auto;max-height:32px;object-fit:contain;object-position:left center;}
  body.staff-mode .date {
-  order:2; flex:1 1 0; min-width:0; margin:0!important; text-align:center;
-  align-self:center; font-size:11px; line-height:1.2; white-space:normal; overflow-wrap:anywhere;
+  order:2; flex:0 0 auto; width:auto; min-width:max-content; max-width:none;
+  margin:0!important; text-align:right; align-self:center;
+  font-size:11px; line-height:1.2; white-space:nowrap!important;
+  word-break:normal!important; overflow-wrap:normal!important;
  }
  body.staff-mode .profile-menu-wrap {
-  order:3; flex:0 0 38px; width:38px; min-width:38px;
-  justify-content:flex-end; margin:0!important; gap:0;
+  order:3; flex:0 0 34px; width:34px; min-width:34px;
+  display:flex; align-items:center; justify-content:flex-end;
+  margin:0!important; padding:0!important; gap:0;
  }
  body.staff-mode .profile-menu-label {display:none!important;}
- body.staff-mode .profile-avatar-btn {width:36px;height:36px;flex:0 0 36px;font-size:18px;position:relative;z-index:3;}
+ body.staff-mode .profile-avatar-btn {
+  display:grid; place-items:center; width:32px; height:32px;
+  min-width:32px; flex:0 0 32px; padding:0; margin:0;
+  font-size:17px; line-height:1; position:relative; z-index:3;
+ }
+ /* Baris 2: tiga kolom seimbang, tanpa label status yang melipat vertikal. */
  body.staff-mode .staff-income-summary {
-  order:4; flex:1 1 32%; min-width:0; max-width:40%;
+  order:4; flex:1 1 32%; width:auto; min-width:0; max-width:none;
   display:flex; flex-direction:column; justify-content:center;
+  margin:0!important;
  }
- body.staff-mode .total-label {margin:0!important;font-size:10px;line-height:1.15;white-space:nowrap;color:#dbe5de;}
- body.staff-mode .total {margin:2px 0 0!important;font-size:clamp(15px,4.2vw,20px);line-height:1.1;letter-spacing:-.3px;white-space:nowrap;}
+ body.staff-mode .total-label {
+  margin:0!important; font-size:11px; line-height:1.2;
+  white-space:normal; word-break:normal; overflow-wrap:normal; color:#dbe5de;
+ }
+ body.staff-mode .total {
+  margin:2px 0 0!important; font-size:clamp(14px,3.8vw,18px);
+  line-height:1.15; letter-spacing:-.2px; white-space:nowrap;
+ }
  body.staff-mode .stats {
-  order:5; flex:1 1 27%; min-width:0; margin:0!important; gap:0;
-  display:flex; align-items:stretch;
+  order:5; display:flex!important; flex:1 1 27%; width:auto;
+  min-width:0; margin:0!important; padding:0; gap:0; align-items:stretch;
  }
- body.staff-mode .stats .stat {flex:1 1 auto;min-width:0;width:auto;padding:5px 5px!important;border-radius:9px;}
- body.staff-mode .stats .stat span {font-size:9px;line-height:1.15;white-space:normal;}
+ body.staff-mode .stats .stat {
+  display:flex; flex:1 1 auto; flex-direction:column; justify-content:center;
+  min-width:0; width:100%; padding:6px 5px!important; border-radius:9px;
+ }
+ body.staff-mode .stats .stat span {
+  font-size:10px; line-height:1.2; white-space:normal;
+  word-break:normal; overflow-wrap:normal;
+ }
  body.staff-mode .stats .stat b {font-size:15px;line-height:1.1;margin-top:3px;white-space:nowrap;}
  body.staff-mode .stats .stat-note {display:none!important;}
  body.staff-mode .global-sales-stat {display:none!important;}
  body.staff-mode .staff-sync-strip {
-  order:6; flex:1 1 30%; min-width:0; max-width:36%;
-  display:flex!important; flex-direction:row!important; flex-wrap:nowrap!important;
-  align-items:center; justify-content:flex-start; gap:5px; margin:0!important;
-  padding:7px 5px!important; border-radius:9px; font-size:10px; line-height:1.15;
-  white-space:nowrap!important; text-align:left; overflow:hidden;
+  order:6; display:flex!important; flex:1 1 30%; width:auto;
+  min-width:0; max-width:none; flex-direction:row!important; flex-wrap:nowrap!important;
+  align-items:center; justify-content:flex-start; gap:5px;
+  margin:0!important; padding:7px 6px!important; border-radius:9px;
+  font-size:10px; line-height:1.2; white-space:nowrap!important;
+  word-break:normal!important; overflow-wrap:normal!important; text-align:left; overflow:hidden;
  }
- body.staff-mode .staff-sync-strip .sync-dot {flex:0 0 8px;width:8px;height:8px;margin:0;}
+ body.staff-mode .staff-sync-strip .sync-dot {display:block;flex:0 0 8px;width:8px;height:8px;margin:0;}
  body.staff-mode .staff-sync-strip #staffSyncText {
-  display:block; flex:1 1 auto; min-width:0; white-space:nowrap!important;
-  overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal;
+  display:block; flex:1 1 auto; min-width:0; max-width:100%;
+  white-space:nowrap!important; word-break:normal!important; overflow-wrap:normal!important;
+  overflow:hidden; text-overflow:ellipsis;
  }
  body.staff-mode main {padding-top:9px!important;}
  body.staff-mode .section-head {margin-top:2px;margin-bottom:7px;}
 }
 @media (max-width: 380px) {
- body.staff-mode header {column-gap:5px;row-gap:6px;padding-left:8px!important;padding-right:8px!important;max-height:124px;}
- body.staff-mode .brand-logo-card {max-width:108px;}
- body.staff-mode .brand-logo-card img {max-height:32px;}
+ body.staff-mode header {column-gap:5px;row-gap:6px;padding-left:8px!important;padding-right:8px!important;max-height:128px;}
+ body.staff-mode .brand {flex-basis:38%;}
+ body.staff-mode .brand-logo-card {max-width:104px;}
+ body.staff-mode .brand-logo-card img {max-height:29px;}
  body.staff-mode .date {font-size:10px;}
- body.staff-mode .profile-menu-wrap {flex-basis:34px;width:34px;min-width:34px;}
- body.staff-mode .profile-avatar-btn {width:33px;height:33px;flex-basis:33px;}
- body.staff-mode .staff-income-summary {flex-basis:31%;max-width:36%;}
- body.staff-mode .total-label {font-size:9px;}
- body.staff-mode .total {font-size:15px;}
+ body.staff-mode .profile-menu-wrap {flex-basis:31px;width:31px;min-width:31px;}
+ body.staff-mode .profile-avatar-btn {width:30px;height:30px;min-width:30px;flex-basis:30px;}
+ body.staff-mode .staff-income-summary {flex-basis:31%;}
+ body.staff-mode .total-label {font-size:10px;}
+ body.staff-mode .total {font-size:14px;}
  body.staff-mode .stats {flex-basis:27%;}
  body.staff-mode .stats .stat {padding:5px 3px!important;}
- body.staff-mode .stats .stat span {font-size:8px;}
+ body.staff-mode .stats .stat span {font-size:9px;}
  body.staff-mode .stats .stat b {font-size:13px;}
- body.staff-mode .staff-sync-strip {flex-basis:31%;max-width:37%;font-size:9px;padding:6px 4px!important;}
+ body.staff-mode .staff-sync-strip {flex-basis:31%;font-size:9px;padding:6px 4px!important;}
 }
 </style>
 </head>
