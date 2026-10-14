@@ -634,6 +634,29 @@ function applyRole(){
  // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
  renderReports();renderProducts();
 }
+async function sendLoginSession(profile){
+ loadAppsScriptSettings();
+ if(!profile||!appScriptConfigured())return false;
+ if(!navigator.onLine){console.info('Login sesi belum dikirim karena perangkat offline.');return false;}
+ const device=String(localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
+ try{
+  await postToAppsScript({
+   action:'loginSession',
+   token:APPS_SCRIPT_TOKEN,
+   id_pengguna:String(profile.id||'staff'),
+   nama_pengguna:String(profile.name||profile.id||'Kasir'),
+   pengguna:String(profile.name||profile.id||'Kasir'),
+   perangkat:device,
+   browser:String(navigator.userAgent||'Browser PWA'),
+   catatan:'Login via PWA Nongki'
+  });
+  console.info('Login sesi berhasil dikirim ke Apps Script.');
+  return true;
+ }catch(error){
+  console.warn('Login berhasil secara lokal, tetapi log sesi belum terkirim:',error);
+  return false;
+ }
+}
 function attemptProfileLogin(){
  try{
   const id=$('loginUserId')?.value;
@@ -654,6 +677,8 @@ function attemptProfileLogin(){
   // Ubah state lebih dahulu. Kegagalan UI tidak mengembalikan profil ke role sebelumnya.
   currentUser=profile;
   saveProfileSession(profile);
+  // Kirim log login secara terpisah; kegagalan log tidak membatalkan login kasir.
+  void sendLoginSession(profile);
   const pinInput=$('loginPin');if(pinInput)pinInput.value='';
   try{showView('salesView');}catch(error){console.warn('Tampilan kasir belum dapat dibuka:',error);}
   safeProfileUiRefresh();
@@ -875,7 +900,19 @@ function outboxToPayload(item){
   pengguna:user,
   perangkat:device,
   status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
-  tanggal:date
+  tanggal:date,
+  // Backend Apps Script mengharapkan items[] dengan nama_produk/kategori/qty/harga_satuan/subtotal.
+  items:items.map(i=>{
+   const productId=String(i.productId||i.id||'');
+   const catalogProduct=(Array.isArray(data.products)?data.products:[]).find(p=>String(p.id)===productId||String(p.name||p.nama_produk||'')===String(i.productName||i.name||''));
+   return {
+    nama_produk:String(i.productName||i.name||catalogProduct?.name||catalogProduct?.nama_produk||'Produk'),
+    kategori:String(i.category||i.kategori||catalogProduct?.category||catalogProduct?.kategori||'Lainnya'),
+    qty:Number(i.quantity??i.qty)||1,
+    harga_satuan:Number(i.unitPrice??i.harga_satuan)||0,
+    subtotal:Number(i.lineTotal??i.subtotal) || ((Number(i.quantity??i.qty)||1)*(Number(i.unitPrice??i.harga_satuan)||0))
+   };
+  })
  };
  const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction};
  if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
