@@ -795,21 +795,34 @@ const PROFILE_PIN_STORAGE_KEY='nongki_profile_pins_v1';
 const PROFILE_PINS={owner:'1212',wife:'2323'};
 try{const storedPins=JSON.parse(localStorage.getItem(PROFILE_PIN_STORAGE_KEY)||'{}');if(typeof storedPins.owner==='string'&&/^\d{4,8}$/.test(storedPins.owner))PROFILE_PINS.owner=storedPins.owner;if(typeof storedPins.wife==='string'&&/^\d{4,8}$/.test(storedPins.wife))PROFILE_PINS.wife=storedPins.wife;}catch(error){console.warn('PIN profil tersimpan tidak dapat dibaca; menggunakan PIN awal.',error);}
 let currentUser=null;
-function readProfileSession(){
- // Jangan pulihkan role dari localStorage: data profileId bukan bukti autentikasi PIN.
- // Setiap pemuatan aplikasi wajib kembali ke layar login; Owner harus memasukkan PIN lagi.
- try{localStorage.removeItem(SESSION_KEY);}catch(error){console.warn('Sesi lama tidak dapat dibersihkan.',error);}
- return null;
-}
-function saveProfileSession(profile){
- try{
-  if(profile&&PROFILE_LIST.some(p=>p.id===profile.id)){
-   localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:profile.id,savedAt:new Date().toISOString()}));
-  }else localStorage.removeItem(SESSION_KEY);
-  return true;
- }catch(error){console.warn('Sesi profil tidak dapat disimpan di perangkat ini.',error);return false}
-}
-function safeProfileUiRefresh(){
+const ACTIVE_ROLE_KEY='nongki_active_role';
+ const LOGGED_IN_KEY='nongki_logged_in';
+ function readProfileSession(){
+  // Pulihkan hanya profil yang dikenal dan ditandai sebagai sesi aktif.
+  // Ini adalah persistensi lokal perangkat, bukan autentikasi server yang kuat.
+  try{
+   if(localStorage.getItem(LOGGED_IN_KEY)!=='true')return null;
+   const savedRole=localStorage.getItem(ACTIVE_ROLE_KEY);
+   const aliases={Owner:'owner',Istri:'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
+   const profileId=aliases[savedRole];
+   return PROFILE_LIST.find(p=>p.id===profileId)||null;
+  }catch(error){console.warn('Sesi profil tersimpan tidak dapat dibaca.',error);return null;}
+ }
+ function saveProfileSession(profile){
+  try{
+   if(profile&&PROFILE_LIST.some(p=>p.id===profile.id)){
+    localStorage.setItem(ACTIVE_ROLE_KEY,profile.name);
+    localStorage.setItem(LOGGED_IN_KEY,'true');
+    localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:profile.id,savedAt:new Date().toISOString()}));
+   }else{
+    localStorage.removeItem(LOGGED_IN_KEY);
+    localStorage.removeItem(ACTIVE_ROLE_KEY);
+    localStorage.removeItem(SESSION_KEY);
+   }
+   return true;
+  }catch(error){console.warn('Sesi profil tidak dapat disimpan di perangkat ini.',error);return false}
+ }
+ function safeProfileUiRefresh(){
  // State profil sudah diperbarui sebelum menyentuh UI; error DOM tidak membatalkan login.
  try{applyRole();}catch(error){console.error('UI profil belum sepenuhnya diperbarui:',error);}
  try{const overlay=$('loginOverlay');if(overlay)overlay.classList.toggle('hidden',!!currentUser);}catch(error){console.warn('Overlay login tidak tersedia:',error);}
