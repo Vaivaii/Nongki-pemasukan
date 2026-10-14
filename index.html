@@ -888,8 +888,9 @@ async function syncPending(){
   const button=$('syncGoogleSheetsBtn');
   if(button)button.disabled=true;
   let sent=0,failed=0,lastError='';
-  // Deklarasi pada scope fungsi agar tidak ada referensi targetDateKey yang keluar dari block scope.
-  let targetDateKey=today();
+  // Satu kunci tanggal acuan per proses sinkronisasi; targetDateKey selalu terdefinisi pada scope fungsi.
+  const todayKey=today();
+  let targetDateKey=todayKey;
   try{
    let outbox=await getAllRecords('outbox');
    await enqueueLegacyPendingTransactions(outbox);
@@ -903,7 +904,7 @@ async function syncPending(){
      try{
       const payload=outboxToPayload(item);
       // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
-      targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
+      targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||todayKey).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
       await postToAppsScript(payload);
       await removeOutboxItem(item.id);
@@ -951,6 +952,34 @@ async function syncPending(){
  })();
  return appScriptSyncPromise;
 }
+// Deteksi transaksi lokal yang belum memperoleh konfirmasi sinkronisasi.
+async function hasPendingLocalTransactions(){
+ const localPending=Array.isArray(data.transactions)&&data.transactions.some(t=>t&&['pending','failed'].includes(String(t.syncStatus||'').toLowerCase()));
+ const queued=await getAllRecords('outbox');
+ return localPending||queued.length>0;
+}
+// Jika modul pemuatan data cloud tersedia, jangan jalankan sebelum antrean lokal aman.
+// Fungsi ini sengaja tidak menimpa data: refresh cloud dilewati bila masih ada antrean.
+async function refreshGoogleSheetsAfterPendingSync(){
+ if(typeof fetchFromGoogleSheets!=='function')return false;
+ try{
+  if(await hasPendingLocalTransactions()){
+   await syncPending();
+   if(await hasPendingLocalTransactions()){
+    const status=$('sheetsConnectionStatus');
+    if(status)status.textContent='Pembaruan cloud ditunda · transaksi lokal masih menunggu sinkronisasi.';
+    console.warn('Refresh Google Sheets dilewati karena transaksi lokal masih pending.');
+    return false;
+   }
+  }
+  await fetchFromGoogleSheets();
+  return true;
+ }catch(error){
+  console.error('Refresh Google Sheets aman gagal:',error);
+  toast('Pembaruan cloud ditunda. Data lokal tetap dipertahankan.');
+  return false;
+ }
+}
 window.addEventListener('online',()=>{setGlobalSyncStatus('syncing','Koneksi tersedia · memeriksa server');syncPending()});
 window.addEventListener('offline',()=>setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan'));
 $('staffSyncFab')?.addEventListener('click',async()=>{loadAppsScriptSettings();const button=$('staffSyncFab');if(!navigator.onLine){toast('Offline · antrean tetap tersimpan');setGlobalSyncStatus('offline','Offline · antrean tetap tersimpan');return}button.disabled=true;button.textContent='↻';try{await syncPending();await fetchGlobalTotal()}finally{button.disabled=false;button.innerHTML='↻<span class="sync-count" id="staffSyncCount" hidden>0</span>';await refreshStaffSyncBadge()}});
@@ -990,7 +1019,7 @@ let resetSyncStatus=false;data.transactions.forEach(t=>{if(t.syncStatus!=='pendi
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();applyRole();setGlobalSyncStatus(navigator.onLine?'syncing':'offline',navigator.onLine?'Memeriksa koneksi server…':'Offline · antrean tetap tersimpan');refreshStaffSyncBadge();
 // Konfigurasi lokal dibaca ulang sebelum mencoba mengirim antrean yang tersimpan.
-loadAppsScriptSettings();syncPending();fetchGlobalTotal();
+loadAppsScriptSettings();syncPending();refreshGoogleSheetsAfterPendingSync();fetchGlobalTotal();
 })();
 </script>
 <script>
