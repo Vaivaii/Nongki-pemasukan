@@ -542,6 +542,14 @@ body:not(.staff-mode) header>.stats{
   body:not(.staff-mode) header>.owner-header-meta #todayLabel{font-size:12px!important}
 }
 
+
+/* V88: server history toolbar and server transaction metadata. */
+#serverHistoryToolbar .toolbar{display:flex;gap:8px;margin:0 0 6px!important}
+#refreshServerHistoryBtn{white-space:normal}
+#serverHistoryStatus{font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+#historyList .history-info small{overflow-wrap:anywhere}
+#historyList .history-price{white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -585,6 +593,10 @@ body:not(.staff-mode) header>.stats{
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
 <div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
+<div class="panel hidden" id="serverHistoryToolbar">
+  <div class="toolbar" style="margin:0 0 6px"><button class="btn" id="refreshServerHistoryBtn" type="button">Refresh Server Data</button></div>
+  <div class="sub" id="serverHistoryStatus" role="status" aria-live="polite">Riwayat server belum dimuat.</div>
+</div>
 <div class="panel" id="historySummary"></div>
 <div class="panel" id="historyList"></div>
 <div class="toolbar"><button class="btn" id="exportCsv">Ekspor CSV</button></div>
@@ -776,18 +788,189 @@ function renderGrid(){
 function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
+let serverHistoryTransactions=[];
+let serverHistoryLoaded=false;
+let serverHistoryLoading=false;
+let serverHistoryError='';
+let serverHistoryRequestId=0;
+
+function serverHistoryField(row, names){
+ if(!row||typeof row!=='object')return '';
+ for(const name of names){
+  if(row[name]!==undefined&&row[name]!==null&&String(row[name]).trim()!=='')return row[name];
+ }
+ const normalized=new Map(Object.keys(row).map(k=>[String(k).toLowerCase().replace(/[^a-z0-9]/g,''),k]));
+ for(const name of names){
+  const key=normalized.get(String(name).toLowerCase().replace(/[^a-z0-9]/g,''));
+  if(key&&row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=='')return row[key];
+ }
+ return '';
+}
+function serverHistoryArray(result){
+ if(Array.isArray(result))return result;
+ if(!result||typeof result!=='object')return null;
+ const candidates=[result.data,result.transactions,result.history,result.recentTransactions,result.recent_transactions,result.rows,result.items,result.result?.data,result.result?.transactions,result.result?.history,result.result?.rows];
+ for(const candidate of candidates)if(Array.isArray(candidate))return candidate;
+ return null;
+}
+function normalizeServerHistory(result){
+ let rows=serverHistoryArray(result);
+ if(!rows)return null;
+ const headers=result.headers||result.header||result.columns||result.result?.headers||result.result?.header;
+ if(rows.length&&Array.isArray(rows[0])){
+  let matrix=rows;
+  let columnNames=Array.isArray(headers)?headers:null;
+  if(!columnNames&&matrix.length&&matrix[0].some(v=>typeof v==='string'&&/(waktu|tanggal|transaksi|nominal|produk|pengguna|pembayaran)/i.test(v))){
+   columnNames=matrix.shift();
+  }
+  if(!columnNames)return null;
+  rows=matrix.map(values=>Object.fromEntries(columnNames.map((key,i)=>[String(key),values[i]])));
+ }
+ return rows.filter(row=>row&&typeof row==='object').map((row,index)=>{
+  const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu']);
+  const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date']);
+  const rawName=serverHistoryField(row,['ringkasan_produk','nama_item','nama_produk','produk','item','name','transactionName','description','deskripsi','rincian']);
+  const rawAmount=serverHistoryField(row,['nominal','total','jumlah','subtotal','amount','transactionTotal','nilai']);
+  const rawPayment=serverHistoryField(row,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment']);
+  const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
+  const rawStatus=serverHistoryField(row,['status','jenis_event','event']);
+  let time=String(rawTime||'').trim();
+  let date=String(rawDate||'').trim();
+  if(rawTime instanceof Date&&!Number.isNaN(rawTime.getTime())){
+   time=rawTime.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+   if(!date)date=rawTime.getFullYear()+'-'+String(rawTime.getMonth()+1).padStart(2,'0')+'-'+String(rawTime.getDate()).padStart(2,'0');
+  }
+  const isoTime=time.match(/T(\d{2}:\d{2}(?::\d{2})?)/);
+  if(isoTime)time=isoTime[1];
+  const dateMatch=String(rawTime||'').match(/^(\d{4}-\d{2}-\d{2})/);
+  if(!date&&dateMatch)date=dateMatch[1];
+  if(!time)time='Jam tidak tersedia';
+  if(!date)date=String($('historyDate')?.value||today());
+  let amount=Number(String(rawAmount??'').replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.'));
+  if(!Number.isFinite(amount))amount=0;
+  let name=String(rawName||'').trim();
+  if(!name){
+   const nested=Array.isArray(row.items)?row.items:[];
+   name=nested.map(i=>String(i.nama_produk||i.productName||i.name||'Produk')+' × '+(Number(i.qty??i.quantity)||1)).join(', ');
+  }
+  if(!name)name=amount?('Transaksi '+rupiah(amount)):'Transaksi server';
+  let profile=String(rawProfile||'').trim();
+  if(profile){
+   const lower=profile.toLowerCase();
+   if(/\bowner\b/.test(lower)||lower==='pemilik')profile='Owner';
+   else if(/\bistri\b/.test(lower))profile='Istri';
+   else if(/\bpegawai\b|\bstaff\b|\bkasir\b/.test(lower))profile='Pegawai';
+  }else profile='Tidak tercatat';
+  return {
+   id:String(serverHistoryField(row,['id_transaksi','id','transactionId','transaction_id','id_event'])||'server-'+index),
+   date,time,name,amount,
+   payment:String(rawPayment||'Tidak tercatat').trim(),
+   profile,
+   status:String(rawStatus||'').trim(),
+   raw:row
+  };
+ }).sort((a,b)=>(String(b.date)+' '+String(b.time)).localeCompare(String(a.date)+' '+String(a.time))).slice(0,20);
+}
+function renderServerHistory(){
+ const date=$('historyDate').value||today();
+ const toolbar=$('serverHistoryToolbar');
+ if(toolbar)toolbar.classList.toggle('hidden',historySource!=='cloud');
+ const summary=$('historySummary'),list=$('historyList'),status=$('serverHistoryStatus');
+ if(status){
+  status.textContent=serverHistoryLoading?'Mengambil riwayat dari server…':serverHistoryError?'Gagal memuat: '+serverHistoryError:serverHistoryLoaded?'Server terhubung · '+serverHistoryTransactions.length+' transaksi diterima.':'Pilih Riwayat Server untuk mengambil data terbaru.';
+ }
+ if(serverHistoryLoading){
+  summary.innerHTML='<div class="sub">Menghubungkan ke Apps Script…</div>';
+  list.innerHTML='<div class="empty">Sedang mengambil riwayat transaksi.</div>';
+  return;
+ }
+ if(serverHistoryError&&!serverHistoryLoaded){
+  summary.innerHTML='<div class="sub">Riwayat server belum berhasil dimuat</div>';
+  list.innerHTML='<div class="empty">Tidak dapat mengambil riwayat. Periksa koneksi, token API, dan dukungan action getRecentTransactions/getHistory pada Apps Script.</div>';
+  return;
+ }
+ const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
+ const rows=dated.slice(0,20);
+ const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
+ summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 20 transaksi · data dari Apps Script</div>';
+ list.innerHTML=rows.map(t=>'<div class="history-row"><div class="history-icon">☁️</div><div class="history-info"><b>'+esc(t.name)+'</b><small>'+esc(t.time)+' · '+esc(t.date)+'</small><small>Metode pembayaran: '+esc(t.payment)+'</small><small>Profil pencatat: '+esc(t.profile)+'</small>'+(t.status?'<span class="cloud-status '+(/batal|cancel/i.test(t.status)?'cancelled':'active')+'">'+esc(t.status)+'</span>':'')+'</div><div class="history-price">'+rupiah(t.amount)+'</div></div>').join('')||'<div class="empty">'+(serverHistoryLoaded?'Tidak ada transaksi server untuk tanggal '+esc(date)+'.':'Belum terhubung ke server.')+'</div>';
+}
 function renderHistory(){
  const date=$('historyDate').value||today();
  $('localCount').textContent=data.transactions.filter(t=>t.date===date).length;
- const cloudCountEl=$('cloudCount');if(cloudCountEl)cloudCountEl.textContent=cloudTransactions.filter(t=>t.date===date).length;
+ const cloudCountEl=$('cloudCount');if(cloudCountEl)cloudCountEl.textContent=serverHistoryTransactions.filter(t=>t.date===date).length;
  document.querySelectorAll('[data-history-source]').forEach(b=>b.classList.toggle('active',b.dataset.historySource===historySource));
  if(historySource==='local'){
+  $('serverHistoryToolbar')?.classList.add('hidden');
   const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled');
-  $('historySummary').innerHTML=`<div class="section-head"><div><span class="sub">${dateText(date)} · Perangkat ini</span><h2>${rupiah(total(active))}</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>${tx.length}</h2></div></div><div class="sub">${itemCount(active)} produk aktif · ${tx.filter(t=>t.status==='cancelled').length} dibatalkan</div>`;
+  $('historySummary').innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Perangkat ini</span><h2>'+rupiah(total(active))+'</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>'+tx.length+'</h2></div></div><div class="sub">'+itemCount(active)+' produk aktif · '+tx.filter(t=>t.status==='cancelled').length+' dibatalkan</div>';
   $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat lokal pada tanggal ini.</div>';
- }else{
-  $('historySummary').innerHTML='<div class="sub">Riwayat server belum tersedia</div><p>Data lintas perangkat baru akan tampil setelah backend dikonfigurasi dan koneksi server terverifikasi.</p>';
-  $('historyList').innerHTML='<div class="empty">Belum terhubung ke server.</div>';
+ }else renderServerHistory();
+}
+async function fetchServerHistory(){
+ if(serverHistoryLoading)return false;
+ loadAppsScriptSettings();
+ if(!navigator.onLine){
+  serverHistoryError='Perangkat sedang offline.';
+  renderServerHistory();
+  return false;
+ }
+ if(!appScriptConfigured()){
+  serverHistoryError='URL Apps Script atau token API belum dikonfigurasi pada perangkat ini.';
+  renderServerHistory();
+  return false;
+ }
+ const requestId=++serverHistoryRequestId;
+ serverHistoryLoading=true;serverHistoryError='';
+ const button=$('refreshServerHistoryBtn');if(button)button.disabled=true;
+ renderServerHistory();
+ try{
+  const actions=['getRecentTransactions','getHistory'];
+  let lastError='Apps Script belum menyediakan endpoint riwayat.';
+  let normalized=null;
+  for(const action of actions){
+   const controller=typeof AbortController!=='undefined'?new AbortController():null;
+   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+   try{
+    const response=await fetch(APPS_SCRIPT_URL,{
+     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+     body:JSON.stringify({action,token:APPS_SCRIPT_TOKEN,date:$('historyDate').value||today(),limit:20,limitPerDay:20}),
+     signal:controller?controller.signal:undefined,cache:'no-store'
+    });
+    const raw=await response.text();
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data JSON.');
+    let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons '+action+' bukan JSON.');}
+    if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
+     throw new Error(String(result.error||result.message||('Action '+action+' ditolak.')));
+    }
+    normalized=normalizeServerHistory(result);
+    if(normalized!==null)break;
+    lastError='Respons '+action+' tidak berisi daftar transaksi yang dikenali.';
+   }catch(error){
+    lastError=String(error?.message||error);
+    console.warn('Riwayat server action '+action+' gagal:',error);
+   }finally{if(timer)clearTimeout(timer)}
+  }
+  if(requestId!==serverHistoryRequestId)return false;
+  if(normalized===null)throw new Error(lastError);
+  serverHistoryTransactions=normalized;
+  serverHistoryLoaded=true;
+  serverHistoryError='';
+  try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
+  return true;
+ }catch(error){
+  if(requestId===serverHistoryRequestId){
+   serverHistoryError=String(error?.message||error);
+   console.error('Gagal mengambil riwayat server:',error);
+  }
+  return false;
+ }finally{
+  if(requestId===serverHistoryRequestId){
+   serverHistoryLoading=false;
+   if(button)button.disabled=false;
+   renderServerHistory();
+  }
  }
 }
 function renderProducts(){const owner=!!(currentUser&&(currentUser.role==='owner'||currentUser.role==='wife'));$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>';updateProfileButtonLabel(currentUser?.role)}
@@ -861,7 +1044,8 @@ $('publishSharedMenuBtn')?.addEventListener('click',()=>publishSharedMenu());
 $('refreshSharedMenuBtn')?.addEventListener('click',()=>fetchSharedMenu());
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',renderHistory);document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory()}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&!serverHistoryLoaded)void fetchServerHistory()}));
+$('refreshServerHistoryBtn')?.addEventListener('click',()=>{void fetchServerHistory()});
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
@@ -1487,7 +1671,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v87-fine-tune-logo-size').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v88-enable-server-history-tab').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
