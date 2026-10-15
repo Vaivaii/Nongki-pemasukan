@@ -646,6 +646,7 @@ body:not(.staff-mode) header>.stats{
 </div>
 </section>
 <section class="view" id="reportsView">
+<div class="report-refresh-row" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px"><button class="btn primary" id="refreshReportBtn" type="button">↻ Refresh Data Laporan</button><span class="sub" id="reportServerStatus">Data laporan akan diambil dari server saat tab dibuka.</span></div>
 <div class="report-filter"><label for="reportMonth" style="margin:0;white-space:nowrap">Periode</label><input id="reportMonth" style="max-width:190px" type="month"/></div>
 <div class="report-cards"><div class="report-card"><span>Omzet periode ini</span><b id="reportRevenue">Rp0</b><small id="reportTxCount">0 transaksi</small></div><div class="report-card"><span>Produk terjual</span><b id="reportItems">0</b><small>Jumlah unit</small></div></div>
 <div class="chart-box"><div class="chart-title">Grafik produk terjual</div><div class="chart-sub">Jumlah unit tiap produk pada bulan yang dipilih · transaksi dibatalkan tidak dihitung</div><div id="productChart"></div></div>
@@ -970,7 +971,118 @@ async function fetchServerHistory(){
 }
 
 function renderProducts(){const owner=!!(currentUser&&(currentUser.role==='owner'||currentUser.role==='wife'));$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>';updateProfileButtonLabel(currentUser?.role)}
+
+// Data laporan server disimpan terpisah dari transaksi lokal.
+let serverReportData=null;
+let serverReportLoading=false;
+let serverReportError='';
+let serverReportRequestId=0;
+function reportField(row,names){
+ if(!row||typeof row!=='object')return '';
+ const normalized=new Map(Object.keys(row).map(k=>[String(k).toLowerCase().replace(/[^a-z0-9]/g,''),k]));
+ for(const name of names){const key=normalized.get(String(name).toLowerCase().replace(/[^a-z0-9]/g,''));if(key&&row[key]!==undefined&&row[key]!==null&&String(row[key]).trim()!=='')return row[key];}
+ return '';
+}
+function reportArray(value){
+ if(Array.isArray(value))return value;
+ if(value&&typeof value==='object')for(const key of ['data','rows','items','values'])if(Array.isArray(value[key]))return value[key];
+ return [];
+}
+function reportNumber(value){
+ if(typeof value==='number')return Number.isFinite(value)?value:0;
+ let s=String(value??'').trim().replace(/[^\d,.-]/g,'');
+ if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+ else if(/,\d{1,2}$/.test(s))s=s.replace(',','.');
+ else s=s.replace(/,/g,'');
+ const n=Number(s);return Number.isFinite(n)?n:0;
+}
+function reportDateKey(value){
+ if(value instanceof Date&&!Number.isNaN(value.getTime()))return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0')+'-'+String(value.getDate()).padStart(2,'0');
+ const s=String(value??'').trim();let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+ if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+ m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+ if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+ return '';
+}
+function reportMonthKey(value){
+ const s=String(value??'').trim(),date=reportDateKey(s);if(date)return date.slice(0,7);
+ const m=s.match(/^(\d{4})[-/](\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0');
+ return s.match(/^\d{4}-\d{2}$/)?s:'';
+}
+function reportProductRows(){
+ return reportArray(serverReportData?.productSales).map(row=>{
+  if(Array.isArray(row))return {name:String(row[0]??'Produk'),units:reportNumber(row[1]),revenue:reportNumber(row[2])};
+  return {name:String(reportField(row,['productName','nama_produk','produk','product','name','nama','item'])||'Produk'),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahTerjual','qty','quantity','jumlah','terjual','totalQty','total_units','count'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales']))};
+ }).filter(row=>row.name);
+}
+function reportDailyRows(){
+ return reportArray(serverReportData?.dailyReport).map(row=>{
+  if(Array.isArray(row))return {date:reportDateKey(row[0]),revenue:reportNumber(row[1]),units:reportNumber(row[2]),transactions:reportNumber(row[3])};
+  return {date:reportDateKey(reportField(row,['tanggal','date','businessDate','business_date','hari','day','waktu'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales','pendapatan'])),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahProduk','produkTerjual','items','itemCount','qty','quantity','jumlah_unit','totalItems'])),transactions:reportNumber(reportField(row,['transactions','transactionCount','jumlahTransaksi','transaksi','count']))};
+ }).filter(row=>row.date);
+}
+function reportMonthlyRows(){
+ return reportArray(serverReportData?.monthlyReport).map(row=>{
+  if(Array.isArray(row))return {month:reportMonthKey(row[0]),revenue:reportNumber(row[1]),units:reportNumber(row[2]),transactions:reportNumber(row[3])};
+  return {month:reportMonthKey(reportField(row,['bulan','month','periode','period','tanggal','date','yearMonth','year_month'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales','pendapatan'])),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahProduk','produkTerjual','items','itemCount','qty','quantity','jumlah_unit','totalItems'])),transactions:reportNumber(reportField(row,['transactions','transactionCount','jumlahTransaksi','transaksi','count']))};
+ }).filter(row=>row.month);
+}
+function renderServerReports(){
+ const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
+ const month=monthEl.value,daily=reportDailyRows().filter(row=>row.date.slice(0,7)===month).sort((a,b)=>a.date.localeCompare(b.date));
+ const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10),monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
+ const totalRevenue=daily.reduce((sum,row)=>sum+row.revenue,0),totalUnits=daily.reduce((sum,row)=>sum+row.units,0);
+ const daysWithSales=daily.filter(row=>row.revenue>0||row.units>0).length,transactionCount=daily.reduce((sum,row)=>sum+row.transactions,0);
+ $('reportRevenue').textContent=rupiah(totalRevenue);$('reportTxCount').textContent=transactionCount+' transaksi · server';$('reportItems').textContent=totalUnits.toLocaleString('id-ID');
+ const pmax=Math.max(1,...products.map(row=>row.units));
+ $('productChart').innerHTML=products.length?products.map(row=>'<div class="bar-row"><div class="bar-label" title="'+esc(row.name)+'">'+esc(row.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,row.units/pmax*100)+'%"></div></div><div class="bar-value">'+row.units+' unit</div></div>').join(''):'<div class="empty">Server belum mengembalikan data produk terjual.</div>';
+ const parts=month.split('-').map(Number),daysInMonth=new Date(parts[0],parts[1],0).getDate(),dailyByDate=new Map(daily.map(row=>[row.date,row]));
+ const chartDaily=Array.from({length:daysInMonth},(_,index)=>{const day=index+1,key=month+'-'+String(day).padStart(2,'0'),row=dailyByDate.get(key)||{revenue:0,units:0,transactions:0};return {day,key,revenue:row.revenue,units:row.units,transactions:row.transactions};});
+ const dmax=Math.max(1,...chartDaily.map(row=>row.revenue));
+ $('dailyChart').innerHTML=chartDaily.map(row=>'<div class="month-col" title="'+row.key+': '+rupiah(row.revenue)+' · '+row.units+' unit"><div class="month-bar" style="height:'+Math.max(2,row.revenue/dmax*100)+'%"></div><span class="month-label">'+row.day+'</span></div>').join('');
+ $('dailyLabels').innerHTML='<span style="font-size:10px;color:var(--muted)">Tanggal 1–'+daysInMonth+'</span><span style="font-size:10px;color:var(--green);font-weight:750">Total: '+rupiah(totalRevenue)+'</span>';
+ $('dailySummary').textContent='Hari dengan penjualan: '+daysWithSales+' · Transaksi: '+transactionCount+' · Produk terjual: '+totalUnits+' unit · Sumber: server';
+ const weeks=[];
+ for(let week=1;week<=5;week++){const from=(week-1)*7+1,to=week===5?31:week*7,rows=daily.filter(row=>{const day=Number(row.date.slice(8,10));return day>=from&&day<=to;});weeks.push({label:'Pekan '+week+' · Tgl '+from+'–'+to,revenue:rows.reduce((sum,row)=>sum+row.revenue,0),units:rows.reduce((sum,row)=>sum+row.units,0),transactions:rows.reduce((sum,row)=>sum+row.transactions,0)});}
+ const wmax=Math.max(1,...weeks.map(row=>row.revenue));
+ $('weeklyChart').innerHTML=weeks.map(row=>'<div class="bar-row"><div class="bar-label">'+row.label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,row.revenue/wmax*100)+'%"></div></div><div class="bar-value">'+rupiah(row.revenue)+'</div></div><div class="sub" style="margin:-6px 0 10px 0">'+row.transactions+' transaksi · '+row.units+' unit</div>').join('');
+ const mmax=Math.max(1,...monthly.map(row=>row.revenue));
+ $('monthlyChart').innerHTML=monthly.length?monthly.map(row=>'<div class="month-col" title="'+row.month+': '+rupiah(row.revenue)+' · '+row.units+' unit"><div class="month-bar" style="height:'+Math.max(3,row.revenue/mmax*100)+'%"></div><span class="month-label">'+esc(row.month.slice(5))+'</span></div>').join(''):'<div class="empty">Server belum mengembalikan rekap bulanan.</div>';
+ $('monthlyLabels').innerHTML=monthly.map(row=>'<span style="font-size:9px;color:var(--muted);width:16%;text-align:center">'+rupiah(row.revenue)+'</span>').join('');
+}
+async function fetchServerReport(){
+ if(serverReportLoading)return false;
+ loadAppsScriptSettings();
+ if(!navigator.onLine){serverReportError='Perangkat sedang offline.';updateReportServerStatus();return false}
+ if(!appScriptConfigured()){serverReportError='URL Apps Script atau token API belum dikonfigurasi.';updateReportServerStatus();return false}
+ const requestId=++serverReportRequestId;serverReportLoading=true;serverReportError='';updateReportServerStatus();
+ const button=$('refreshReportBtn');if(button)button.disabled=true;
+ const status=$('reportServerStatus');if(status)status.textContent='Mengambil laporan dari server…';
+ try{
+  const controller=typeof AbortController!=='undefined'?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+  let response,raw;
+  try{const url=new URL(APPS_SCRIPT_URL);url.searchParams.set('action','getReport');url.searchParams.set('token',APPS_SCRIPT_TOKEN);response=await fetch(url.toString(),{method:'GET',signal:controller?controller.signal:undefined,cache:'no-store'});raw=await response.text();}
+  finally{if(timer)clearTimeout(timer)}
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan JSON laporan.');
+  let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getReport bukan JSON.')}
+  if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error'))throw new Error(String(result.error||result.message||'Server menolak permintaan laporan.'));
+  const payload=result?.data&&typeof result.data==='object'?result.data:result;
+  if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
+  if(requestId!==serverReportRequestId)return false;
+  serverReportData=payload;serverReportError='';renderServerReports();updateReportServerStatus();return true;
+ }catch(error){
+  if(requestId===serverReportRequestId){serverReportError=error?.name==='AbortError'?'Waktu mengambil laporan server habis.':String(error?.message||error);console.error('Gagal mengambil laporan server:',error);updateReportServerStatus();}
+  return false;
+ }finally{if(requestId===serverReportRequestId){serverReportLoading=false;if(button)button.disabled=false;updateReportServerStatus();}}
+}
+function updateReportServerStatus(){
+ const status=$('reportServerStatus');if(!status)return;
+ status.textContent=serverReportLoading?'Mengambil laporan dari server…':serverReportError?'Gagal memuat laporan: '+serverReportError:serverReportData?'Data laporan tersinkron dari server.':'Laporan server belum dimuat.';
+}
+
 function renderReports(){
+ if(serverReportData){renderServerReports();return;}
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
  const month=monthEl.value;const tx=data.transactions.filter(t=>(t.date||'').slice(0,7)===month&&t.status!=='cancelled');
  $('reportRevenue').textContent=rupiah(total(tx));$('reportTxCount').textContent=tx.length+' transaksi';$('reportItems').textContent=itemCount(tx).toLocaleString('id-ID');
@@ -1025,7 +1137,7 @@ async function cancelTx(id){
 
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts();if(id==='reportsView')renderReports()}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchServerReport();}}
 document.addEventListener('click',e=>{
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
@@ -1042,7 +1154,7 @@ $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
 $('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&!serverHistoryLoaded)void fetchServerHistory()}));
 $('refreshServerHistoryBtn')?.addEventListener('click',()=>{void fetchServerHistory()});
- $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);
+ $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);$('refreshReportBtn')?.addEventListener('click',()=>{void fetchServerReport()});
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
@@ -1667,7 +1779,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v89-fix-get-server-history').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v89-sync-report-server').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
