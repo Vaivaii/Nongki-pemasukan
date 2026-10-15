@@ -1007,9 +1007,9 @@ function reportDateKey(value){
  if(value instanceof Date&&!Number.isNaN(value.getTime()))return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0')+'-'+String(value.getDate()).padStart(2,'0');
  const s=String(value??'').trim();
  // ISO date atau timestamp ISO; ambil tanggal kalender yang tertulis tanpa konversi zona waktu.
- let m=s.match(/^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:$|[T\\s])/);
+ let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:$|[T\s])/);
  if(m){const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]);if(mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate())return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');return '';}
- m=s.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})$/);
+ m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
  if(m){const d=Number(m[1]),mo=Number(m[2]),y=Number(m[3]);if(mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate())return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
  return '';
 }
@@ -1026,13 +1026,13 @@ function reportProductRows(){
 }
 function reportDailyRows(){
  return reportArray(serverReportData?.dailyReport).map(row=>{
-  if(Array.isArray(row))return {date:reportDateKey(row[0]),revenue:reportNumber(row[1]),units:reportNumber(row[2]),transactions:reportNumber(row[3])};
+  if(Array.isArray(row))return {date:reportDateKey(row[0]),units:reportNumber(row[1]),revenue:reportNumber(row[2]),transactions:reportNumber(row[3])};
   return {date:reportDateKey(reportField(row,['tanggal','date','businessDate','business_date','hari','day','waktu'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales','pendapatan'])),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahProduk','produkTerjual','items','itemCount','qty','quantity','jumlah_unit','totalItems'])),transactions:reportNumber(reportField(row,['transactions','transactionCount','jumlahTransaksi','transaksi','count']))};
  }).filter(row=>row.date);
 }
 function reportMonthlyRows(){
  return reportArray(serverReportData?.monthlyReport).map(row=>{
-  if(Array.isArray(row))return {month:reportMonthKey(row[0]),revenue:reportNumber(row[1]),units:reportNumber(row[2]),transactions:reportNumber(row[3])};
+  if(Array.isArray(row)){const month=reportMonthKey(row[0])||reportMonthKey(row[1]);return {month,revenue:reportNumber(row[3]),units:reportNumber(row[2]),transactions:reportNumber(row[4])};}
   return {month:reportMonthKey(reportField(row,['bulan','month','periode','period','tanggal','date','yearMonth','year_month'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales','pendapatan'])),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahProduk','produkTerjual','items','itemCount','qty','quantity','jumlah_unit','totalItems'])),transactions:reportNumber(reportField(row,['transactions','transactionCount','jumlahTransaksi','transaksi','count']))};
  }).filter(row=>row.month);
 }
@@ -1865,7 +1865,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v94-indexeddb-report-fallback').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v95-fix-report-columns-dates').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
