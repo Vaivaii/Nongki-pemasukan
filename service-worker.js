@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'nongki-pwa-v90-realtime-autosync-report';
+const CACHE_NAME = 'nongki-pwa-v91-fix-total-unit-omzet';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
