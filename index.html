@@ -456,76 +456,90 @@ body.staff-mode .owner-header-meta{display:contents!important}
 .settings-accordion>summary::before,
 .settings-accordion>summary::after{content:none!important;display:none!important}
 
-/* V84: compact split header for Owner/Istri; keep the logo centered and metadata aligned with menu cards. */
+/* V85: compact split header — logo and income left, date right for Owner/Istri. */
 body:not(.staff-mode) header{
-  padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto!important;
+  column-gap:8px!important;
+  row-gap:0!important;
+  align-items:start!important;
+  padding:calc(5px + env(safe-area-inset-top,0px)) 12px 8px!important;
 }
 body:not(.staff-mode) header>.brand{
+  grid-column:1!important;
+  grid-row:1!important;
   display:flex!important;
   width:100%!important;
-  justify-content:center!important;
-  align-items:center!important;
-  margin:0 auto!important;
+  justify-content:flex-start!important;
+  align-items:flex-start!important;
+  margin:0!important;
 }
 body:not(.staff-mode) header>.brand .brand-logo-card{
   width:100%!important;
   max-width:100%!important;
-  padding:2px 0 5px!important;
-  margin:0 auto!important;
-  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  justify-content:flex-start!important;
+  align-items:flex-start!important;
 }
 body:not(.staff-mode) header>.brand .brand-logo-card img{
+  display:block!important;
   width:100%!important;
-  max-height:58px!important;
+  max-height:55px!important;
   object-fit:contain!important;
-  object-position:center!important;
-  margin:0 auto!important;
+  object-position:left top!important;
+  margin:0!important;
 }
-body:not(.staff-mode) header>.owner-header-meta{
+body:not(.staff-mode) header>.owner-header-meta{display:contents!important}
+body:not(.staff-mode) header>.owner-header-meta #todayLabel{
+  grid-column:2!important;
+  grid-row:1!important;
+  justify-self:end!important;
+  align-self:start!important;
+  display:block!important;
+  width:auto!important;
+  max-width:100%!important;
+  margin:5px 0 0!important;
+  padding:0!important;
+  text-align:right!important;
+  white-space:nowrap!important;
+}
+body:not(.staff-mode) header>.owner-header-meta .staff-income-summary{
+  grid-column:1!important;
+  grid-row:2!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:flex-start!important;
-  width:100%!important;
+  justify-content:flex-start!important;
+  box-sizing:border-box!important;
   margin:0!important;
-  padding:0!important;
-}
-body:not(.staff-mode) header>.owner-header-meta #todayLabel{
-  width:100%!important;
-  margin:3px 0 0!important;
-  padding:0!important;
-  text-align:left!important;
-  line-height:1.2!important;
-}
-body:not(.staff-mode) header>.owner-header-meta .staff-income-summary{
-  width:100%!important;
-  max-width:100%!important;
-  margin:0!important;
-  padding:3px 0 0!important;
-  align-items:flex-start!important;
+  padding:1px 0 0!important;
   text-align:left!important;
 }
 body:not(.staff-mode) header>.owner-header-meta .total-label,
 body:not(.staff-mode) header>.owner-header-meta .total{
+  display:block!important;
   width:100%!important;
   margin-left:0!important;
   padding-left:0!important;
   text-align:left!important;
 }
-body:not(.staff-mode) header>.owner-header-meta .total{
-  margin-top:1px!important;
-  line-height:1.12!important;
-}
+body:not(.staff-mode) header>.owner-header-meta .total{margin-top:2px!important}
 body:not(.staff-mode) header>.stats{
-  margin-top:9px!important;
+  grid-column:1 / -1!important;
+  grid-row:3!important;
+  width:100%!important;
+  min-width:0!important;
+  margin-top:7px!important;
 }
 @media(max-width:380px){
-  body:not(.staff-mode) header{
-    padding-left:9px!important;
-    padding-right:9px!important;
-  }
-  body:not(.staff-mode) header>.brand .brand-logo-card img{
-    max-height:54px!important;
-  }
+  body:not(.staff-mode) header{column-gap:6px!important;padding-left:9px!important;padding-right:9px!important}
+  body:not(.staff-mode) header>.brand .brand-logo-card img{max-height:52px!important}
+  body:not(.staff-mode) header>.owner-header-meta #todayLabel{font-size:12px!important}
 }
 
 </style>
@@ -1473,7 +1487,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v85-compact-split-header-final').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
