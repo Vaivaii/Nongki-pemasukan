@@ -580,8 +580,8 @@ body:not(.staff-mode) header>.stats{
 <div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
-<button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner</b><small>Kelola seluruh aplikasi</small></span></button>
-<button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Istri</b><small>Menu, riwayat, dan laporan</small></span></button>
+<button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
+<button class="profile-option" data-profile-choice="wife" role="menuitem" type="button"><span class="profile-emoji">⭐</span><span><b>Owner (Istri)</b><small>Menu, riwayat, dan laporan</small></span></button>
 <button class="profile-option" data-profile-choice="staff" role="menuitem" type="button"><span class="profile-emoji">🧢</span><span><b>Pegawai</b><small>Catat penjualan</small></span></button></div>
 <button class="hidden" id="roleSwitchBtn" type="button" aria-hidden="true" tabindex="-1">Ganti profil</button></div><button class="hidden" id="manageBtn" type="button" aria-hidden="true" tabindex="-1">Atur produk</button></div>
 <div class="section-head"><h2>Transaksi terbaru</h2><button class="btn" id="seeHistory">Lihat semua</button></div>
@@ -1265,8 +1265,8 @@ function download(content,name,type){let blob=new Blob([content],{type}),url=URL
 // Profil lokal 3 peran. Ini pembatasan UI, bukan autentikasi aman terhadap pengguna yang menguasai browser.
 const SESSION_KEY='nongki_profile_session_v1';
 const PROFILE_LIST=[
- {id:'owner',name:'Owner',role:'owner'},
- {id:'wife',name:'Istri',role:'wife'},
+ {id:'owner',name:'Owner (Suami)',role:'owner'},
+ {id:'wife',name:'Owner (Istri)',role:'wife'},
  {id:'staff',name:'Pegawai',role:'staff'}
 ];
 const PROFILE_PIN_STORAGE_KEY='nongki_profile_pins_v1';
@@ -1281,7 +1281,7 @@ const ACTIVE_ROLE_KEY='nongki_active_role';
   try{
    if(localStorage.getItem(LOGGED_IN_KEY)!=='true')return null;
    const savedRole=localStorage.getItem(ACTIVE_ROLE_KEY);
-   const aliases={Owner:'owner',Istri:'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
+   const aliases={Owner:'owner','Owner (Suami)':'owner',Istri:'wife',Kasir:'wife','Owner (Istri)':'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
    const profileId=aliases[savedRole];
    return PROFILE_LIST.find(p=>p.id===profileId)||null;
   }catch(error){console.warn('Sesi profil tersimpan tidak dapat dibaca.',error);return null;}
@@ -1313,7 +1313,7 @@ function ensureProfilePicker(){
  const old=$('loginUserId');
  if(old&&old.tagName!=='SELECT'){
   const select=document.createElement('select');
-  select.id='loginUserId';select.setAttribute('aria-label','Pilih profil');select.innerHTML='<option value="owner">Owner</option><option value="wife">Istri</option><option value="staff">Pegawai</option>';
+  select.id='loginUserId';select.setAttribute('aria-label','Pilih profil');select.innerHTML='<option value="owner">Owner (Suami)</option><option value="wife">Owner (Istri)</option><option value="staff">Pegawai</option>';
   old.replaceWith(select);
  }
  const label=document.querySelector('label[for="loginUserId"]');
@@ -1327,14 +1327,14 @@ function ensureProfilePicker(){
  if(note)note.textContent='Sesi profil disimpan di perangkat ini. Profil Pegawai tidak memakai PIN.';
 }
 function roleName(profile=currentUser){
- return profile?.role==='owner'?'Owner':profile?.role==='wife'?'Istri':'Pegawai';
+ return profile?.role==='owner'?'Owner (Suami)':profile?.role==='wife'?'Owner (Istri)':'Pegawai';
 }
 function renderUsers(){}
 function updateProfileButtonLabel(role){
  const raw=String(role||currentUser?.role||localStorage.getItem(ACTIVE_ROLE_KEY)||'staff');
- const aliases={Owner:'owner',Istri:'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
+ const aliases={Owner:'owner','Owner (Suami)':'owner',Istri:'wife',Kasir:'wife','Owner (Istri)':'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
  const activeRole=aliases[raw]||'staff';
- const labels={owner:'Owner',wife:'Istri',staff:'Pegawai'};
+ const labels={owner:'Owner (Suami)',wife:'Owner (Istri)',staff:'Pegawai'};
  const switchBtn=document.querySelector('.btn-switch-profile')||$('profileAvatarBtn');
  if(switchBtn)switchBtn.textContent=labels[activeRole];
 }
@@ -1690,7 +1690,9 @@ function outboxToPayload(item){
  const amount=Number(row.total??source.total??source.nominal??0)||0;
  const stamp=event==='cancelTransaction'?(source.canceledAt||item.createdAt):(row.createdAt||item.createdAt);
  const date=String(row.businessDate||source.businessDate||source.date||localTimestamp(stamp).slice(0,10));
- const user=String(row.userId||source.canceledBy||source.userId||'Kasir / Admin');
+ const rawUser=String(row.userId||source.canceledBy||source.userId||'Kasir / Admin');
+ const userLabels={owner:'Owner (Suami)',wife:'Owner (Istri)',staff:'Pegawai',OWNER:'Owner (Suami)',WIFE:'Owner (Istri)',STAFF:'Pegawai'};
+ const user=userLabels[rawUser]||rawUser;
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
  const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
  const transaction={
@@ -1702,6 +1704,7 @@ function outboxToPayload(item){
   jumlah_item:quantity,
   nominal:amount,
   pengguna:user,
+  nama_pengguna:user,
   perangkat:device,
   status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
   tanggal:date,
@@ -1911,7 +1914,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v98-report-dedupe').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v102-update-profile-names').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
