@@ -1052,8 +1052,17 @@ function renderTodaySummary(){
 function localReportRows(month,onlyPending=false){
  const rows=new Map();
  const transactions=[...(Array.isArray(data?.transactions)?data.transactions:[]),...(Array.isArray(localReportTransactions)?localReportTransactions:[])];
+ const seenTransactionIds=new Set();
  for(const tx of transactions){
-  if(!tx||tx.status==='cancelled'||tx.status==='canceled')continue;
+  if(!tx)continue;
+  // Data transaksi dapat muncul di state lokal dan hasil pemulihan IndexedDB sekaligus.
+  // Hitung satu kali berdasarkan ID agar omzet laporan tidak terduplikasi.
+  const transactionId=String(tx.id||tx.transactionId||tx.transaction_id||tx.localId||'').trim();
+  if(transactionId){
+   if(seenTransactionIds.has(transactionId))continue;
+   seenTransactionIds.add(transactionId);
+  }
+  if(tx.status==='cancelled'||tx.status==='canceled')continue;
   if(onlyPending&&tx.syncStatus!=='pending'&&tx.syncStatus!=='failed')continue;
   const date=reportDateKey(tx.date||tx.businessDate||tx.createdAt||tx.timestamp);
   if(!date||date.slice(0,7)!==month)continue;
