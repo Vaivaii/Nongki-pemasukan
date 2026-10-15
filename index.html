@@ -840,8 +840,8 @@ function normalizeServerHistory(result){
    time=rawTime.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
    if(!date)date=rawTime.getFullYear()+'-'+String(rawTime.getMonth()+1).padStart(2,'0')+'-'+String(rawTime.getDate()).padStart(2,'0');
   }
-  const isoTime=time.match(/T(\d{2}:\d{2}(?::\d{2})?)/);
-  if(isoTime)time=isoTime[1];
+  const timeMatch=time.match(/[ T](\d{2}:\d{2}(?::\d{2})?)/);
+  if(timeMatch)time=timeMatch[1];
   const dateMatch=String(rawTime||'').match(/^(\d{4}-\d{2}-\d{2})/);
   if(!date&&dateMatch)date=dateMatch[1];
   if(!time)time='Jam tidak tersedia';
