@@ -1078,7 +1078,7 @@ function renderServerReports(){
  $('weeklyChart').innerHTML=weeks.map(row=>'<div class="bar-row"><div class="bar-label">'+row.label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,row.revenue/wmax*100)+'%"></div></div><div class="bar-value">'+rupiah(row.revenue)+'</div></div><div class="sub" style="margin:-6px 0 10px 0">'+row.transactions+' transaksi · '+row.units+' unit</div>').join('');
  const mmax=Math.max(1,...monthly.map(row=>row.revenue));
  $('monthlyChart').innerHTML=monthly.length?monthly.map(row=>'<div class="month-col" title="'+row.month+': '+rupiah(row.revenue)+' · '+row.units+' unit"><div class="month-bar" style="height:'+Math.max(3,row.revenue/mmax*100)+'%"></div><span class="month-label">'+esc(row.month.slice(5))+'</span></div>').join(''):'<div class="empty">Server belum mengembalikan rekap bulanan.</div>';
- $('monthlyLabels').innerHTML=monthly.map(row=>'<span style="font-size:9px;color:var(--muted);width:16%;text-align:center">'+rupiah(row.revenue)+'</span>').join('');
+ $('monthlyLabels').innerHTML=monthly.map(row=>'<span style="font-size:9px;color:var(--muted);width:16%;text-align:center;line-height:1.35">'+rupiah(row.revenue)+'<br>'+row.units+' unit</span>').join('');
 }
 async function fetchServerReport(){
  if(serverReportLoading)return false;
