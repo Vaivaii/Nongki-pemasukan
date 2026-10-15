@@ -455,6 +455,79 @@ body.staff-mode .owner-header-meta{display:contents!important}
 .settings-accordion>summary::-webkit-details-marker{display:list-item!important}
 .settings-accordion>summary::before,
 .settings-accordion>summary::after{content:none!important;display:none!important}
+
+/* V84: compact split header for Owner/Istri; keep the logo centered and metadata aligned with menu cards. */
+body:not(.staff-mode) header{
+  padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px!important;
+}
+body:not(.staff-mode) header>.brand{
+  display:flex!important;
+  width:100%!important;
+  justify-content:center!important;
+  align-items:center!important;
+  margin:0 auto!important;
+}
+body:not(.staff-mode) header>.brand .brand-logo-card{
+  width:100%!important;
+  max-width:100%!important;
+  padding:2px 0 5px!important;
+  margin:0 auto!important;
+  justify-content:center!important;
+}
+body:not(.staff-mode) header>.brand .brand-logo-card img{
+  width:100%!important;
+  max-height:58px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0 auto!important;
+}
+body:not(.staff-mode) header>.owner-header-meta{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+}
+body:not(.staff-mode) header>.owner-header-meta #todayLabel{
+  width:100%!important;
+  margin:3px 0 0!important;
+  padding:0!important;
+  text-align:left!important;
+  line-height:1.2!important;
+}
+body:not(.staff-mode) header>.owner-header-meta .staff-income-summary{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:3px 0 0!important;
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+body:not(.staff-mode) header>.owner-header-meta .total-label,
+body:not(.staff-mode) header>.owner-header-meta .total{
+  width:100%!important;
+  margin-left:0!important;
+  padding-left:0!important;
+  text-align:left!important;
+}
+body:not(.staff-mode) header>.owner-header-meta .total{
+  margin-top:1px!important;
+  line-height:1.12!important;
+}
+body:not(.staff-mode) header>.stats{
+  margin-top:9px!important;
+}
+@media(max-width:380px){
+  body:not(.staff-mode) header{
+    padding-left:9px!important;
+    padding-right:9px!important;
+  }
+  body:not(.staff-mode) header>.brand .brand-logo-card img{
+    max-height:54px!important;
+  }
+}
+
 </style>
 </head>
 <body>
