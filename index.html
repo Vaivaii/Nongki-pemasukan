@@ -991,21 +991,25 @@ function reportArray(value){
  if(value&&typeof value==='object')for(const key of ['data','rows','items','values'])if(Array.isArray(value[key]))return value[key];
  return [];
 }
-function parseNumeric(value){
- if(typeof value==='number')return Number.isFinite(value)?value:0;
- // Omzet server adalah nominal Rupiah: buang Rp, titik, koma, spasi,
- // dan seluruh karakter non-digit agar "Rp 1.234.567" menjadi 1234567.
- const digits=String(value??'').replace(/\D/g,'');
+function parseNominal(val){
+ if(val===null||val===undefined||val==='')return 0;
+ if(typeof val==='number')return Number.isFinite(val)?Math.max(0,Math.round(val)):0;
+ // Format Rupiah seperti "Rp 40.000", "40,000", dan string angka biasa.
+ const digits=String(val).trim().replace(/[^0-9]/g,'');
+ if(!digits)return 0;
  const number=Number(digits);
  return Number.isFinite(number)?number:0;
 }
-function reportNumber(value){return parseNumeric(value);}
+function parseNumeric(value){return parseNominal(value);}
+function reportNumber(value){return parseNominal(value);}
 function reportDateKey(value){
  if(value instanceof Date&&!Number.isNaN(value.getTime()))return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0')+'-'+String(value.getDate()).padStart(2,'0');
- const s=String(value??'').trim();let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
- if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
- m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
- if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+ const s=String(value??'').trim();
+ // ISO date atau timestamp ISO; ambil tanggal kalender yang tertulis tanpa konversi zona waktu.
+ let m=s.match(/^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:$|[T\\s])/);
+ if(m){const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]);if(mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate())return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');return '';}
+ m=s.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})$/);
+ if(m){const d=Number(m[1]),mo=Number(m[2]),y=Number(m[3]);if(mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate())return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
  return '';
 }
 function reportMonthKey(value){
@@ -1042,13 +1046,48 @@ function renderTodaySummary(){
  const status=$('reportItemsStatus');
  if(status)status.textContent=summary&&(successRaw!==''||canceledRaw!=='')?'('+(successRaw!==''?reportNumber(successRaw):0).toLocaleString('id-ID')+' Sukses, '+(canceledRaw!==''?reportNumber(canceledRaw):0).toLocaleString('id-ID')+' Dibatalkan)':'Rincian status hari ini belum tersedia dari server';
 }
+function localReportRows(month,onlyPending=false){
+ const rows=new Map();
+ const transactions=Array.isArray(data?.transactions)?data.transactions:[];
+ for(const tx of transactions){
+  if(!tx||tx.status==='cancelled'||tx.status==='canceled')continue;
+  if(onlyPending&&tx.syncStatus!=='pending'&&tx.syncStatus!=='failed')continue;
+  const date=reportDateKey(tx.date||tx.businessDate||tx.createdAt||tx.timestamp);
+  if(!date||date.slice(0,7)!==month)continue;
+  const revenue=parseNominal(tx.total??tx.nominal??tx.amount);
+  if(!rows.has(date))rows.set(date,{date,revenue:0,units:0,transactions:0});
+  const row=rows.get(date);row.revenue+=revenue;row.units+=Math.max(0,Number(tx.qty)||1);row.transactions+=1;
+ }
+ return [...rows.values()];
+}
+function hybridReportRows(month){
+ const serverRows=reportDailyRows().filter(row=>row.date&&row.date.slice(0,7)===month);
+ const serverTotal=serverRows.reduce((sum,row)=>sum+parseNominal(row.revenue),0);
+ // Jika tanggal server gagal dinormalisasi, periode tidak punya baris server, atau omzet server nol,
+ // gunakan semua transaksi lokal agar laporan tidak berubah menjadi Rp0 setelah refresh.
+ if(!serverRows.length||serverTotal<=0){
+  return {rows:localReportRows(month,false),source:'lokal (fallback)'};
+ }
+ // Server valid: gabungkan hanya transaksi lokal yang masih menunggu sinkronisasi/gagal.
+ // Kelompokkan per tanggal supaya grafik, ringkasan, dan rekap mingguan konsisten.
+ const merged=new Map();
+ for(const row of serverRows){
+  if(!merged.has(row.date))merged.set(row.date,{date:row.date,revenue:0,units:0,transactions:0});
+  const target=merged.get(row.date);
+  target.revenue+=parseNominal(row.revenue);target.units+=row.units;target.transactions+=row.transactions;
+ }
+ for(const row of localReportRows(month,true)){
+  if(!merged.has(row.date))merged.set(row.date,{date:row.date,revenue:0,units:0,transactions:0});
+  const target=merged.get(row.date);
+  target.revenue+=row.revenue;target.units+=row.units;target.transactions+=row.transactions;
+ }
+ return {rows:[...merged.values()],source:'server + lokal belum tersinkron'};
+}
 function renderServerReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
- const month=monthEl.value,allDaily=reportDailyRows().sort((a,b)=>a.date.localeCompare(b.date));
- // Seluruh kartu dan rekap harian/mingguan mengikuti bulan yang dipilih di dropdown Periode.
- const daily=allDaily.filter(row=>row.date.slice(0,7)===month);
+ const month=monthEl.value,hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
  const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10),monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
- const totalOmzet=daily.reduce((sum,row)=>sum+parseNumeric(row.revenue),0);
+ const totalOmzet=daily.reduce((sum,row)=>sum+parseNominal(row.revenue),0);
  const totalUnits=daily.reduce((sum,row)=>sum+row.units,0);
  const daysWithSales=daily.filter(row=>row.revenue>0||row.units>0).length,transactionCount=daily.reduce((sum,row)=>sum+row.transactions,0);
  const omzetElement=$('totalOmzetPeriod')||$('reportRevenue');
@@ -1062,7 +1101,7 @@ function renderServerReports(){
  const dmax=Math.max(1,...chartDaily.map(row=>row.revenue));
  $('dailyChart').innerHTML=chartDaily.map(row=>'<div class="month-col" title="'+row.key+': '+rupiah(row.revenue)+' · '+row.units+' unit"><div class="month-bar" style="height:'+Math.max(2,row.revenue/dmax*100)+'%"></div><span class="month-label">'+row.day+'</span></div>').join('');
  $('dailyLabels').innerHTML='<span style="font-size:10px;color:var(--muted)">Tanggal 1–'+daysInMonth+'</span><span style="font-size:10px;color:var(--green);font-weight:750">Total: '+rupiah(totalOmzet)+'</span>';
- $('dailySummary').textContent='Hari dengan penjualan: '+daysWithSales+' · Transaksi: '+transactionCount+' · Produk terjual: '+totalUnits+' unit · Sumber: server';
+ $('dailySummary').textContent='Hari dengan penjualan: '+daysWithSales+' · Transaksi: '+transactionCount+' · Produk terjual: '+totalUnits+' unit · Sumber: '+hybrid.source;
  const weeks=[];
  for(let week=1;week<=5;week++){const from=(week-1)*7+1,to=week===5?31:week*7,rows=daily.filter(row=>{const day=Number(row.date.slice(8,10));return day>=from&&day<=to;});weeks.push({label:'Pekan '+week+' · Tgl '+from+'–'+to,revenue:rows.reduce((sum,row)=>sum+row.revenue,0),units:rows.reduce((sum,row)=>sum+row.units,0),transactions:rows.reduce((sum,row)=>sum+row.transactions,0)});}
  const wmax=Math.max(1,...weeks.map(row=>row.revenue));
@@ -1805,7 +1844,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v92-fix-omzet-parser').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v93-hybrid-local-server').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
