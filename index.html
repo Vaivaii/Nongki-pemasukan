@@ -648,7 +648,7 @@ body:not(.staff-mode) header>.stats{
 <section class="view" id="reportsView">
 <div class="report-refresh-row" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px"><button class="btn primary" id="refreshReportBtn" type="button">↻ Refresh Data Laporan</button><span class="sub" id="reportServerStatus">Data laporan akan diambil dari server saat tab dibuka.</span></div>
 <div class="report-filter"><label for="reportMonth" style="margin:0;white-space:nowrap">Periode</label><input id="reportMonth" style="max-width:190px" type="month"/></div>
-<div class="report-cards"><div class="report-card"><span>Omzet periode ini</span><b id="reportRevenue">Rp0</b><small id="reportTxCount">0 transaksi</small></div><div class="report-card"><span>Produk terjual</span><b id="reportItems">0</b><small>Jumlah unit</small></div></div>
+<div class="report-cards"><div class="report-card"><span>Omzet periode ini</span><b id="reportRevenue">Rp0</b><small id="reportTxCount">0 transaksi</small></div><div class="report-card"><span>Produk terjual hari ini</span><b id="reportItems">0 unit</b><small id="reportItemsStatus">Rincian status menunggu data server</small></div></div>
 <div class="chart-box"><div class="chart-title">Grafik produk terjual</div><div class="chart-sub">Jumlah unit tiap produk pada bulan yang dipilih · transaksi dibatalkan tidak dihitung</div><div id="productChart"></div></div>
 <div class="chart-box"><div class="chart-title">Rekap harian</div><div class="chart-sub">Omzet bersih per tanggal pada bulan yang dipilih</div><div class="month-bars" id="dailyChart"></div><div id="dailyLabels" style="display:flex;justify-content:space-between;gap:2px;margin-top:7px;flex-wrap:wrap"></div><div class="note" id="dailySummary"></div></div>
 <div class="chart-box"><div class="chart-title">Rekap mingguan</div><div class="chart-sub">Omzet bersih per pekan dalam bulan yang dipilih</div><div id="weeklyChart"></div></div>
@@ -977,6 +977,7 @@ let serverReportData=null;
 let serverReportLoading=false;
 let serverReportError='';
 let serverReportRequestId=0;
+let serverReportRefreshPending=false;
 function reportField(row,names){
  if(!row||typeof row!=='object')return '';
  const normalized=new Map(Object.keys(row).map(k=>[String(k).toLowerCase().replace(/[^a-z0-9]/g,''),k]));
@@ -1027,13 +1028,24 @@ function reportMonthlyRows(){
   return {month:reportMonthKey(reportField(row,['bulan','month','periode','period','tanggal','date','yearMonth','year_month'])),revenue:reportNumber(reportField(row,['revenue','omzet','totalSales','totalPenjualan','nominal','total','sales','pendapatan'])),units:reportNumber(reportField(row,['unitsSold','unitTerjual','jumlahProduk','produkTerjual','items','itemCount','qty','quantity','jumlah_unit','totalItems'])),transactions:reportNumber(reportField(row,['transactions','transactionCount','jumlahTransaksi','transaksi','count']))};
  }).filter(row=>row.month);
 }
+function renderTodaySummary(){
+ const summary=serverReportData&&serverReportData.summaryHariIni&&typeof serverReportData.summaryHariIni==='object'?serverReportData.summaryHariIni:null;
+ const unitsRaw=summary?reportField(summary,['totalUnit','totalUnits','unitTerjual','produkTerjual','totalProdukTerjual','jumlahProduk','unitsSold','totalItems','jumlah_unit','qty','total']):'';
+ const successRaw=summary?reportField(summary,['sukses','success','berhasil','unitSukses','unitsSukses','jumlahSukses','transaksiSukses','successful']):'';
+ const canceledRaw=summary?reportField(summary,['dibatalkan','batal','cancelled','canceled','unitDibatalkan','unitsCancelled','jumlahDibatalkan','transaksiDibatalkan']):'';
+ const todayRow=reportDailyRows().find(row=>row.date===today());
+ const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow?todayRow.units:0);
+ $('reportItems').textContent=units.toLocaleString('id-ID')+' unit';
+ const status=$('reportItemsStatus');
+ if(status)status.textContent=summary&&(successRaw!==''||canceledRaw!=='')?'('+(successRaw!==''?reportNumber(successRaw):0).toLocaleString('id-ID')+' Sukses, '+(canceledRaw!==''?reportNumber(canceledRaw):0).toLocaleString('id-ID')+' Dibatalkan)':'Rincian status hari ini belum tersedia dari server';
+}
 function renderServerReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
  const month=monthEl.value,daily=reportDailyRows().filter(row=>row.date.slice(0,7)===month).sort((a,b)=>a.date.localeCompare(b.date));
  const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10),monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
  const totalRevenue=daily.reduce((sum,row)=>sum+row.revenue,0),totalUnits=daily.reduce((sum,row)=>sum+row.units,0);
  const daysWithSales=daily.filter(row=>row.revenue>0||row.units>0).length,transactionCount=daily.reduce((sum,row)=>sum+row.transactions,0);
- $('reportRevenue').textContent=rupiah(totalRevenue);$('reportTxCount').textContent=transactionCount+' transaksi · server';$('reportItems').textContent=totalUnits.toLocaleString('id-ID');
+ $('reportRevenue').textContent=rupiah(totalRevenue);$('reportTxCount').textContent=transactionCount+' transaksi · server';renderTodaySummary();
  const pmax=Math.max(1,...products.map(row=>row.units));
  $('productChart').innerHTML=products.length?products.map(row=>'<div class="bar-row"><div class="bar-label" title="'+esc(row.name)+'">'+esc(row.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,row.units/pmax*100)+'%"></div></div><div class="bar-value">'+row.units+' unit</div></div>').join(''):'<div class="empty">Server belum mengembalikan data produk terjual.</div>';
  const parts=month.split('-').map(Number),daysInMonth=new Date(parts[0],parts[1],0).getDate(),dailyByDate=new Map(daily.map(row=>[row.date,row]));
@@ -1070,11 +1082,15 @@ async function fetchServerReport(){
   const payload=result?.data&&typeof result.data==='object'?result.data:result;
   if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
   if(requestId!==serverReportRequestId)return false;
-  serverReportData=payload;serverReportError='';renderServerReports();updateReportServerStatus();return true;
+  serverReportData={...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};serverReportError='';renderServerReports();updateReportServerStatus();return true;
  }catch(error){
   if(requestId===serverReportRequestId){serverReportError=error?.name==='AbortError'?'Waktu mengambil laporan server habis.':String(error?.message||error);console.error('Gagal mengambil laporan server:',error);updateReportServerStatus();}
   return false;
- }finally{if(requestId===serverReportRequestId){serverReportLoading=false;if(button)button.disabled=false;updateReportServerStatus();}}
+ }finally{if(requestId===serverReportRequestId){serverReportLoading=false;if(button)button.disabled=false;updateReportServerStatus();if(serverReportRefreshPending){serverReportRefreshPending=false;setTimeout(()=>void fetchServerReport(),150);}}}
+}
+async function fetchReport(){
+ if(serverReportLoading){serverReportRefreshPending=true;return false;}
+ return fetchServerReport();
 }
 function updateReportServerStatus(){
  const status=$('reportServerStatus');if(!status)return;
@@ -1708,6 +1724,7 @@ async function syncPending(){
    // Refresh cloud total only after the server confirms queued events.
    // This reads Income Log; it does not create or resend a transaction.
    if(sent>0&&failed===0)await fetchGlobalTotal();
+   if(sent>0){void fetchReport();void fetchServerHistory();}
    await refreshGlobalCardStatus();
    await refreshStaffSyncBadge();
    return failed===0;
@@ -1779,7 +1796,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v89-sync-report-server').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v90-realtime-autosync-report').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
