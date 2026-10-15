@@ -456,7 +456,7 @@ body.staff-mode .owner-header-meta{display:contents!important}
 .settings-accordion>summary::before,
 .settings-accordion>summary::after{content:none!important;display:none!important}
 
-/* V85: compact split header — logo and income left, date right for Owner/Istri. */
+/* V86: compact split header — logo reduced, other Owner/Istri elements preserved. */
 body:not(.staff-mode) header{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
@@ -486,7 +486,7 @@ body:not(.staff-mode) header>.brand .brand-logo-card{
 body:not(.staff-mode) header>.brand .brand-logo-card img{
   display:block!important;
   width:100%!important;
-  max-height:55px!important;
+  max-height:42px!important;
   object-fit:contain!important;
   object-position:left top!important;
   margin:0!important;
@@ -517,7 +517,7 @@ body:not(.staff-mode) header>.owner-header-meta .staff-income-summary{
   justify-content:flex-start!important;
   box-sizing:border-box!important;
   margin:0!important;
-  padding:1px 0 0!important;
+  padding:0!important;
   text-align:left!important;
 }
 body:not(.staff-mode) header>.owner-header-meta .total-label,
@@ -538,7 +538,7 @@ body:not(.staff-mode) header>.stats{
 }
 @media(max-width:380px){
   body:not(.staff-mode) header{column-gap:6px!important;padding-left:9px!important;padding-right:9px!important}
-  body:not(.staff-mode) header>.brand .brand-logo-card img{max-height:52px!important}
+  body:not(.staff-mode) header>.brand .brand-logo-card img{max-height:40px!important}
   body:not(.staff-mode) header>.owner-header-meta #todayLabel{font-size:12px!important}
 }
 
@@ -1487,7 +1487,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v85-compact-split-header-final').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v86-resize-logo-nongki').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
