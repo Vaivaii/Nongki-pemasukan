@@ -794,6 +794,7 @@ let serverHistoryLoaded=false;
 let serverHistoryLoading=false;
 let serverHistoryError='';
 let serverHistoryRequestId=0;
+let serverHistoryRefreshPending=false;
 
 function serverHistoryField(row, names){
  if(!row||typeof row!=='object')return '';
@@ -909,7 +910,7 @@ function renderHistory(){
  }else renderServerHistory();
 }
 async function fetchServerHistory(){
- if(serverHistoryLoading)return false;
+ if(serverHistoryLoading){serverHistoryRefreshPending=true;return false;}
  loadAppsScriptSettings();
  if(!navigator.onLine){
   serverHistoryError='Perangkat sedang offline.';
@@ -966,6 +967,7 @@ async function fetchServerHistory(){
    serverHistoryLoading=false;
    if(button)button.disabled=false;
    renderServerHistory();
+   if(serverHistoryRefreshPending){serverHistoryRefreshPending=false;setTimeout(()=>void fetchServerHistory(),150);}
   }
  }
 }
