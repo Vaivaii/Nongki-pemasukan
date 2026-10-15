@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'nongki-pwa-v99-ios-homescreen';
+const CACHE_NAME = 'nongki-pwa-v100-matching-icon';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
@@ -7,6 +7,7 @@ const CORE_FILES = [
   './index.html',
   './manifest.json',
   './icon-192.png',
+  './nongki-icon.svg',
   './icon-512.png'
 ];
 
