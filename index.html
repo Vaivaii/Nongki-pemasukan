@@ -886,14 +886,14 @@ function renderServerHistory(){
  }
  if(serverHistoryError&&!serverHistoryLoaded){
   summary.innerHTML='<div class="sub">Riwayat server belum berhasil dimuat</div>';
-  list.innerHTML='<div class="empty">Tidak dapat mengambil riwayat. Periksa koneksi, token API, dan dukungan action getRecentTransactions/getHistory pada Apps Script.</div>';
+  list.innerHTML='<div class="empty">Tidak dapat mengambil riwayat. Periksa koneksi, URL Web App, dan token API.</div>';
   return;
  }
  const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
  const rows=dated.slice(0,20);
  const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
  summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 20 transaksi · data dari Apps Script</div>';
- list.innerHTML=rows.map(t=>'<div class="history-row"><div class="history-icon">☁️</div><div class="history-info"><b>'+esc(t.name)+'</b><small>'+esc(t.time)+' · '+esc(t.date)+'</small><small>Metode pembayaran: '+esc(t.payment)+'</small><small>Profil pencatat: '+esc(t.profile)+'</small>'+(t.status?'<span class="cloud-status '+(/batal|cancel/i.test(t.status)?'cancelled':'active')+'">'+esc(t.status)+'</span>':'')+'</div><div class="history-price">'+rupiah(t.amount)+'</div></div>').join('')||'<div class="empty">'+(serverHistoryLoaded?'Tidak ada transaksi server untuk tanggal '+esc(date)+'.':'Belum terhubung ke server.')+'</div>';
+ list.innerHTML=rows.map(t=>'<div class="history-row"><div class="history-icon">☁️</div><div class="history-info"><b>'+esc(t.name)+'</b><small>Jam: '+esc(t.time)+'</small><small>Profil pencatat: '+esc(t.profile)+'</small><span class="cloud-status '+(/batal|cancel/i.test(t.status)?'cancelled':'active')+'">'+esc(t.status||'Tidak tercatat')+'</span></div><div class="history-price">'+rupiah(t.amount)+'</div></div>').join('')||'<div class="empty">'+(serverHistoryLoaded?'Tidak ada transaksi server untuk tanggal '+esc(date)+'.':'Belum terhubung ke server.')+'</div>';
 }
 function renderHistory(){
  const date=$('historyDate').value||today();
@@ -925,43 +925,38 @@ async function fetchServerHistory(){
  const button=$('refreshServerHistoryBtn');if(button)button.disabled=true;
  renderServerHistory();
  try{
-  const actions=['getRecentTransactions','getHistory'];
-  let lastError='Apps Script belum menyediakan endpoint riwayat.';
-  let normalized=null;
-  for(const action of actions){
-   const controller=typeof AbortController!=='undefined'?new AbortController():null;
-   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
-   try{
-    const response=await fetch(APPS_SCRIPT_URL,{
-     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-     body:JSON.stringify({action,token:APPS_SCRIPT_TOKEN,date:$('historyDate').value||today(),limit:20,limitPerDay:20}),
-     signal:controller?controller.signal:undefined,cache:'no-store'
-    });
-    const raw=await response.text();
-    if(!response.ok)throw new Error('HTTP '+response.status);
-    if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data JSON.');
-    let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons '+action+' bukan JSON.');}
-    if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
-     throw new Error(String(result.error||result.message||('Action '+action+' ditolak.')));
-    }
-    normalized=normalizeServerHistory(result);
-    if(normalized!==null)break;
-    lastError='Respons '+action+' tidak berisi daftar transaksi yang dikenali.';
-   }catch(error){
-    lastError=String(error?.message||error);
-    console.warn('Riwayat server action '+action+' gagal:',error);
-   }finally{if(timer)clearTimeout(timer)}
+  const controller=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+  let response,raw;
+  try{
+   const url=new URL(APPS_SCRIPT_URL);
+   url.searchParams.set('action','getRecentTransactions');
+   url.searchParams.set('token',APPS_SCRIPT_TOKEN);
+   url.searchParams.set('limit','20');
+   response=await fetch(url.toString(),{
+    method:'GET',
+    signal:controller?controller.signal:undefined,
+    cache:'no-store'
+   });
+   raw=await response.text();
+  }finally{if(timer)clearTimeout(timer)}
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  if(/^\\s*<!doctype\\s+html|^\\s*<html\\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data JSON.');
+  let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getRecentTransactions bukan JSON.');}
+  if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')){
+   throw new Error(String(result.error||result.message||'Action getRecentTransactions ditolak.'));
   }
+  const normalized=normalizeServerHistory(result);
   if(requestId!==serverHistoryRequestId)return false;
-  if(normalized===null)throw new Error(lastError);
-  serverHistoryTransactions=normalized;
+  if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
+  serverHistoryTransactions=normalized.slice(0,20);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
   return true;
  }catch(error){
   if(requestId===serverHistoryRequestId){
-   serverHistoryError=String(error?.message||error);
+   serverHistoryError=error?.name==='AbortError'?'Waktu mengambil riwayat server habis.':String(error?.message||error);
    console.error('Gagal mengambil riwayat server:',error);
   }
   return false;
@@ -973,6 +968,7 @@ async function fetchServerHistory(){
   }
  }
 }
+
 function renderProducts(){const owner=!!(currentUser&&(currentUser.role==='owner'||currentUser.role==='wife'));$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>';updateProfileButtonLabel(currentUser?.role)}
 function renderReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
@@ -1671,7 +1667,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v88-enable-server-history-tab').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v89-fix-get-server-history').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
