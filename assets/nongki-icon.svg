@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <rect width="1024" height="1024" fill="#F8F7F2"/>
-  <g fill="#080808">
-    <path d="M270 700V344h-24v-14h151l231 276V344h-46v-14h151v14h-31v356h-44L400 414v286h46v14H246v-14z"/>
-    <path d="M670 324c-4-57 23-110 83-147 27-17 55-27 81-31-4 54-21 102-57 134-30 27-67 41-107 44z"/>
-  </g>
-  <path d="M682 312c27-49 65-92 119-140" fill="none" stroke="#F8F7F2" stroke-width="9" stroke-linecap="round"/>
+  <!-- Centered black serif N, reduced slightly to preserve generous margins. -->
+  <text x="500" y="675" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="520" font-weight="bold" fill="#080808">N</text>
+  <!-- Small leaf attached to the top of the right stem, matching the approved sketch. -->
+  <path d="M616 390 C612 343 636 296 682 267 C705 252 728 241 750 237 C747 278 731 316 704 340 C680 361 649 375 616 390 Z" fill="#080808"/>
+  <path d="M623 381 C644 345 672 310 718 269" fill="none" stroke="#F8F7F2" stroke-width="7" stroke-linecap="round"/>
 </svg>
