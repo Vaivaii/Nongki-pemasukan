@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'nongki-pwa-v86-resize-logo-nongki';
+const CACHE_NAME = 'nongki-pwa-v87-fine-tune-logo-size';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [

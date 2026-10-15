@@ -486,7 +486,7 @@ body:not(.staff-mode) header>.brand .brand-logo-card{
 body:not(.staff-mode) header>.brand .brand-logo-card img{
   display:block!important;
   width:100%!important;
-  max-height:42px!important;
+  max-height:36px!important;
   object-fit:contain!important;
   object-position:left top!important;
   margin:0!important;
@@ -538,7 +538,7 @@ body:not(.staff-mode) header>.stats{
 }
 @media(max-width:380px){
   body:not(.staff-mode) header{column-gap:6px!important;padding-left:9px!important;padding-right:9px!important}
-  body:not(.staff-mode) header>.brand .brand-logo-card img{max-height:40px!important}
+  body:not(.staff-mode) header>.brand .brand-logo-card img{max-height:34px!important}
   body:not(.staff-mode) header>.owner-header-meta #todayLabel{font-size:12px!important}
 }
 
@@ -1487,7 +1487,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v86-resize-logo-nongki').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v87-fine-tune-logo-size').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
