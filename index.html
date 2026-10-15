@@ -980,6 +980,7 @@ let serverReportLoading=false;
 let serverReportError='';
 let serverReportRequestId=0;
 let serverReportRefreshPending=false;
+let localReportTransactions=[];
 function reportField(row,names){
  if(!row||typeof row!=='object')return '';
  const normalized=new Map(Object.keys(row).map(k=>[String(k).toLowerCase().replace(/[^a-z0-9]/g,''),k]));
@@ -1048,7 +1049,7 @@ function renderTodaySummary(){
 }
 function localReportRows(month,onlyPending=false){
  const rows=new Map();
- const transactions=Array.isArray(data?.transactions)?data.transactions:[];
+ const transactions=[...(Array.isArray(data?.transactions)?data.transactions:[]),...(Array.isArray(localReportTransactions)?localReportTransactions:[])];
  for(const tx of transactions){
   if(!tx||tx.status==='cancelled'||tx.status==='canceled')continue;
   if(onlyPending&&tx.syncStatus!=='pending'&&tx.syncStatus!=='failed')continue;
@@ -1086,7 +1087,14 @@ function hybridReportRows(month){
 function renderServerReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
  const month=monthEl.value,hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
- const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10),monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
+ const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10);
+ let monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
+ if(!monthly.some(row=>row.revenue>0)){
+  const monthlyTotals=new Map();
+  const sourceRows=localReportRows(month,false);
+  for(const row of sourceRows){const key=row.date.slice(0,7);if(!monthlyTotals.has(key))monthlyTotals.set(key,{month:key,revenue:0,units:0,transactions:0});const item=monthlyTotals.get(key);item.revenue+=row.revenue;item.units+=row.units;item.transactions+=row.transactions;}
+  monthly=[...monthlyTotals.values()].sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
+ }
  const totalOmzet=daily.reduce((sum,row)=>sum+parseNominal(row.revenue),0);
  const totalUnits=daily.reduce((sum,row)=>sum+row.units,0);
  const daysWithSales=daily.filter(row=>row.revenue>0||row.units>0).length,transactionCount=daily.reduce((sum,row)=>sum+row.transactions,0);
@@ -1129,6 +1137,19 @@ async function fetchServerReport(){
   if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error'))throw new Error(String(result.error||result.message||'Server menolak permintaan laporan.'));
   const payload=result?.data&&typeof result.data==='object'?result.data:result;
   if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
+  if(requestId!==serverReportRequestId)return false;
+  // Transaksi utama dicatat di IndexedDB; localStorage hanya menyimpan ringkasan/cache lama.
+  // Muat keduanya agar fallback tetap bekerja setelah aplikasi dibuka ulang.
+  try{
+   const indexed=await getAllRecords('transactions');
+   localReportTransactions=Array.isArray(indexed)?indexed.map(tx=>{
+    const items=Array.isArray(tx.items)?tx.items:[];
+    const qty=items.reduce((sum,item)=>sum+(Number(item.quantity??item.qty)||1),0);
+    const amount=parseNominal(tx.total??tx.nominal??items.reduce((sum,item)=>sum+(Number(item.lineTotal??item.subtotal)||((Number(item.quantity??item.qty)||1)*(Number(item.unitPrice??item.harga_satuan)||0))),0));
+    const old=Array.isArray(data?.transactions)?data.transactions.find(row=>String(row.id)===String(tx.id)||String(row.id)===String(tx.legacyId||'')):null;
+    return {id:tx.id,date:tx.businessDate||tx.date||tx.createdAt,status:tx.status==='canceled'||tx.status==='cancelled'?'cancelled':'active',syncStatus:old?.syncStatus||(tx.syncStatus||'pending'),total:amount,qty:qty||1,createdAt:tx.createdAt};
+   }):[];
+  }catch(error){console.warn('Transaksi lokal IndexedDB tidak dapat dibaca untuk laporan:',error);localReportTransactions=[];}
   if(requestId!==serverReportRequestId)return false;
   serverReportData={...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};serverReportError='';renderServerReports();updateReportServerStatus();return true;
  }catch(error){
@@ -1844,7 +1865,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v93-hybrid-local-server').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v94-indexeddb-report-fallback').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
