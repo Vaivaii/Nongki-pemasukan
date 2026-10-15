@@ -551,7 +551,6 @@ body:not(.staff-mode) header>.stats{
 #historyList .history-price{white-space:nowrap}
 
 
-.global-sales-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.global-master-refresh{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid currentColor;border-radius:50%;background:transparent;color:inherit;opacity:.9;cursor:pointer}.global-master-refresh:disabled{opacity:.65;cursor:wait}.master-refresh-icon{display:inline-block;font-size:22px;line-height:1}.global-master-refresh.is-loading .master-refresh-icon{animation:nongki-master-spin .8s linear infinite}@keyframes nongki-master-spin{to{transform:rotate(360deg)}}
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 </style>
 </head>
@@ -1903,7 +1902,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v95-clean-card-click-sync').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v97-clean-card-click-sync').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
