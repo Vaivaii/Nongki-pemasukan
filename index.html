@@ -550,7 +550,8 @@ body:not(.staff-mode) header>.stats{
 #historyList .history-info small{overflow-wrap:anywhere}
 #historyList .history-price{white-space:nowrap}
 
-</style>
+
+.global-sales-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.global-master-refresh{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid currentColor;border-radius:50%;background:transparent;color:inherit;opacity:.9;cursor:pointer}.global-master-refresh:disabled{opacity:.65;cursor:wait}.master-refresh-icon{display:inline-block;font-size:22px;line-height:1}.global-master-refresh.is-loading .master-refresh-icon{animation:nongki-master-spin .8s linear infinite}@keyframes nongki-master-spin{to{transform:rotate(360deg)}}</style>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -570,7 +571,7 @@ body:not(.staff-mode) header>.stats{
   <div class="staff-income-summary"><div class="total-label">Pemasukan hari ini</div><div class="total" id="todayTotal">Rp0</div></div>
 </div>
 
-<div class="stats"><div class="stat global-sales-stat"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><span aria-label="Status sinkronisasi" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span class="global-sync-text-legacy" id="globalSyncText" aria-hidden="true"></span></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><span class="sync-dot status-waiting legacy-local-sync-dot" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
+<div class="stats"><div class="stat global-sales-stat"><div class="global-sales-heading"><span>Penjualan global hari ini</span><button type="button" class="global-master-refresh" id="masterRefreshBtn" aria-label="Refresh semua data server" title="Refresh semua data server"><span class="master-refresh-icon" id="masterRefreshIcon" aria-hidden="true">↻</span></button></div><b id="todayGlobal">Belum terhubung</b><span aria-label="Status sinkronisasi" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span class="global-sync-text-legacy" id="globalSyncText" aria-hidden="true"></span></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><span class="sync-dot status-waiting legacy-local-sync-dot" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
 </header>
 <main>
 <section class="view active" id="salesView">
@@ -1239,6 +1240,7 @@ $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
 $('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&!serverHistoryLoaded)void fetchServerHistory()}));
 $('refreshServerHistoryBtn')?.addEventListener('click',()=>{void fetchServerHistory()});
+$('masterRefreshBtn')?.addEventListener('click',()=>{void syncAllData()});
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);$('refreshReportBtn')?.addEventListener('click',()=>{void fetchServerReport()});
 $('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
@@ -1589,6 +1591,40 @@ function extractGlobalTotal(result){
  }
  return null;
 }
+let masterSyncPromise=null;
+async function fetchMasterMenu(){return fetchSharedMenu({quiet:true});}
+async function syncAllData(){
+ if(masterSyncPromise)return masterSyncPromise;
+ const button=$('masterRefreshBtn'),icon=$('masterRefreshIcon');
+ if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Refresh semua data hanya tersedia untuk Owner dan Istri.');return false;}
+ if(!navigator.onLine){toast('Perangkat offline. Data lokal tetap tersedia.');return false;}
+ if(button){button.disabled=true;button.classList.add('is-loading');button.setAttribute('aria-busy','true');}
+ if(icon)icon.textContent='↻';
+ masterSyncPromise=(async()=>{
+  // Antrean transaksi diproses terlebih dahulu agar laporan membaca data terbaru yang sudah diterima server.
+  let queueOk=true;
+  try{queueOk=await syncPending();}catch(error){queueOk=false;console.warn('Antrean transaksi belum tersinkron:',error);}
+  const tasks=[
+   ['Penjualan Global',()=>fetchGlobalTotal()],
+   ['Data Laporan',()=>fetchReport()],
+   ['Riwayat Server',()=>fetchServerHistory()],
+   ['Master Menu',()=>fetchMasterMenu()]
+  ];
+  const results=await Promise.allSettled(tasks.map(async([name,run])=>({name,ok:await run()})));
+  const failed=[];
+  results.forEach((result,index)=>{
+   if(result.status==='rejected'||result.value?.ok===false)failed.push(tasks[index][0]);
+  });
+  if(!queueOk)failed.unshift('Antrean transaksi');
+  if(failed.length){console.warn('Master Refresh: sebagian data gagal diperbarui:',failed);toast('Refresh selesai sebagian. Gagal: '+failed.join(', '));}
+  else toast('Master Refresh selesai · semua data diperbarui.');
+  return failed.length===0;
+ })().catch(error=>{console.error('Master Refresh gagal:',error);toast('Master Refresh gagal: '+String(error?.message||error));return false;}).finally(()=>{
+  if(button){button.disabled=false;button.classList.remove('is-loading');button.removeAttribute('aria-busy');}
+  masterSyncPromise=null;
+ });
+ return masterSyncPromise;
+}
 async function fetchGlobalTotal(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
  loadAppsScriptSettings();
@@ -1865,7 +1901,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v95-fix-report-columns-dates').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v96-master-sync-button').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
