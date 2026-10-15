@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <rect width="1024" height="1024" fill="#F8F7F2"/>
-  <!-- Centered black serif N, reduced slightly to preserve generous margins. -->
-  <text x="500" y="675" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="520" font-weight="bold" fill="#080808">N</text>
-  <!-- Small leaf attached to the top of the right stem, matching the approved sketch. -->
-  <path d="M616 390 C612 343 636 296 682 267 C705 252 728 241 750 237 C747 278 731 316 704 340 C680 361 649 375 616 390 Z" fill="#080808"/>
-  <path d="M623 381 C644 345 672 310 718 269" fill="none" stroke="#F8F7F2" stroke-width="7" stroke-linecap="round"/>
+  <!-- Custom-drawn centered serif N; avoid platform font substitutions. -->
+  <path fill="#080808" d="M270 700V660C300 654 310 642 310 615V390C310 365 300 355 270 350V330H400L650 610V380C650 355 640 350 610 350V330H760V350C730 355 720 365 720 390V700H680L380 410V615C380 642 390 654 420 660V700Z"/>
+  <!-- Small leaf grows directly from the top of the N's right stem. -->
+  <path fill="#080808" d="M680 344C669 309 690 273 724 250C744 237 764 230 783 229C782 264 766 298 743 320C725 337 703 344 680 344Z"/>
+  <path d="M681 338C705 306 733 273 767 246" fill="none" stroke="#F8F7F2" stroke-width="7" stroke-linecap="round"/>
 </svg>
