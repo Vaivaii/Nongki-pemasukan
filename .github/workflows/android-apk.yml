@@ -14,6 +14,7 @@ on:
       - 'package.json'
       - 'capacitor.config.json'
       - 'scripts/**'
+      - 'assets/**'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -56,6 +57,12 @@ jobs:
 
       - name: Generate Android project
         run: npx cap add android
+
+      - name: Prepare approved Nongki launcher icon
+        run: |
+          mkdir -p assets
+          node -e "require('sharp')('assets/nongki-icon.svg').resize(1024,1024).png().toFile('assets/icon.png').then(()=>console.log('Launcher icon prepared'))"
+          npx capacitor-assets generate --android --iconBackgroundColor "#F8F7F2"
 
       - name: Match Android status bar to Nongki header
         run: python3 scripts/configure-android-statusbar.py
