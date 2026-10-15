@@ -5,6 +5,10 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <meta content="#173d2c" name="theme-color"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Nongki"/>
+<link rel="apple-touch-icon" href="./icon-192.png"/>
 <link href="./manifest.json" rel="manifest"/>
 <link href="./icon-192.png" rel="icon"/>
 <title>Nongki — Desain Disetujui · PWA</title>
@@ -1911,7 +1915,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v98-report-dedupe').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v99-ios-homescreen').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
