@@ -854,7 +854,8 @@ function normalizeServerHistory(result){
   if(!date&&dateMatch)date=dateMatch[1];
   if(!time)time='Jam tidak tersedia';
   if(!date)date=String($('historyDate')?.value||today());
-  let amount=Number(String(rawAmount??'').replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.'));
+  const amountText=String(rawAmount??'').replace(/\./g,'').replace(/,/g,'').replace(/[^\d-]/g,'');
+  let amount=Number(amountText);
   if(!Number.isFinite(amount))amount=0;
   let name=String(rawName||'').trim();
   if(!name){
@@ -1918,7 +1919,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v102-update-profile-names').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v105-strict-fix-amount').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
