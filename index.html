@@ -703,7 +703,7 @@ function renderHistory(){
   $('historyList').innerHTML='<div class="empty">Belum terhubung ke server.</div>';
  }
 }
-function renderProducts(){const owner=!!(currentUser&&(currentUser.role==='owner'||currentUser.role==='wife'));$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>'}
+function renderProducts(){const owner=!!(currentUser&&(currentUser.role==='owner'||currentUser.role==='wife'));$('productAdminForm').classList.toggle('hidden',!owner);$('productAdminNote').textContent=owner?'Harga yang diubah hanya berlaku untuk transaksi berikutnya. Riwayat transaksi lama tetap memakai harga saat transaksi dicatat.':'Mode pegawai: harga hanya dapat dilihat. Hubungi pemilik jika ada perubahan harga.';$('productList').innerHTML=data.products.map(p=>`<div class="history-row"><div class="history-icon">${esc(p.icon||'🥤')}</div><div class="history-info"><b>${esc(p.name)}</b><small>${esc(p.category||'Lainnya')} · ${p.active===false?'Nonaktif':'Aktif'}</small></div><div class="history-price">${rupiah(p.price)}${owner?`<button data-edit-product="${p.id}">Edit</button><button data-toggle-product="${p.id}">${p.active===false?'Aktifkan':'Nonaktifkan'}</button><button data-remove-product="${p.id}">Hapus</button>`:''}</div></div>`).join('')||'<div class="empty">Belum ada produk.</div>';updateProfileButtonLabel(currentUser?.role)}
 function renderReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
  const month=monthEl.value;const tx=data.transactions.filter(t=>(t.date||'').slice(0,7)===month&&t.status!=='cancelled');
@@ -827,7 +827,7 @@ const ACTIVE_ROLE_KEY='nongki_active_role';
  try{applyRole();}catch(error){console.error('UI profil belum sepenuhnya diperbarui:',error);}
  try{const overlay=$('loginOverlay');if(overlay)overlay.classList.toggle('hidden',!!currentUser);}catch(error){console.warn('Overlay login tidak tersedia:',error);}
  try{const name=$('headerProfileName');if(name)name.textContent=currentUser?'Profil: '+currentUser.name:'Belum masuk';}catch(error){}
- try{const switchBtn=$('profileAvatarBtn');if(switchBtn)switchBtn.textContent=currentUser?roleName(currentUser):'Switch Profile';}catch(error){console.warn('Label tombol profil tidak dapat diperbarui:',error);}
+ try{updateProfileButtonLabel(currentUser?.role);}catch(error){console.warn('Label tombol profil tidak dapat diperbarui:',error);}
  try{const glyph=$('profileAvatarGlyph');if(glyph)glyph.textContent=currentUser?.role==='owner'?'👑':currentUser?.role==='wife'?'⭐':'🧢';}catch(error){}
  try{const menu=$('profileDropdown');if(menu)menu.hidden=true;const btn=$('profileAvatarBtn');if(btn)btn.setAttribute('aria-expanded','false');}catch(error){}
 }
@@ -852,6 +852,14 @@ function roleName(profile=currentUser){
  return profile?.role==='owner'?'Owner':profile?.role==='wife'?'Istri':'Pegawai';
 }
 function renderUsers(){}
+function updateProfileButtonLabel(role){
+ const raw=String(role||currentUser?.role||localStorage.getItem(ACTIVE_ROLE_KEY)||'staff');
+ const aliases={Owner:'owner',Istri:'wife',Pegawai:'staff',owner:'owner',wife:'wife',staff:'staff'};
+ const activeRole=aliases[raw]||'staff';
+ const labels={owner:'Owner',wife:'Istri',staff:'Pegawai'};
+ const switchBtn=document.querySelector('.btn-switch-profile')||$('profileAvatarBtn');
+ if(switchBtn)switchBtn.textContent=labels[activeRole];
+}
 function applyRole(){
  const role=currentUser?.role||'staff';
  const owner=role==='owner', wife=role==='wife', staff=role==='staff';
@@ -888,7 +896,7 @@ function applyRole(){
  $('activeRoleBadge').textContent=roleName().toUpperCase();
  $('rolePreviewText').textContent=owner?'Owner: akses penuh, termasuk sinkronisasi dan backup.':wife?'Istri: catat penjualan, riwayat, laporan, dan pengaturan menu.':'Pegawai: hanya mencatat penjualan.';
  // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
- renderReports();renderProducts();
+ renderReports();renderProducts();updateProfileButtonLabel(currentUser?.role);
 }
 async function sendLoginSession(profile){
  loadAppsScriptSettings();
@@ -1082,7 +1090,7 @@ async function fetchSharedMenu({quiet=false}={}){
    }
    return true;
   }catch(error){sharedMenuStatus('Gagal mengambil menu · memakai data lokal');if(!quiet)console.warn('Menu bersama belum dapat diambil:',error);return false;}
-  finally{sharedMenuPromise=null;}
+  finally{updateProfileButtonLabel(currentUser?.role);sharedMenuPromise=null;}
  })();
  return sharedMenuPromise;
 }
