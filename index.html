@@ -576,7 +576,7 @@ body:not(.staff-mode) header>.stats{
   <div class="staff-income-summary"><div class="total-label">Pemasukan hari ini</div><div class="total" id="todayTotal">Rp0</div></div>
 </div>
 
-<div class="stats"><div class="stat global-sales-stat" id="globalSalesCard" role="button" tabindex="0" aria-label="Ketuk untuk memperbarui semua data server"><span>Penjualan global hari ini</span><b id="todayGlobal">Belum terhubung</b><span aria-label="Status sinkronisasi" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span class="global-sync-text-legacy" id="globalSyncText" aria-hidden="true"></span></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><span class="sync-dot status-waiting legacy-local-sync-dot" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
+<div class="stats"><div class="stat global-sales-stat" id="globalSalesCard" role="button" tabindex="0" aria-label="Ketuk untuk memperbarui semua data server"><span>Penjualan global hari ini</span><b id="todayGlobal">Rp0</b><span aria-label="Status sinkronisasi" class="sync-dot status-waiting" id="globalSyncDot" role="status"></span><span class="global-sync-text-legacy" id="globalSyncText" aria-hidden="true"></span></div><div class="stat local-items-stat"><span>Produk terjual (lokal)</span><b id="todayItems">0</b><span class="sync-dot status-waiting legacy-local-sync-dot" id="staffSyncDot" role="status" aria-label="Status sinkronisasi"></span></div></div><div class="staff-sync-strip" id="staffSyncStatus" role="status" aria-live="polite" hidden><span id="staffSyncText">Status: Menunggu sinkronisasi</span></div>
 </header>
 <main>
 <section class="view active" id="salesView">
@@ -1238,7 +1238,7 @@ async function cancelTx(id){
 
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView')renderHistory();if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchServerReport();}}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
@@ -1643,12 +1643,11 @@ async function syncAllData(){
 async function fetchGlobalTotal(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
  loadAppsScriptSettings();
- if(!navigator.onLine){setGlobalSyncStatus('offline','Offline · total global belum diperbarui');return false}
- if(!appScriptConfigured()){setGlobalSyncStatus('offline','Server belum dikonfigurasi');return false}
+ if(!navigator.onLine){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
+ if(!appScriptConfigured()){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
  globalTotalFetchPromise=(async()=>{
   const display=$('todayGlobal');
   try{
-   if(display&&display.textContent==='Belum terhubung')display.textContent='Memuat…';
    const controller=typeof AbortController!=='undefined'?new AbortController():null;
    const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
    let response,raw;
@@ -1668,7 +1667,7 @@ async function fetchGlobalTotal(){
    return true;
   }catch(error){
    console.warn('Total penjualan global belum dapat diambil:',error);
-   if(display&&display.textContent==='Memuat…')display.textContent='Belum terhubung';
+   if(display)display.textContent='Rp0';
    const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
    globalServerConfirmed=false;
     setGlobalSyncStatus('error',label);
@@ -1919,7 +1918,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v105-strict-fix-amount').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v107-clean-global-card').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
