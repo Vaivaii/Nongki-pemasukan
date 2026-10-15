@@ -1,0 +1,9 @@
+{
+  "appId": "com.nongki.pemasukan",
+  "appName": "Nongki",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false
+  }
+}
