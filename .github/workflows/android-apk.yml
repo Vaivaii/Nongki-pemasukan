@@ -56,6 +56,9 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Match Android status bar to Nongki header
+        run: python3 scripts/configure-android-statusbar.py
+
       - name: Sync local web assets into Android
         run: npx cap sync android
 
