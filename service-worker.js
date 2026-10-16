@@ -1,5 +1,5 @@
 // Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'nongki-pwa-v108-payment-ui-main';
+const CACHE_NAME = 'nongki-pwa-v109-payment-logic-connected';
 
 // Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
