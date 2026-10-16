@@ -837,7 +837,7 @@ function renderGrid(){
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
  let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
   const collapsed=collapsedCategory(g);
-  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
+  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button type="button" class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
  }).join('');
  $('productGrid').innerHTML=html||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';
 }
@@ -1271,6 +1271,9 @@ async function record(id,payment={}){
    data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());void syncPending();render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · sinkronisasi otomatis');
  } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
 }
+
+// API sempit untuk UI pembayaran di script terpisah; data dan record tetap berada di scope inti.
+window.NongkiCore={getProduct:(id)=>Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null,record:(id,payment)=>record(id,payment),money:(value)=>rupiah(value)};
 
 async function cancelTx(id){
  let t=data.transactions.find(x=>x.id===id);if(!t||t.status==='cancelled')return;
@@ -2009,15 +2012,15 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    initialized:true,getMethod:()=>selectedMethod,
    begin(id){
     try{
-     const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;
+     const product=window.NongkiCore?.getProduct(id);
      if(!product||product.active===false)return;
      const total=Math.max(0,Number(product.price)||0);
-     if(selectedMethod==='QRIS'){closeTunaiModal();void record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});return;}
+     if(selectedMethod==='QRIS'){closeTunaiModal();void window.NongkiCore.record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});return;}
      if($('modalTunai')&&$('inputUangDiterima')&&$('textKembalian')&&$('processCashDemo')){openTunaiModal(id,total);return;}
-     void record(id,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});
+     void window.NongkiCore.record(id,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});
     }catch(error){
      console.error('Nongki product click/payment UI failed; using safe transaction fallback:',error);
-     try{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);void record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Nongki transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}
+     try{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);void window.NongkiCore.record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Nongki transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}
     }
    }
   };
@@ -2036,7 +2039,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    const inp=input();if(!inp)return;const received=Math.max(0,Number(inp.value)||0);
    if(!pendingProductId||String(inp.value).trim()===''||received<pendingTotal){updateCashPreview();inp.focus();return;}
    const id=pendingProductId,total=pendingTotal,btn=process();if(btn)btn.disabled=true;closeTunaiModal();
-   try{await record(id,{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});}
+   try{await window.NongkiCore.record(id,{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});}
    finally{pendingProductId=null;pendingTotal=0;inp.value='';updateCashPreview();}
   });
   setMethod('TUNAI');updateCashPreview();
@@ -2046,7 +2049,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=112').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=113').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
