@@ -1977,7 +1977,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   if(window.NongkiPaymentUI&&window.NongkiPaymentUI.initialized)return;
   const $=id=>document.getElementById(id);
   const money=n=>'Rp'+Math.max(0,Number(n)||0).toLocaleString('id-ID');
-  let selectedMethod='TUNAI',pendingProductId=null,pendingTotal=0;
+  let selectedMethod='TUNAI',pendingProductId=null,pendingTotal=0,lastProductTotal=0;
   const modal=()=> $('modalTunai'),input=()=> $('inputUangDiterima'),process=()=> $('processCashDemo');
   function updateCashPreview(){
    const inp=input(),totalEl=$('paymentDemoTotal'),changeEl=$('textKembalian'),changeBox=$('paymentChangeBox'),validation=$('paymentValidation'),btn=process();
@@ -2014,13 +2014,14 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
      const product=window.NongkiCore?.getProduct(id);
      if(!product||product.active===false)return;
      const total=Math.max(0,Number(product.price)||0);
+     lastProductTotal=total;
      // Fast-track: product taps never open the cash calculator, regardless of payment method.
      closeTunaiModal();
      void window.NongkiCore.record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});
     }
    };
   const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
-  bind('paymentCashCard','click',()=>{setMethod('TUNAI');closeTunaiModal();const m=modal(),inp=input();if(m&&inp&&$('textKembalian')&&process()){const title=$('cashPaymentTitle');if(title)title.textContent='Kalkulator Tunai';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();inp.focus();}});
+  bind('paymentCashCard','click',()=>{setMethod('TUNAI');closeTunaiModal();const m=modal(),inp=input();if(m&&inp&&$('textKembalian')&&process()){pendingTotal=lastProductTotal;const title=$('cashPaymentTitle');if(title)title.textContent='Kalkulator Tunai';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();inp.focus();}});
   bind('paymentQrisCard','click',()=>{setMethod('QRIS');closeTunaiModal();});
   bind('cashPaymentClose','click',closeTunaiModal);bind('cashPaymentCancel','click',closeTunaiModal);
   const m=modal();if(m)m.addEventListener('click',e=>{if(e.target===m)closeTunaiModal();});
@@ -2028,7 +2029,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   bind('inputUangDiterima','input',updateCashPreview);
   document.addEventListener('click',e=>{
    const btn=e.target.closest('[data-payment-shortcut]');if(!btn)return;
-   const m=modal(),inp=input();if(!m||m.hidden||!pendingProductId||!inp)return;
+   const m=modal(),inp=input();if(!m||m.hidden||!inp)return;
    inp.value=btn.dataset.paymentShortcut==='exact'?String(pendingTotal):String(Number(btn.dataset.paymentShortcut)||0);
    updateCashPreview();inp.focus();
   });
