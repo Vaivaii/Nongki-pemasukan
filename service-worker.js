@@ -1,5 +1,5 @@
 // Nongki PWA v125: accumulate current sale total.
-const CACHE_NAME = 'nongki-v125-accumulate-current-sale';
+const CACHE_NAME = 'nongki-v126-cancel-adjust-current-total';
 
 const CORE_FILES = [
   './',
