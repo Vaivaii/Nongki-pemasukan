@@ -1293,7 +1293,7 @@ function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
 const clickTarget=e.target instanceof Element?e.target:e.target?.parentElement;
-let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){if(typeof window.NongkiPaymentUI?.begin==='function'){window.NongkiPaymentUI.begin(id,product.price);}else{window.currentTotalBelanja=Math.max(0,Number(product.price)||0);const totalEl=document.getElementById('totalBelanjaModal');if(totalEl)totalEl.textContent=rupiah(window.currentTotalBelanja);}}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
+let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){const price=Math.max(0,Number(product.price)||0);if(typeof window.NongkiPaymentUI?.begin==='function')window.NongkiPaymentUI.begin(id,price);else{window.currentTotalBelanja=price;const totalEl=document.getElementById('totalBelanjaModal');if(totalEl)totalEl.textContent=rupiah(price);}const method=window.NongkiPaymentUI?.getMethod?.()==='QRIS'?'QRIS':'TUNAI';window.NongkiPaymentUI?.markRecorded?.(id,price);void window.NongkiCore.record(id,{metode_pembayaran:method,uang_diterima:price,kembalian:0});}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -1983,7 +1983,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    const digits=String(value??'').replace(/[^0-9]/g,'');
    return digits?Math.max(0,parseInt(digits,10)||0):0;
   };
-  let selectedMethod='TUNAI',pendingProductId=null,lastProductId=null,lastProductTotal=0;
+  let selectedMethod='TUNAI',pendingProductId=null,lastProductId=null,lastProductTotal=0,lastProductRecorded=false;
   window.currentTotalBelanja=0;
   const modal=()=> $('modalTunai'),input=()=> $('inputUangDiterima'),process=()=> $('processCashDemo');
   function updateCashPreview(){
@@ -2009,7 +2009,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    if(inp)inp.value='';pendingProductId=null;updateCashPreview();
   }
   function rememberProduct(productId,total){
-   lastProductId=String(productId);lastProductTotal=toAmount(total);window.currentTotalBelanja=lastProductTotal;
+   lastProductId=String(productId);lastProductTotal=toAmount(total);lastProductRecorded=false;window.currentTotalBelanja=lastProductTotal;
    const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(lastProductTotal);
    // Product taps update background state only; never reveal the modal here.
    const m=modal();if(m&&m.hidden)m.removeAttribute('data-open');
@@ -2033,7 +2033,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    const id=lastProductId,total=toAmount(window.currentTotalBelanja);
    const card=$('paymentQrisCard');if(card)card.disabled=true;
    try{
-    await window.NongkiCore.record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});
+    if(!lastProductRecorded){await window.NongkiCore.record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});lastProductRecorded=true;}
     closeTunaiModal();
    }catch(error){console.error('QRIS fast-track transaction failed:',error);}
    finally{if(card)card.disabled=false;}
@@ -2047,6 +2047,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
     rememberProduct(id,resolvedPrice);
    },
    getCurrentTotal:()=>toAmount(window.currentTotalBelanja),
+   markRecorded(id,total){if(lastProductId===String(id)&&lastProductTotal===toAmount(total))lastProductRecorded=true;},
    openCash:()=>openTunaiModal(lastProductId,window.currentTotalBelanja)
   };
   const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
@@ -2073,7 +2074,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    if(raw.trim()===''||received<total){updateCashPreview();inp.focus();return;}
    const id=pendingProductId,payload={metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)};
    const btn=process();if(btn)btn.disabled=true;
-   try{await window.NongkiCore.record(id,payload);closeTunaiModal();lastProductId=null;lastProductTotal=0;window.currentTotalBelanja=0;const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(0);updateCashPreview();}
+   try{if(!lastProductRecorded){await window.NongkiCore.record(id,payload);lastProductRecorded=true;}closeTunaiModal();lastProductId=null;lastProductTotal=0;lastProductRecorded=false;window.currentTotalBelanja=0;const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(0);updateCashPreview();}
    catch(error){console.error('Cash modal transaction failed:',error);if(btn)btn.disabled=false;try{const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi tunai gagal diproses. Periksa status sinkronisasi.</span>';}catch(_){}}
   });
   setMethod('TUNAI');updateCashPreview();
@@ -2083,11 +2084,11 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=123-product-selection-state').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=124-record-on-product-click').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
-<!-- v123: capture product selection before other click handlers; never open the cash modal here. -->
+<!-- v124: product click records once and updates the cash modal total without opening it. -->
 <script>
 (function(){
  if(window.__nongkiProductSelectionV123)return;
