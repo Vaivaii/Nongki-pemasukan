@@ -2009,7 +2009,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    if(inp)inp.value='';pendingProductId=null;updateCashPreview();
   }
   function rememberProduct(productId,total){
-   lastProductId=String(productId);lastProductTotal=toAmount(total);lastProductRecorded=false;window.currentTotalBelanja=lastProductTotal;
+   lastProductId=String(productId);const itemTotal=toAmount(total);lastProductTotal=toAmount(window.currentTotalBelanja)+itemTotal;lastProductRecorded=false;window.currentTotalBelanja=lastProductTotal;
    const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(lastProductTotal);
    // Product taps update background state only; never reveal the modal here.
    const m=modal();if(m&&m.hidden)m.removeAttribute('data-open');
@@ -2047,7 +2047,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
     rememberProduct(id,resolvedPrice);
    },
    getCurrentTotal:()=>toAmount(window.currentTotalBelanja),
-   markRecorded(id,total){if(lastProductId===String(id)&&lastProductTotal===toAmount(total))lastProductRecorded=true;},
+   markRecorded(id,total){if(lastProductId===String(id))lastProductRecorded=true;},
    openCash:()=>openTunaiModal(lastProductId,window.currentTotalBelanja)
   };
   const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
@@ -2084,7 +2084,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=124-record-on-product-click').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=125-accumulate-current-sale').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
@@ -2115,7 +2115,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="payment-modal-backdrop" id="modalTunai" hidden>
 <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="cashPaymentTitle" tabindex="-1">
 <div class="payment-modal-head"><div><h2 id="cashPaymentTitle">Pembayaran Tunai</h2><p>Masukkan uang yang diterima dari pelanggan</p></div><button class="payment-close" id="cashPaymentClose" type="button" aria-label="Tutup dialog">×</button></div>
-<div class="payment-total-box"><span>TOTAL BELANJA</span><strong id="totalBelanjaModal">Rp0</strong><small>Total dihitung dari harga produk yang dipilih.</small></div>
+<div class="payment-total-box"><span>TOTAL BELANJA</span><strong id="totalBelanjaModal">Rp0</strong><small>Total dihitung dari akumulasi produk yang dipilih.</small></div>
 <label class="payment-input-label" for="inputUangDiterima">Uang Diterima</label>
 <input class="payment-cash-input" id="inputUangDiterima" type="number" inputmode="numeric" min="0" step="500" placeholder="Masukkan nominal" autocomplete="off">
 <div class="payment-shortcut-title">PILIH NOMINAL CEPAT</div>
