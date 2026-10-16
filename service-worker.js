@@ -1,5 +1,5 @@
 // Nongki PWA v112: force cache refresh and immediate service-worker takeover.
-const CACHE_NAME = 'nongki-v112-force-cache-clear';
+const CACHE_NAME = 'nongki-v113-core-scope-fix';
 
 const CORE_FILES = [
   './',
