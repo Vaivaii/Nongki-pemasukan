@@ -1,5 +1,5 @@
-// Nongki PWA v124: record on product click without duplicate payment.
-const CACHE_NAME = 'nongki-v124-record-on-product-click';
+// Nongki PWA v125: accumulate current sale total.
+const CACHE_NAME = 'nongki-v125-accumulate-current-sale';
 
 const CORE_FILES = [
   './',
