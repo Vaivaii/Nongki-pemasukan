@@ -1293,7 +1293,7 @@ function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
 const clickTarget=e.target instanceof Element?e.target:e.target?.parentElement;
-let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){if(typeof window.NongkiPaymentUI?.begin==='function'){window.NongkiPaymentUI.begin(id,product.price);}else{const method=window.NongkiPaymentUI?.getMethod?.()==='QRIS'?'QRIS':'TUNAI';const total=Math.max(0,Number(product.price)||0);void record(id,{metode_pembayaran:method,uang_diterima:total,kembalian:0});}}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
+let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){if(typeof window.NongkiPaymentUI?.begin==='function'){window.NongkiPaymentUI.begin(id,product.price);}else{window.currentTotalBelanja=Math.max(0,Number(product.price)||0);const totalEl=document.getElementById('totalBelanjaModal');if(totalEl)totalEl.textContent=rupiah(window.currentTotalBelanja);}}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -2086,6 +2086,29 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     navigator.serviceWorker.register('./service-worker.js?v=122-fix-product-and-modal-state&html=product-click-fix').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
+</script>
+<!-- v123: capture product selection before other click handlers; never open the cash modal here. -->
+<script>
+(function(){
+ if(window.__nongkiProductSelectionV123)return;
+ window.__nongkiProductSelectionV123=true;
+ document.addEventListener('click',function(event){
+  const target=event.target instanceof Element?event.target:event.target?.parentElement;
+  const card=target?.closest('[data-sell]');
+  if(!card)return;
+  const id=String(card.dataset.sell||'');
+  const product=window.NongkiCore?.getProduct?.(id);
+  if(!product||product.active===false)return;
+  const rawPrice=product.price;
+  const price=typeof rawPrice==='number'?rawPrice:Number(String(rawPrice??'').replace(/[^0-9]/g,''));
+  if(!Number.isFinite(price)||price<0)return;
+  window.currentTotalBelanja=price;
+  const total='Rp'+Math.round(price).toLocaleString('id-ID');
+  const modalTotal=document.getElementById('totalBelanjaModal');
+  if(modalTotal)modalTotal.textContent=total;
+  if(typeof window.NongkiPaymentUI?.begin==='function')window.NongkiPaymentUI.begin(id,price);
+ },true);
+})();
 </script>
 <!-- Payment UI v121: manual modal trigger and background product state to the existing local transaction/save/sync path. -->
 <div class="payment-modal-backdrop" id="modalTunai" hidden>
