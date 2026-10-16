@@ -1,5 +1,5 @@
 // Nongki PWA v125: accumulate current sale total.
-const CACHE_NAME = 'nongki-v128-jkl-columns-sync';
+const CACHE_NAME = 'nongki-v131-sync-on-process-only';
 
 const CORE_FILES = [
   './',
