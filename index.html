@@ -2020,7 +2020,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
     }
    };
   const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
-  bind('paymentCashCard','click',()=>{setMethod('TUNAI');closeTunaiModal();});
+  bind('paymentCashCard','click',()=>{setMethod('TUNAI');closeTunaiModal();const m=modal(),inp=input();if(m&&inp&&$('textKembalian')&&process()){const title=$('cashPaymentTitle');if(title)title.textContent='Kalkulator Tunai';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();inp.focus();}});
   bind('paymentQrisCard','click',()=>{setMethod('QRIS');closeTunaiModal();});
   bind('cashPaymentClose','click',closeTunaiModal);bind('cashPaymentCancel','click',closeTunaiModal);
   const m=modal();if(m)m.addEventListener('click',e=>{if(e.target===m)closeTunaiModal();});
