@@ -2032,9 +2032,11 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   document.addEventListener('keydown',e=>{const current=modal();if(e.key==='Escape'&&current&&!current.hidden)closeTunaiModal();});
   bind('inputUangDiterima','input',updateCashPreview);
   document.addEventListener('click',e=>{
-   const btn=e.target.closest('[data-payment-shortcut]');if(!btn)return;
+   const target=e.target instanceof Element?e.target:null;
+   const btn=target?.closest('[data-payment-shortcut]');if(!btn)return;
    const m=modal(),inp=input();if(!m||m.hidden||!inp)return;
-   inp.value=btn.dataset.paymentShortcut==='exact'?String(pendingTotal):String(Number(btn.dataset.paymentShortcut)||0);
+   const shortcut=btn.dataset.paymentShortcut;
+   inp.value=shortcut==='exact'?String(pendingTotal):String(Number(shortcut)||0);
    updateCashPreview();inp.focus();
   });
   bind('processCashDemo','click',async()=>{
