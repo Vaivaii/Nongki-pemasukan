@@ -1,5 +1,5 @@
-// Nongki PWA v121: manual cash modal trigger and background product state.
-const CACHE_NAME = 'nongki-v121-manual-modal-trigger';
+// Nongki PWA v122: product click and modal total state fix.
+const CACHE_NAME = 'nongki-v122-fix-product-and-modal-state';
 
 const CORE_FILES = [
   './',
