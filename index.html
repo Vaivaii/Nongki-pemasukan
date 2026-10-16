@@ -1757,6 +1757,8 @@ function outboxToPayload(item){
  const user=userLabels[rawUser]||rawUser;
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
  const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
+ const method=String(row.metode_pembayaran||'TUNAI').toUpperCase()==='QRIS'?'QRIS':'TUNAI';
+ const statusEvent=event==='cancelTransaction'?'Dibatalkan':'Sukses ('+method+')';
  const transaction={
   id_event:eventId,
   id_transaksi:txId,
@@ -1765,9 +1767,12 @@ function outboxToPayload(item){
   ringkasan_produk:summary,
   jumlah_item:quantity,
   nominal:amount,
-  metode_pembayaran:String(row.metode_pembayaran||'TUNAI').toUpperCase(),
-  uang_diterima:Math.max(0,Number(row.uang_diterima)||0),
-  kembalian:Math.max(0,Number(row.kembalian)||0),
+  metode_pembayaran:method,
+  statusEvent,
+  uangDiterima:event==='cancelTransaction'?0:(method==='QRIS'?amount:Math.max(0,Number(row.uang_diterima)||0)),
+  kembalian:event==='cancelTransaction'?0:(method==='QRIS'?0:Math.max(0,Number(row.kembalian)||0)),
+  uang_diterima:event==='cancelTransaction'?0:(method==='QRIS'?amount:Math.max(0,Number(row.uang_diterima)||0)),
+  kembalian:event==='cancelTransaction'?0:(method==='QRIS'?0:Math.max(0,Number(row.kembalian)||0)),
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
@@ -2092,7 +2097,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=126-cancel-adjust-current-total').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=128-jkl-columns-sync').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
