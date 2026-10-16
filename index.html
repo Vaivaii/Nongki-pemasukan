@@ -1292,7 +1292,8 @@ function resetForm(){editingId=null;$('productName').value='';$('productPrice').
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
-let sell=e.target.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){if(typeof window.NongkiPaymentUI?.begin==='function'){window.NongkiPaymentUI.begin(id,product.price);}else{const method=window.NongkiPaymentUI?.getMethod?.()==='QRIS'?'QRIS':'TUNAI';const total=Math.max(0,Number(product.price)||0);void record(id,{metode_pembayaran:method,uang_diterima:total,kembalian:0});}}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
+const clickTarget=e.target instanceof Element?e.target:e.target?.parentElement;
+let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){if(typeof window.NongkiPaymentUI?.begin==='function'){window.NongkiPaymentUI.begin(id,product.price);}else{const method=window.NongkiPaymentUI?.getMethod?.()==='QRIS'?'QRIS':'TUNAI';const total=Math.max(0,Number(product.price)||0);void record(id,{metode_pembayaran:method,uang_diterima:total,kembalian:0});}}}catch(error){console.error('Product click handler failed:',error);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -2021,7 +2022,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    pendingProductId=chosenId==null?null:String(chosenId);
    window.currentTotalBelanja=toAmount(chosenTotal);
    const title=$('cashPaymentTitle');if(title)title.textContent='Kalkulator Tunai';
-   const totalEl=$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(window.currentTotalBelanja);
+   const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(window.currentTotalBelanja);
    inp.value='';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();
    const dialog=m.querySelector('.payment-modal');if(dialog&&typeof dialog.focus==='function')dialog.focus({preventScroll:true});
    inp.focus();
@@ -2082,7 +2083,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=122-fix-product-and-modal-state').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=122-fix-product-and-modal-state&html=product-click-fix').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
