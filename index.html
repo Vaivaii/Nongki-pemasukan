@@ -2024,7 +2024,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
      void window.NongkiCore.record(id,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});
     }catch(error){
      console.error('Nongki product click/payment UI failed; using safe transaction fallback:',error);
-     try{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);void window.NongkiCore.record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Nongki transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}
+     try{const product=window.NongkiCore?.getProduct(id);if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);void window.NongkiCore.record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Nongki transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}
     }
    }
   };
