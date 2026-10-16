@@ -1,5 +1,5 @@
-// Nongki PWA v118: cash calculator product total fix.
-const CACHE_NAME = 'nongki-v118-tunai-total-fix';
+// Nongki PWA v121: manual cash modal trigger and background product state.
+const CACHE_NAME = 'nongki-v121-manual-modal-trigger';
 
 const CORE_FILES = [
   './',
