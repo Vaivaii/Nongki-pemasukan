@@ -2009,7 +2009,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   }
   function rememberProduct(productId,total){
    lastProductId=String(productId);lastProductTotal=toAmount(total);window.currentTotalBelanja=lastProductTotal;
-   const totalEl=$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(lastProductTotal);
+   const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(lastProductTotal);
    // Product taps update background state only; never reveal the modal here.
    const m=modal();if(m&&m.hidden)m.removeAttribute('data-open');
    return lastProductTotal;
