@@ -1,5 +1,5 @@
-// Nongki PWA v123: reliable product selection state.
-const CACHE_NAME = 'nongki-v123-product-selection-state';
+// Nongki PWA v124: record on product click without duplicate payment.
+const CACHE_NAME = 'nongki-v124-record-on-product-click';
 
 const CORE_FILES = [
   './',
