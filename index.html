@@ -1997,7 +1997,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   function closeTunaiModal(){const m=modal();if(m){m.hidden=true;m.removeAttribute('data-open');}}
   function openTunaiModal(productId,total){
    const m=modal(),inp=input();
-   if(!m||!inp)throw new Error('Modal Tunai tidak tersedia');
+   if(!m||!inp||!$('textKembalian')||!process())throw new Error('Modal Tunai tidak lengkap atau tidak tersedia');
    pendingProductId=String(productId);pendingTotal=Math.max(0,Number(total)||0);
    const title=$('cashPaymentTitle');if(title)title.textContent='Pembayaran Tunai';
    inp.value='';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();
@@ -2013,7 +2013,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
      if(!product||product.active===false)return;
      const total=Math.max(0,Number(product.price)||0);
      if(selectedMethod==='QRIS'){closeTunaiModal();void record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});return;}
-     if($('modalTunai')&&$('inputUangDiterima')){openTunaiModal(id,total);return;}
+     if($('modalTunai')&&$('inputUangDiterima')&&$('textKembalian')&&$('processCashDemo')){openTunaiModal(id,total);return;}
      void record(id,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});
     }catch(error){
      console.error('Nongki product click/payment UI failed; using safe transaction fallback:',error);
