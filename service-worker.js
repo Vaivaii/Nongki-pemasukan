@@ -1,5 +1,5 @@
-// Nongki PWA v112: force cache refresh and immediate service-worker takeover.
-const CACHE_NAME = 'nongki-v114-tunai-card-trigger-only';
+// Nongki PWA v116: isolated cash modal fixes and immediate service-worker takeover.
+const CACHE_NAME = 'nongki-v116-tunai-modal-isolated-fix';
 
 const CORE_FILES = [
   './',
