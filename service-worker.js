@@ -1,5 +1,5 @@
-// Nongki PWA v117: fast-track product transactions without opening cash modal.
-const CACHE_NAME = 'nongki-v117-no-modal-on-product';
+// Nongki PWA v118: cash calculator product total fix.
+const CACHE_NAME = 'nongki-v118-tunai-total-fix';
 
 const CORE_FILES = [
   './',
