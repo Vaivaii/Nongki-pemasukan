@@ -2088,29 +2088,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   });
 }
 </script>
-<!-- v124: product click records once and updates the cash modal total without opening it. -->
-<script>
-(function(){
- if(window.__nongkiProductSelectionV123)return;
- window.__nongkiProductSelectionV123=true;
- document.addEventListener('click',function(event){
-  const target=event.target instanceof Element?event.target:event.target?.parentElement;
-  const card=target?.closest('[data-sell]');
-  if(!card)return;
-  const id=String(card.dataset.sell||'');
-  const product=window.NongkiCore?.getProduct?.(id);
-  if(!product||product.active===false)return;
-  const rawPrice=product.price;
-  const price=typeof rawPrice==='number'?rawPrice:Number(String(rawPrice??'').replace(/[^0-9]/g,''));
-  if(!Number.isFinite(price)||price<0)return;
-  window.currentTotalBelanja=price;
-  const total='Rp'+Math.round(price).toLocaleString('id-ID');
-  const modalTotal=document.getElementById('totalBelanjaModal');
-  if(modalTotal)modalTotal.textContent=total;
-  if(typeof window.NongkiPaymentUI?.begin==='function')window.NongkiPaymentUI.begin(id,price);
- },true);
-})();
-</script>
+
 <!-- Payment UI v121: manual modal trigger and background product state to the existing local transaction/save/sync path. -->
 <div class="payment-modal-backdrop" id="modalTunai" hidden>
 <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="cashPaymentTitle" tabindex="-1">
