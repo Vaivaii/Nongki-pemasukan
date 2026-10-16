@@ -1,5 +1,5 @@
-// Nongki PWA v116: isolated cash modal fixes and immediate service-worker takeover.
-const CACHE_NAME = 'nongki-v116-tunai-modal-isolated-fix';
+// Nongki PWA v117: fast-track product transactions without opening cash modal.
+const CACHE_NAME = 'nongki-v117-no-modal-on-product';
 
 const CORE_FILES = [
   './',
