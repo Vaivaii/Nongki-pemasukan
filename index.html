@@ -2083,7 +2083,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=122-fix-product-and-modal-state&html=product-click-fix').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=123-product-selection-state').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
