@@ -1,5 +1,5 @@
-// Nongki PWA v122: product click and modal total state fix.
-const CACHE_NAME = 'nongki-v122-fix-product-and-modal-state';
+// Nongki PWA v123: reliable product selection state.
+const CACHE_NAME = 'nongki-v123-product-selection-state';
 
 const CORE_FILES = [
   './',
