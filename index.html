@@ -1289,7 +1289,7 @@ function resetForm(){editingId=null;$('productName').value='';$('productPrice').
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
-let sell=e.target.closest('[data-sell]');if(sell){if(window.NongkiPaymentUI)window.NongkiPaymentUI.begin(sell.dataset.sell);else record(sell.dataset.sell);return}
+let sell=e.target.closest('[data-sell]');if(sell){try{if(window.NongkiPaymentUI&&typeof window.NongkiPaymentUI.begin==='function'){window.NongkiPaymentUI.begin(sell.dataset.sell);}else{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(sell.dataset.sell)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);record(sell.dataset.sell,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});}}}catch(error){console.error('Product click handler failed:',error);try{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(sell.dataset.sell)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);record(sell.dataset.sell,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Product transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}}return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -1968,92 +1968,95 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
 </script>
 <script>
-/* Payment method UI v110: defensive initialization and reliable product-click routing. */
+/* Payment UI v111: fail-safe product routing; modal is optional. */
 (function(){
  function initPaymentUI(){
   if(window.NongkiPaymentUI&&window.NongkiPaymentUI.initialized)return;
   const $=id=>document.getElementById(id);
-  const required=['paymentCashCard','paymentQrisCard','paymentCashChip','paymentQrisChip','paymentMethodStatus','cashPaymentModal','cashPaymentTitle','cashPaymentClose','cashPaymentCancel','cashReceivedInput','paymentDemoTotal','paymentChangeAmount','paymentChangeBox','paymentValidation','processCashDemo'];
-  const missing=required.filter(id=>!$(id));
-  if(missing.length){console.error('Nongki payment UI: elemen belum tersedia:',missing);return;}
   const money=n=>'Rp'+Math.max(0,Number(n)||0).toLocaleString('id-ID');
-  const modal=$('cashPaymentModal'),input=$('cashReceivedInput'),process=$('processCashDemo');
   let selectedMethod='TUNAI',pendingProductId=null,pendingTotal=0;
+  const modal=()=> $('modalTunai'),input=()=> $('inputUangDiterima'),process=()=> $('processCashDemo');
   function updateCashPreview(){
-   const raw=String(input.value??''),received=raw===''?0:Math.max(0,Number(input.value)||0),delta=received-pendingTotal;
-   $('paymentDemoTotal').textContent=money(pendingTotal);
-   $('paymentChangeAmount').textContent=(delta<0?'−':'')+money(Math.abs(delta));
-   $('paymentChangeBox').classList.toggle('good',delta>=0);$('paymentChangeBox').classList.toggle('bad',delta<0);
-   $('paymentValidation').classList.toggle('good',raw!==''&&delta>=0);$('paymentValidation').classList.toggle('bad',raw===''||delta<0);
-   $('paymentValidation').textContent=raw===''?'Masukkan uang diterima atau pilih nominal cepat.':delta<0?'Uang diterima kurang '+money(-delta)+'.':delta===0?'Uang pas · tidak ada kembalian.':'Kembalian untuk pelanggan: '+money(delta)+'.';
-   process.disabled=!pendingProductId||raw===''||received<pendingTotal;
+   const inp=input(),totalEl=$('paymentDemoTotal'),changeEl=$('textKembalian'),changeBox=$('paymentChangeBox'),validation=$('paymentValidation'),btn=process();
+   if(!inp)return;
+   const raw=String(inp.value??''),received=raw===''?0:Math.max(0,Number(inp.value)||0),delta=received-pendingTotal;
+   if(totalEl)totalEl.textContent=money(pendingTotal);
+   if(changeEl)changeEl.textContent=(delta<0?'−':'')+money(Math.abs(delta));
+   if(changeBox){changeBox.classList.toggle('good',delta>=0);changeBox.classList.toggle('bad',delta<0);}
+   if(validation){validation.classList.toggle('good',raw!==''&&delta>=0);validation.classList.toggle('bad',raw===''||delta<0);validation.textContent=raw===''?'Masukkan uang diterima atau pilih nominal cepat.':delta<0?'Uang diterima kurang '+money(-delta)+'.':delta===0?'Uang pas · tidak ada kembalian.':'Kembalian untuk pelanggan: '+money(delta)+'.';}
+   if(btn)btn.disabled=!pendingProductId||raw===''||received<pendingTotal;
   }
   function setMethod(method){
    selectedMethod=method==='QRIS'?'QRIS':'TUNAI';const cash=selectedMethod==='TUNAI';
-   $('paymentCashCard').classList.toggle('active',cash);$('paymentQrisCard').classList.toggle('active',!cash);
-   $('paymentCashCard').setAttribute('aria-pressed',String(cash));$('paymentQrisCard').setAttribute('aria-pressed',String(!cash));
-   $('paymentCashChip').hidden=!cash;$('paymentQrisChip').hidden=cash;
-   $('paymentMethodStatus').innerHTML='<span class="status-dot"></span><span>'+(cash?'Tunai aktif · pilih produk untuk memasukkan uang diterima.':'QRIS aktif · ketuk produk untuk mencatat pembayaran non-tunai.')+'</span>';
+   const cashCard=$('paymentCashCard'),qrisCard=$('paymentQrisCard'),cashChip=$('paymentCashChip'),qrisChip=$('paymentQrisChip'),status=$('paymentMethodStatus');
+   if(cashCard){cashCard.classList.toggle('active',cash);cashCard.setAttribute('aria-pressed',String(cash));}
+   if(qrisCard){qrisCard.classList.toggle('active',!cash);qrisCard.setAttribute('aria-pressed',String(!cash));}
+   if(cashChip)cashChip.hidden=!cash;if(qrisChip)qrisChip.hidden=cash;
+   if(status)status.innerHTML='<span class="status-dot"></span><span>'+(cash?'Tunai aktif · pilih produk untuk memasukkan uang diterima.':'QRIS aktif · ketuk produk untuk mencatat pembayaran non-tunai.')+'</span>';
   }
-  function closeModal(){modal.hidden=true;modal.removeAttribute('data-open');}
-  function openCashModal(id,total){
-   pendingProductId=String(id);pendingTotal=Math.max(0,Number(total)||0);
-   $('cashPaymentTitle').textContent='Pembayaran Tunai';input.value='';
-   $('paymentDemoTotal').textContent=money(pendingTotal);
-   modal.hidden=false;modal.setAttribute('data-open','true');updateCashPreview();
-   const dialog=modal.querySelector('.payment-modal');if(dialog&&typeof dialog.focus==='function')dialog.focus({preventScroll:true});
-   input.focus();
+  function closeTunaiModal(){const m=modal();if(m){m.hidden=true;m.removeAttribute('data-open');}}
+  function openTunaiModal(productId,total){
+   const m=modal(),inp=input();
+   if(!m||!inp)throw new Error('Modal Tunai tidak tersedia');
+   pendingProductId=String(productId);pendingTotal=Math.max(0,Number(total)||0);
+   const title=$('cashPaymentTitle');if(title)title.textContent='Pembayaran Tunai';
+   inp.value='';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();
+   const dialog=m.querySelector('.payment-modal');if(dialog&&typeof dialog.focus==='function')dialog.focus({preventScroll:true});
+   inp.focus();
   }
-  const api={initialized:true,getMethod:()=>selectedMethod,begin(id){
-   const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;
-   if(!product||product.active===false)return;
-   const total=Math.max(0,Number(product.price)||0);
-   if(selectedMethod==='QRIS'){
-    closeModal();
-    void record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});
-   }else openCashModal(id,total);
-  }};
-  window.NongkiPaymentUI=api;
-  $('paymentCashCard').addEventListener('click',()=>setMethod('TUNAI'));
-  $('paymentQrisCard').addEventListener('click',()=>{setMethod('QRIS');closeModal();});
-  $('cashPaymentClose').addEventListener('click',closeModal);
-  $('cashPaymentCancel').addEventListener('click',closeModal);
-  modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal();});
-  input.addEventListener('input',updateCashPreview);
+  window.openTunaiModal=openTunaiModal;
+  window.NongkiPaymentUI={
+   initialized:true,getMethod:()=>selectedMethod,
+   begin(id){
+    try{
+     const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;
+     if(!product||product.active===false)return;
+     const total=Math.max(0,Number(product.price)||0);
+     if(selectedMethod==='QRIS'){closeTunaiModal();void record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});return;}
+     if($('modalTunai')&&$('inputUangDiterima')){openTunaiModal(id,total);return;}
+     void record(id,{metode_pembayaran:'TUNAI',uang_diterima:total,kembalian:0});
+    }catch(error){
+     console.error('Nongki product click/payment UI failed; using safe transaction fallback:',error);
+     try{const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;if(product&&product.active!==false){const total=Math.max(0,Number(product.price)||0);void record(id,{metode_pembayaran:selectedMethod==='QRIS'?'QRIS':'TUNAI',uang_diterima:total,kembalian:0});}}catch(fallbackError){console.error('Nongki transaction fallback failed:',fallbackError);try{toast('Transaksi gagal diproses. Coba ketuk produk lagi.');}catch(_){}}
+    }
+   }
+  };
+  const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
+  bind('paymentCashCard','click',()=>setMethod('TUNAI'));
+  bind('paymentQrisCard','click',()=>{setMethod('QRIS');closeTunaiModal();});
+  bind('cashPaymentClose','click',closeTunaiModal);bind('cashPaymentCancel','click',closeTunaiModal);
+  const m=modal();if(m)m.addEventListener('click',e=>{if(e.target===m)closeTunaiModal();});
+  document.addEventListener('keydown',e=>{const current=modal();if(e.key==='Escape'&&current&&!current.hidden)closeTunaiModal();});
+  bind('inputUangDiterima','input',updateCashPreview);
   document.querySelectorAll('[data-payment-shortcut]').forEach(btn=>btn.addEventListener('click',()=>{
-   if(!pendingProductId)return;
-   input.value=btn.dataset.paymentShortcut==='exact'?String(pendingTotal):String(Number(btn.dataset.paymentShortcut)||0);
-   updateCashPreview();
+   if(!pendingProductId)return;const inp=input();if(!inp)return;
+   inp.value=btn.dataset.paymentShortcut==='exact'?String(pendingTotal):String(Number(btn.dataset.paymentShortcut)||0);updateCashPreview();
   }));
-  process.addEventListener('click',async()=>{
-   const received=Math.max(0,Number(input.value)||0);
-   if(!pendingProductId||String(input.value).trim()===''||received<pendingTotal){updateCashPreview();input.focus();return;}
-   const id=pendingProductId,total=pendingTotal;
-   process.disabled=true;closeModal();
+  bind('processCashDemo','click',async()=>{
+   const inp=input();if(!inp)return;const received=Math.max(0,Number(inp.value)||0);
+   if(!pendingProductId||String(inp.value).trim()===''||received<pendingTotal){updateCashPreview();inp.focus();return;}
+   const id=pendingProductId,total=pendingTotal,btn=process();if(btn)btn.disabled=true;closeTunaiModal();
    try{await record(id,{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});}
-   finally{pendingProductId=null;pendingTotal=0;input.value='';updateCashPreview();}
+   finally{pendingProductId=null;pendingTotal=0;inp.value='';updateCashPreview();}
   });
   setMethod('TUNAI');updateCashPreview();
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPaymentUI,{once:true});
- else initPaymentUI();
-})();
-</script>
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPaymentUI,{once:true});else initPaymentUI();
+})();</script>
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v110-fix-product-click-modal').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v111-foolproof-modal-fix').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
-<!-- Payment UI prototype only. Not connected to transaction save/sync. -->
-<div class="payment-modal-backdrop" id="cashPaymentModal" hidden>
+<!-- Payment UI v111 is connected to the existing local transaction/save/sync path. -->
+<div class="payment-modal-backdrop" id="modalTunai" hidden>
 <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="cashPaymentTitle" tabindex="-1">
 <div class="payment-modal-head"><div><h2 id="cashPaymentTitle">Pembayaran Tunai</h2><p>Masukkan uang yang diterima dari pelanggan</p></div><button class="payment-close" id="cashPaymentClose" type="button" aria-label="Tutup dialog">×</button></div>
 <div class="payment-total-box"><span>TOTAL BELANJA</span><strong id="paymentDemoTotal">Rp23.000</strong><small>Total dihitung dari harga produk yang dipilih.</small></div>
-<label class="payment-input-label" for="cashReceivedInput">Uang Diterima</label>
-<input class="payment-cash-input" id="cashReceivedInput" type="number" inputmode="numeric" min="0" step="500" placeholder="Masukkan nominal" autocomplete="off">
+<label class="payment-input-label" for="inputUangDiterima">Uang Diterima</label>
+<input class="payment-cash-input" id="inputUangDiterima" type="number" inputmode="numeric" min="0" step="500" placeholder="Masukkan nominal" autocomplete="off">
 <div class="payment-shortcut-title">PILIH NOMINAL CEPAT</div>
 <div class="payment-shortcuts">
 <button class="payment-shortcut exact" type="button" data-payment-shortcut="exact">Uang Pas</button>
@@ -2063,7 +2066,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <button class="payment-shortcut" type="button" data-payment-shortcut="50000">50rb</button>
 <button class="payment-shortcut" type="button" data-payment-shortcut="100000">100rb</button>
 </div>
-<div class="payment-change-box bad" id="paymentChangeBox"><span>KEMBALIAN</span><strong id="paymentChangeAmount">−Rp23.000</strong></div>
+<div class="payment-change-box bad" id="paymentChangeBox"><span>KEMBALIAN</span><strong id="textKembalian">−Rp23.000</strong></div>
 <div class="payment-validation bad" id="paymentValidation" aria-live="polite">Uang diterima belum mencukupi.</div>
 <div class="payment-modal-actions"><button id="cashPaymentCancel" type="button">Kembali</button><button class="payment-process" id="processCashDemo" type="button">✓ PROSES TRANSAKSI TUNAI</button></div>
 <p class="payment-demo-note">Transaksi disimpan ke antrean lokal dan mengikuti sinkronisasi otomatis yang sudah ada.</p>
