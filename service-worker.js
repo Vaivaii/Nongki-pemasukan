@@ -1,12 +1,12 @@
-// Naikkan versi ini setiap kali file aplikasi diubah.
-const CACHE_NAME = 'nongki-pwa-v111-foolproof-modal-fix';
+// Nongki PWA v112: force cache refresh and immediate service-worker takeover.
+const CACHE_NAME = 'nongki-v112-force-cache-clear';
 
-// Hanya file yang benar-benar ada. File yang 404 dilewati, tidak menggagalkan install.
 const CORE_FILES = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
+  './nongki-icon.svg',
   './icon-512.png'
 ];
 
@@ -15,10 +15,13 @@ self.addEventListener('install', event => {
     const cache = await caches.open(CACHE_NAME);
     await Promise.all(CORE_FILES.map(async file => {
       try {
-        const res = await fetch(file, { cache: 'reload' });
-        if (res && res.ok) await cache.put(file, res);
-      } catch (e) { /* abaikan: file belum ada / offline */ }
+        const response = await fetch(file, { cache: 'reload' });
+        if (response && response.ok) await cache.put(file, response);
+      } catch (error) {
+        // File optional/offline: continue installing so the worker can take over.
+      }
     }));
+    // Activate immediately; do not wait for old tabs to close.
     await self.skipWaiting();
   })());
 });
@@ -26,7 +29,10 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    await Promise.all(keys
+      .filter(key => key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
+    // Control open tabs immediately after old caches have been cleared.
     await self.clients.claim();
   })());
 });
@@ -42,33 +48,32 @@ self.addEventListener('fetch', event => {
 
   event.respondWith((async () => {
     if (isPage) {
-      // HTML: ambil dari jaringan dulu supaya update langsung terbaca.
+      // Prefer the latest server HTML; use cache only when offline.
       try {
         const response = await fetch(request, { cache: 'no-cache' });
         if (response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(c => c.put(request, copy));
+          void caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }
         return response;
       } catch {
         return (await caches.match(request)) ||
-               (await caches.match('./index.html')) ||
-               (await caches.match('./')) ||
-               new Response('Aplikasi belum tersedia offline.', {
-                 status: 503,
-                 headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-               });
+          (await caches.match('./index.html')) ||
+          (await caches.match('./')) ||
+          new Response('Aplikasi belum tersedia offline.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
       }
     }
 
-    // Aset lain (ikon, manifest): cache dulu, perbarui di latar belakang.
     const cached = await caches.match(request);
-    const refresh = fetch(request).then(res => {
-      if (res && res.ok) {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(request, copy));
+    const refresh = fetch(request).then(response => {
+      if (response && response.ok) {
+        const copy = response.clone();
+        void caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
       }
-      return res;
+      return response;
     }).catch(() => null);
     return cached || (await refresh) ||
       new Response('Aset belum tersedia offline.', {
