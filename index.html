@@ -623,7 +623,7 @@ body:not(.staff-mode) header>.stats{
 </header>
 <main>
 <section class="view active" id="salesView">
-<div class="payment-methods" role="group" aria-label="Metode pembayaran demo">
+<div class="payment-methods" role="group" aria-label="Metode pembayaran">
 <button class="payment-card active" id="paymentCashCard" type="button" aria-pressed="true">
 <span class="payment-icon" aria-hidden="true">💵</span><strong>TUNAI</strong><small>Input uang diterima &amp; kembalian</small><span class="payment-chip" id="paymentCashChip">AKTIF</span>
 </button>
@@ -631,7 +631,7 @@ body:not(.staff-mode) header>.stats{
 <span class="payment-icon" aria-hidden="true">▦</span><strong>QRIS</strong><small>Pembayaran non-tunai</small><span class="payment-chip" id="paymentQrisChip" hidden>AKTIF</span>
 </button>
 </div>
-<div class="payment-status" id="paymentMethodStatus" role="status" aria-live="polite"><span class="status-dot"></span><span>Tunai aktif · ketuk kartu untuk simulasi pembayaran.</span></div>
+<div class="payment-status" id="paymentMethodStatus" role="status" aria-live="polite"><span class="status-dot"></span><span>Tunai aktif · pilih produk untuk memulai transaksi.</span></div>
 
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <div class="products" id="productGrid"></div>
@@ -735,7 +735,7 @@ function reqResult(r){return new Promise((resolve,reject)=>{r.onsuccess=()=>reso
 function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Transaksi database gagal'));tx.onabort=()=>reject(tx.error||new Error('Transaksi database dibatalkan'));});}
 async function getAllRecords(storeName){const db=await openNongkiDB();try{return await reqResult(db.transaction(storeName,'readonly').objectStore(storeName).getAll());}finally{db.close();}}
 async function putProduct(p){const db=await openNongkiDB();try{const tx=db.transaction('products','readwrite');const done=txDone(tx);tx.objectStore('products').put({...p,id:String(p.id),price:Number(p.price)||0,updatedAt:new Date().toISOString()});await done;}finally{db.close();}}
-async function recordTransaction({userId=null,deviceId=null,items}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function recordTransaction({userId=null,deviceId=null,items,metode_pembayaran='TUNAI',uang_diterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,metode_pembayaran:String(metode_pembayaran||'TUNAI').toUpperCase(),uang_diterima:Math.max(0,Number(uang_diterima)||0),kembalian:Math.max(0,Number(kembalian)||0),items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function cancelTransaction(id,{userId=null,reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function migrateLegacyLocalData(){return {products:0,transactions:0,skipped:true};}
 
@@ -1266,11 +1266,11 @@ function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('g
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function record(id){
+async function record(id,payment={}){
  let p=data.products.find(x=>x.id===id);if(!p||p.active===false)return;
  const d=new Date();
  try {
-   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
+   const total=Number(p.price)||0;const method=String(payment.metode_pembayaran||'TUNAI').toUpperCase();const received=method==='QRIS'?total:Math.max(0,Number(payment.uang_diterima)||0);const change=method==='QRIS'?0:Math.max(0,received-total);if(method==='TUNAI'&&received<total){toast('Uang diterima kurang dari total belanja.');return;}const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:total}],metode_pembayaran:method,uang_diterima:received,kembalian:change});
    const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
    data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());void syncPending();render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · sinkronisasi otomatis');
  } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
@@ -1293,7 +1293,7 @@ function resetForm(){editingId=null;$('productName').value='';$('productPrice').
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
 document.addEventListener('click',e=>{
-let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
+let sell=e.target.closest('[data-sell]');if(sell){if(window.NongkiPaymentUI)window.NongkiPaymentUI.begin(sell.dataset.sell);else record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -1760,6 +1760,9 @@ function outboxToPayload(item){
   ringkasan_produk:summary,
   jumlah_item:quantity,
   nominal:amount,
+  metode_pembayaran:String(row.metode_pembayaran||'TUNAI').toUpperCase(),
+  uang_diterima:Math.max(0,Number(row.uang_diterima)||0),
+  kembalian:Math.max(0,Number(row.kembalian)||0),
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
@@ -1969,72 +1972,65 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
 </script>
 <script>
-/* DEV payment UI prototype: deliberately isolated from record(), cancelTx(), localStorage sessions and sync. */
-(()=>{
+/* Payment method UI connected to the existing local transaction queue. */
+document.addEventListener('DOMContentLoaded',()=>{
  const $=id=>document.getElementById(id);
- const DEMO_TOTAL=23000;
- let demoPaymentMethod='TUNAI';
- const money=n=>'Rp'+Math.abs(Number(n)||0).toLocaleString('id-ID');
- const signedMoney=n=>(n<0?'−':'')+money(n);
+ const money=n=>'Rp'+Math.max(0,Number(n)||0).toLocaleString('id-ID');
+ let selectedMethod='TUNAI',pendingProductId=null,pendingTotal=0;
+ const modal=$('cashPaymentModal'),input=$('cashReceivedInput');
  function updateCashPreview(){
-   const raw=$('cashReceivedInput').value;
-   const received=raw===''?0:Math.max(0,Number(raw)||0);
-   const delta=received-DEMO_TOTAL;
-   $('paymentChangeAmount').textContent=signedMoney(delta);
-   $('paymentChangeBox').classList.toggle('good',delta>=0);
-   $('paymentChangeBox').classList.toggle('bad',delta<0);
-   $('paymentValidation').classList.toggle('good',delta>=0);
-   $('paymentValidation').classList.toggle('bad',delta<0);
-   $('paymentValidation').textContent=raw===''?'Masukkan uang diterima atau pilih nominal cepat.':delta<0?'Uang diterima kurang '+money(-delta)+'.':delta===0?'Uang pas · tidak ada kembalian.':'Kembalian untuk pelanggan: '+money(delta)+'.';
+  const raw=input.value,received=raw===''?0:Math.max(0,Number(raw)||0),delta=received-pendingTotal;
+  $('paymentDemoTotal').textContent=money(pendingTotal);
+  $('paymentChangeAmount').textContent=(delta<0?'−':'')+money(Math.abs(delta));
+  $('paymentChangeBox').classList.toggle('good',delta>=0);$('paymentChangeBox').classList.toggle('bad',delta<0);
+  $('paymentValidation').classList.toggle('good',delta>=0);$('paymentValidation').classList.toggle('bad',delta<0);
+  $('paymentValidation').textContent=raw===''?'Masukkan uang diterima atau pilih nominal cepat.':delta<0?'Uang diterima kurang '+money(-delta)+'.':delta===0?'Uang pas · tidak ada kembalian.':'Kembalian untuk pelanggan: '+money(delta)+'.';
+  $('processCashDemo').disabled=received<pendingTotal;
  }
  function setMethod(method){
-   demoPaymentMethod=method;
-   const cash=method==='TUNAI';
-   $('paymentCashCard').classList.toggle('active',cash);
-   $('paymentQrisCard').classList.toggle('active',!cash);
-   $('paymentCashCard').setAttribute('aria-pressed',String(cash));
-   $('paymentQrisCard').setAttribute('aria-pressed',String(!cash));
-   $('paymentCashChip').hidden=!cash;
-   $('paymentQrisChip').hidden=cash;
-   $('paymentMethodStatus').innerHTML='<span class="status-dot"></span><span>'+(cash?'Tunai aktif · mode demo; pilih kartu untuk memasukkan uang.':'QRIS AKTIF · Uang diterima '+money(DEMO_TOTAL)+' · Kembalian Rp0 (simulasi).')+'</span>';
+  selectedMethod=method==='QRIS'?'QRIS':'TUNAI';const cash=selectedMethod==='TUNAI';
+  $('paymentCashCard').classList.toggle('active',cash);$('paymentQrisCard').classList.toggle('active',!cash);
+  $('paymentCashCard').setAttribute('aria-pressed',String(cash));$('paymentQrisCard').setAttribute('aria-pressed',String(!cash));
+  $('paymentCashChip').hidden=!cash;$('paymentQrisChip').hidden=cash;
+  $('paymentMethodStatus').innerHTML='<span class="status-dot"></span><span>'+(cash?'Tunai aktif · pilih produk untuk memasukkan uang diterima.':'QRIS aktif · total belanja dikirim sebagai pembayaran non-tunai.')+'</span>';
  }
- function openCashModal(){
-   setMethod('TUNAI');
-   $('cashPaymentModal').hidden=false;
-   $('cashPaymentModal').setAttribute('data-open','true');
-   updateCashPreview();
-   $('cashPaymentModal').querySelector('.payment-modal').focus({preventScroll:true});
+ function closeModal(){modal.hidden=true;modal.removeAttribute('data-open');}
+ function openCashModal(id,total){
+  pendingProductId=id;pendingTotal=total;$('cashPaymentTitle').textContent='Pembayaran Tunai';
+  $('paymentDemoTotal').textContent=money(total);input.value='';
+  modal.hidden=false;modal.setAttribute('data-open','true');updateCashPreview();
+  modal.querySelector('.payment-modal').focus({preventScroll:true});
  }
- function closeCashModal(){
-   $('cashPaymentModal').hidden=true;
-   $('cashPaymentModal').removeAttribute('data-open');
-   $('paymentCashCard').focus({preventScroll:true});
- }
- $('paymentCashCard').addEventListener('click',openCashModal);
- $('paymentQrisCard').addEventListener('click',()=>{setMethod('QRIS');closeIfOpen()});
- function closeIfOpen(){if(!$('cashPaymentModal').hidden){$('cashPaymentModal').hidden=true;$('cashPaymentModal').removeAttribute('data-open')}}
- $('cashPaymentClose').addEventListener('click',closeCashModal);
- $('cashPaymentCancel').addEventListener('click',closeCashModal);
- $('cashPaymentModal').addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal()});
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cashPaymentModal').hidden)closeCashModal()});
- $('cashReceivedInput').addEventListener('input',updateCashPreview);
+ window.NongkiPaymentUI={begin(id){
+  const product=Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null;
+  if(!product||product.active===false)return;
+  const total=Math.max(0,Number(product.price)||0);
+  if(selectedMethod==='QRIS')void record(id,{metode_pembayaran:'QRIS',uang_diterima:total,kembalian:0});
+  else openCashModal(id,total);
+ }};
+ $('paymentCashCard').addEventListener('click',()=>setMethod('TUNAI'));
+ $('paymentQrisCard').addEventListener('click',()=>{setMethod('QRIS');closeModal()});
+ $('cashPaymentClose').addEventListener('click',closeModal);$('cashPaymentCancel').addEventListener('click',closeModal);
+ modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal()});
+ input.addEventListener('input',updateCashPreview);
  document.querySelectorAll('[data-payment-shortcut]').forEach(btn=>btn.addEventListener('click',()=>{
-   $('cashReceivedInput').value=btn.dataset.paymentShortcut==='exact'?String(DEMO_TOTAL):btn.dataset.paymentShortcut;
-   updateCashPreview();
+  input.value=btn.dataset.paymentShortcut==='exact'?String(pendingTotal):btn.dataset.paymentShortcut;updateCashPreview();
  }));
- $('processCashDemo').addEventListener('click',()=>{
-   const received=Number($('cashReceivedInput').value)||0;
-   if(received<DEMO_TOTAL){updateCashPreview();$('cashReceivedInput').focus();return}
-   window.alert('Prototype UI saja. Belum ada transaksi yang disimpan. Logika simpan/batal dan sinkronisasi tetap tidak diubah.');
+ $('processCashDemo').addEventListener('click',async()=>{
+  const received=Math.max(0,Number(input.value)||0);
+  if(!pendingProductId||received<pendingTotal){updateCashPreview();input.focus();return;}
+  const id=pendingProductId;closeModal();
+  await record(id,{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:received-pendingTotal});
+  pendingProductId=null;pendingTotal=0;
  });
- $('paymentDemoTotal').textContent=money(DEMO_TOTAL);
  setMethod('TUNAI');
-})();
+});
 </script>
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v108-payment-ui-main').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v109-payment-logic-connected').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
@@ -2042,7 +2038,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="payment-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="cashPaymentTitle" tabindex="-1">
 <div class="payment-modal-head"><div><h2 id="cashPaymentTitle">Pembayaran Tunai</h2><p>Masukkan uang yang diterima dari pelanggan</p></div><button class="payment-close" id="cashPaymentClose" type="button" aria-label="Tutup dialog">×</button></div>
-<div class="payment-total-box"><span>TOTAL BELANJA · DEMO</span><strong id="paymentDemoTotal">Rp23.000</strong><small>Contoh nominal untuk pratinjau UI, bukan total transaksi aktif.</small></div>
+<div class="payment-total-box"><span>TOTAL BELANJA</span><strong id="paymentDemoTotal">Rp23.000</strong><small>Total dihitung dari harga produk yang dipilih.</small></div>
 <label class="payment-input-label" for="cashReceivedInput">Uang Diterima</label>
 <input class="payment-cash-input" id="cashReceivedInput" type="number" inputmode="numeric" min="0" step="500" placeholder="Masukkan nominal" autocomplete="off">
 <div class="payment-shortcut-title">PILIH NOMINAL CEPAT</div>
@@ -2057,7 +2053,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="payment-change-box bad" id="paymentChangeBox"><span>KEMBALIAN</span><strong id="paymentChangeAmount">−Rp23.000</strong></div>
 <div class="payment-validation bad" id="paymentValidation" aria-live="polite">Uang diterima belum mencukupi.</div>
 <div class="payment-modal-actions"><button id="cashPaymentCancel" type="button">Kembali</button><button class="payment-process" id="processCashDemo" type="button">✓ PROSES TRANSAKSI TUNAI</button></div>
-<p class="payment-demo-note">DEMO UI SAJA · Tombol proses belum menyimpan transaksi atau mengubah sinkronisasi. Sistem kasir Nongki saat ini mencatat setiap ketukan produk sebagai transaksi tersendiri.</p>
+<p class="payment-demo-note">Transaksi disimpan ke antrean lokal dan mengikuti sinkronisasi otomatis yang sudah ada.</p>
 </section></div>
 </body>
 </html>
