@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
-<meta content="#173d2c" name="theme-color"/>
+<meta content="#111315" name="theme-color"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Nongki"/>
 <link rel="apple-touch-icon" href="./nongki-icon.svg"/>
 <link href="./manifest.json" rel="manifest"/>
 <link href="./icon-192.png" rel="icon"/>
-<title>Nongki — Desain Disetujui · PWA</title>
+<title>Nongki — Dark Premium · PWA</title>
 <style>
 :root{--green:#173d2c;--green2:#24563e;--gold:#d5b36a;--cream:#f7f5ef;--ink:#1e2923;--muted:#758078;--line:#e5e8e1;--white:#fff;--red:#b94b40}
 *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
@@ -567,6 +567,133 @@ body:not(.staff-mode) header>.stats{
 .cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
+
+
+/* DEV UI REDESIGN — premium charcoal / champagne gold. UI-only overrides; application logic unchanged. */
+:root{
+ --green:#d5b36a;--green2:#e8c978;--gold:#d5b36a;--cream:#111315;--ink:#f2efe8;
+ --muted:#a4a19a;--line:#343638;--white:#1b1d20;--red:#ff8278;
+ color-scheme:dark;
+}
+html{background:#111315;color-scheme:dark}
+body{background:#111315;color:#f2efe8}
+header{
+ background:radial-gradient(ellipse at 92% 0%,#3b3220 0%,transparent 42%),linear-gradient(145deg,#191b1e 0%,#111315 82%);
+ color:#f5f0e5;border:0;border-bottom:1px solid #3c3424;border-radius:0 0 25px 25px;
+ box-shadow:0 12px 35px #0004;
+}
+header:after{border-color:#d5b36a24}
+.brand p,.date,.total-label,.stat span,.stat-note{color:#c6c0b3}
+.total{color:#f8f2e4;letter-spacing:-1px}
+.stats{gap:9px}
+.stat{background:linear-gradient(145deg,#242629,#1a1c1f);border:1px solid #44403a;border-radius:15px}
+.stat b{color:#e8c978}
+main{color:#f2efe8}
+.section-head h2,.product-group-title{color:#f0d18a}
+.section-head h2{font-size:16px;font-weight:750}
+.sub,.note,label,.empty{color:#a4a19a}
+.product-group-title{border-bottom-color:#403a2d}
+.product{
+ background:linear-gradient(150deg,#202225 0%,#191b1e 100%);color:#f2efe8;
+ border:1px solid #383a3d;border-radius:17px;
+ box-shadow:0 7px 18px #0002;transition:transform .12s,border-color .12s,background .12s;
+}
+.product:active{border-color:#d5b36a;background:#29251c}
+.product .name{color:#f2efe8}
+.product .price{color:#e8c978}
+.product .hint{color:#a4a19a}
+.product .sold-badge{background:#d5b36a;color:#191714}
+.product .sold-badge.zero{background:#333538;color:#b5b0a5}
+.btn{
+ background:#242629;color:#e7d6aa;border:1px solid #45413a;border-radius:12px;
+ box-shadow:none;transition:background .12s,border-color .12s;
+}
+.btn:active{background:#33302a}
+.btn.primary{background:#d5b36a;color:#191714;border-color:#d5b36a;box-shadow:0 4px 14px #d5b36a20}
+.btn.gold{background:#2c271d;color:#efd38e;border-color:#665532}
+.panel,.chart-box{
+ background:linear-gradient(150deg,#1d1f22,#181a1c);border:1px solid #35373a;
+ border-radius:17px;box-shadow:0 8px 22px #0002;color:#f2efe8;
+}
+.history-row{border-bottom-color:#343638}
+.history-icon{background:#302a1d;color:#e8c978}
+.history-info b{color:#f2efe8}
+.history-info small{color:#a4a19a}
+.history-price{color:#e8c978}
+.history-price button{background:#382321;border-color:#633a35;color:#ff9b91}
+.tabs{
+ background:#191b1eef;border:1px solid #4a4334;border-radius:23px;
+ box-shadow:0 10px 28px #0008;backdrop-filter:blur(18px);
+}
+.tab{color:#aaa69d}
+.tab.active{background:linear-gradient(135deg,#e6c779,#c7a453);color:#171615;font-weight:800}
+input,select,textarea{
+ background:#202225!important;color:#f2efe8!important;border:1px solid #414347!important;
+ border-radius:11px!important;caret-color:#e8c978;
+}
+input::placeholder,textarea::placeholder{color:#8c8982}
+input:focus,select:focus,textarea:focus{outline:2px solid #d5b36a66;border-color:#d5b36a!important}
+option{background:#202225;color:#f2efe8}
+label{color:#c3bdb1}
+.toast{background:#e2c16f;color:#191714;box-shadow:0 8px 25px #0005;font-weight:750}
+.separator{background:#343638}
+.report-card{
+ background:linear-gradient(150deg,#242629,#191b1e);border-color:#393b3e;border-radius:16px;
+}
+.report-card span,.report-card small{color:#aaa69d}
+.report-card b{color:#e8c978}
+.chart-title{color:#f2efe8}
+.chart-sub{color:#aaa69d}
+.bar-track{background:#343638}
+.bar-fill{background:linear-gradient(90deg,#b89549,#f0d58d)}
+.bar-value{color:#e8c978}
+.month-bars{border-bottom-color:#44403a}
+.month-bar{background:linear-gradient(180deg,#f0d58d,#b89549)}
+.month-label{color:#aaa69d}
+.role-demo{background:#202225;border-color:#3b3d40}
+.role-demo small{color:#aaa69d}
+.locked-note{background:#302719;border-color:#68532d;color:#e8c978}
+.history-switch{background:#202225;border:1px solid #383a3d}
+.history-switch-btn{color:#aaa69d}
+.history-switch-btn.active{background:#393020;color:#f2d58e;box-shadow:0 2px 8px #0004}
+.history-switch-btn span{background:#4a402b;color:#f0d58d}
+.cloud-status.active{background:#20382b;color:#a5e0b5}
+.cloud-status.cancelled{background:#402522;color:#ff9b91}
+.login-overlay{background:radial-gradient(ellipse at 50% 0%,#332b1d 0%,#111315 60%);color:#f2efe8}
+.login-card{background:linear-gradient(150deg,#222427,#181a1c);border:1px solid #494237;box-shadow:0 24px 65px #0008}
+.login-logo{background:linear-gradient(145deg,#343020,#191b1e);border:1px solid #665632}
+.login-card h2{color:#f2efe8}
+.login-card p{color:#aaa69d}
+.login-demo{background:#202225;color:#aaa69d;border:1px solid #383a3d}
+.user-row{border-bottom-color:#343638}
+.user-row small{color:#aaa69d}
+.admin-user-panel{background:transparent}
+.payment-method-card{border:1px solid #51452c;box-shadow:0 5px 16px #0003}
+.payment-cash{background:linear-gradient(135deg,#e4c16e,#b08c3e);color:#191714}
+.payment-qris{background:linear-gradient(135deg,#303236,#1d1f22);color:#f1d48c;border-color:#62502d}
+.payment-method-card small{opacity:.85}
+.payment-cart-count{background:#17181928}
+.cart-summary{background:#1d1f22;border-color:#3b3d40}
+.cart-summary>span,.cart-summary>small{color:#aaa69d}
+.cart-summary>b{color:#e8c978}
+.cash-modal-backdrop{background:#050607d9;backdrop-filter:blur(7px)}
+.cash-modal{background:linear-gradient(155deg,#242629,#17191b);color:#f2efe8;border:1px solid #4b4332;box-shadow:0 24px 80px #0009}
+.cash-modal h2{color:#f0d58d}
+.cash-modal-subtitle{color:#aaa69d}
+.cash-modal-close{background:#34312a;color:#f0d58d}
+.cash-total,.cash-change{background:#302a1d;border:1px solid #51452e}
+.cash-total span,.cash-change span{color:#c7b78e}
+.cash-total b,.cash-change b{color:#f0d58d}
+.cash-shortcuts button,.cash-numpad button{background:#25272a;border-color:#45413a;color:#e8d5a4}
+.cash-shortcuts button:last-child{background:#3a3020;border-color:#80683a;color:#f0d58d}
+.cash-change{background:#302a1d}
+.cash-change small{color:#aaa69d}
+.cash-confirm{background:linear-gradient(135deg,#e4c16e,#b08c3e);color:#191714}
+button:disabled,.btn:disabled{opacity:.45;filter:saturate(.5)}
+a{color:#e8c978}
+:focus-visible{outline-color:#e8c978}
+::selection{background:#d5b36a55;color:#fff}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
