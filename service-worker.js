@@ -1,5 +1,5 @@
-// Nongki PWA v140-fix-complete-payload: complete batch transaction payload.
-const CACHE_NAME = 'nongki-v140-fix-complete-payload';
+// Nongki PWA v143-android-sync-port: verified transaction payload and cache refresh.
+const CACHE_NAME = 'nongki-v143-android-sync-port';
 
 const CORE_FILES = [
   './',
