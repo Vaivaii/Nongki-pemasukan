@@ -1,5 +1,5 @@
-// Nongki PWA v138-realtime-qty-header: real-time local sold quantity in header.
-const CACHE_NAME = 'nongki-v138-realtime-qty-header';
+// Nongki PWA v140-fix-complete-payload: complete batch transaction payload.
+const CACHE_NAME = 'nongki-v140-fix-complete-payload';
 
 const CORE_FILES = [
   './',
