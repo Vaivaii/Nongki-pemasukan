@@ -1,5 +1,5 @@
-// Nongki PWA v138-fix-cart-reset-and-badge: sync cash batch only when Process is pressed.
-const CACHE_NAME = 'nongki-v138-fix-cart-reset-and-badge';
+// Nongki PWA v138-realtime-qty-header: real-time local sold quantity in header.
+const CACHE_NAME = 'nongki-v138-realtime-qty-header';
 
 const CORE_FILES = [
   './',
