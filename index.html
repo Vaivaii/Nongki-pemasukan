@@ -819,7 +819,7 @@ function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 function total(tx){return tx.reduce((s,t)=>s+((t.status==='cancelled'||t.status==='canceled')?0:(Number(t.total)||0)),0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+((t.status==='cancelled'||t.status==='canceled')?0:(Number(t.qty)||0)),0)}
-function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayItems').textContent=itemCount(tx)}
+let serverHeaderItemsToday=null; function renderHeader(){const tx=dayTx();$('todayLabel').textContent=dateText(today());const paymentUI=window.NongkiPaymentUI;const cartCounts=paymentUI?.getHeaderCartCounts?.()||{};const cartQty=Object.values(cartCounts).reduce((sum,qty)=>sum+Math.max(0,Number(qty)||0),0);const cartTotal=Math.max(0,Number(paymentUI?.getHeaderCartTotal?.())||0);const pendingQty=itemCount(tx.filter(t=>t.syncStatus==='pending'||t.syncStatus==='failed'));const qtyBase=serverHeaderItemsToday===null?itemCount(tx):serverHeaderItemsToday+pendingQty;$('todayTotal').textContent=rupiah(total(tx)+cartTotal);$('todayItems').textContent=qtyBase+cartQty}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -1287,9 +1287,9 @@ async function recordBatch(items,payment={}) {
   return saved.id;
  }catch(error){console.error('Batch transaction save failed:',error);toast('Gagal menyimpan transaksi lokal. Coba lagi.');return false;}
 }
-async function syncBatchNow(){const ok=await syncPending();if(ok){await fetchGlobalTotal();await fetchServerHistory();}return ok;}
+async function syncBatchNow(){const ok=await syncPending();if(ok){await fetchGlobalTotal();await fetchServerHistory();const reportOk=await fetchReport();if(reportOk){const todayRow=reportDailyRows().find(row=>row.date===today());if(todayRow)serverHeaderItemsToday=Math.max(0,Number(todayRow.units)||0);}renderHeader();}return ok;}
 // API sempit untuk UI pembayaran di script terpisah; data dan record tetap berada di scope inti.
-window.NongkiCore={getProduct:(id)=>Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null,record:(id,payment)=>record(id,payment),recordBatch:(items,payment)=>recordBatch(items,payment),syncBatchNow:()=>syncBatchNow(),money:(value)=>rupiah(value)};
+window.NongkiCore={getProduct:(id)=>Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null,record:(id,payment)=>record(id,payment),recordBatch:(items,payment)=>recordBatch(items,payment),syncBatchNow:()=>syncBatchNow(),refreshHeader:()=>renderHeader(),money:(value)=>rupiah(value)};
 
 async function cancelTx(id){
  let t=data.transactions.find(x=>x.id===id);if(!t||t.status==='cancelled')return;
@@ -1298,7 +1298,7 @@ async function cancelTx(id){
    const indexed=await getAllRecords('transactions');
    const saved=indexed.find(x=>x.id===id||String(x.legacyId||'')===String(id));
    if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
-   t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
+   t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';serverHeaderItemsToday=null;
    try{window.NongkiPaymentUI?.transactionCancelled?.(String(id),Number(t.total)||0,t)}catch(paymentCancelError){console.warn('Payment accumulator adjustment skipped:',paymentCancelError)}
    const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
    save();saveCloudPreview();const globalEl=$('todayGlobal');if(globalEl&&String(t.date||today()).slice(0,10)===today()){const currentGlobal=Number(String(globalEl.textContent||'').replace(/[^0-9]/g,''))||0;globalEl.textContent=rupiah(Math.max(0,currentGlobal-(Number(t.total)||0)));}setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());render();try{window.NongkiPaymentUI?.refreshPreview?.()}catch(previewError){console.warn('Income preview refresh skipped:',previewError)}try{const cancelSyncOk=await syncPending();if(cancelSyncOk){await fetchGlobalTotal();await fetchServerHistory();}else{console.warn('Pembatalan tersimpan lokal; sinkronisasi server menunggu koneksi/konfigurasi.');}}catch(cancelSyncError){console.warn('Pembatalan tersimpan lokal; sinkronisasi server tertunda:',cancelSyncError)}render();try{window.NongkiPaymentUI?.refreshPreview?.()}catch(previewError){console.warn('Income preview refresh skipped:',previewError)}toast('Transaksi dibatalkan · pemasukan dan badge diperbarui'+(navigator.onLine?' · sinkronisasi server dicoba':' · menunggu koneksi'));
@@ -2048,10 +2048,11 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(window.currentTotalBelanja);
    updateTodayIncomePreview(window.currentTotalBelanja);
    try{if(typeof window.renderGrid==='function')window.renderGrid();}catch(renderError){console.warn('Cart badge refresh skipped:',renderError)}
+   try{window.NongkiCore?.refreshHeader?.();}catch(headerError){console.warn('Header quantity refresh skipped:',headerError)}
    updateCashPreview();
    return window.currentTotalBelanja;
   }
-  function resetCartState(){Object.keys(cart).forEach(id=>delete cart[id]);currentCartItems.length=0;currentSaleTransactions.clear();lastProductId=null;lastProductTotal=0;lastProductRecorded=false;savedBatchId=null;window.currentTotalBelanja=0;const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(0);updateTodayIncomePreview(0);updateCashPreview();try{if(typeof window.renderGrid==='function')window.renderGrid();}catch(renderError){console.warn('Cart badge reset skipped:',renderError)}}
+  function resetCartState(){Object.keys(cart).forEach(id=>delete cart[id]);currentCartItems.length=0;currentSaleTransactions.clear();lastProductId=null;lastProductTotal=0;lastProductRecorded=false;savedBatchId=null;window.currentTotalBelanja=0;const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(0);updateTodayIncomePreview(0);updateCashPreview();try{if(typeof window.renderGrid==='function')window.renderGrid();}catch(renderError){console.warn('Cart badge reset skipped:',renderError)}try{window.NongkiCore?.refreshHeader?.();}catch(headerError){console.warn('Header quantity reset skipped:',headerError)}}
   function updateCashPreview(){
    const inp=input(),totalEl=$('totalBelanjaModal')||$('paymentDemoTotal'),changeEl=$('textKembalian'),changeBox=$('paymentChangeBox'),validation=$('paymentValidation'),btn=process();
    if(!inp)return;
@@ -2103,7 +2104,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    if(syncingBatch)return;
    const card=$('paymentQrisCard');if(card)card.disabled=true;syncingBatch=true;
    try{
-    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'QRIS',uang_diterima:toAmount(window.currentTotalBelanja),kembalian:0});if(!savedBatchId)throw new Error('Transaksi QRIS belum berhasil disimpan lokal.');}
+    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'QRIS',uang_diterima:toAmount(window.currentTotalBelanja),kembalian:0});if(!savedBatchId)throw new Error('Transaksi QRIS belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}
     const synced=await window.NongkiCore.syncBatchNow();
     if(!synced){const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi QRIS tersimpan lokal, tetapi sinkronisasi belum berhasil. Tekan QRIS lagi untuk mencoba ulang tanpa membuat transaksi ganda.</span>';return;}
     closeTunaiModal();resetCartState();
@@ -2118,7 +2119,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
     if(resolvedPrice===undefined||resolvedPrice===null||product?.active===false)return;
     rememberProduct(id,resolvedPrice);
    },
-   getCurrentTotal:()=>toAmount(window.currentTotalBelanja),refreshPreview:()=>updateTodayIncomePreview(window.currentTotalBelanja),getCartCounts:()=>Object.keys(cart).reduce((counts,id)=>{counts[id]=Number(cart[id]?.quantity)||0;return counts;},{}),
+   getCurrentTotal:()=>toAmount(window.currentTotalBelanja),refreshPreview:()=>updateTodayIncomePreview(window.currentTotalBelanja),getCartCounts:()=>Object.keys(cart).reduce((counts,id)=>{counts[id]=Number(cart[id]?.quantity)||0;return counts;},{}),getHeaderCartCounts:()=>savedBatchId?{}:Object.keys(cart).reduce((counts,id)=>{counts[id]=Number(cart[id]?.quantity)||0;return counts;},{}),getHeaderCartTotal:()=>savedBatchId?0:toAmount(window.currentTotalBelanja),
    markRecorded(id,total){if(lastProductId===String(id))lastProductRecorded=true;},
    trackTransaction(transactionId,amount){currentSaleTransactions.set(String(transactionId),toAmount(amount));},
    transactionCancelled(transactionId,amount,transaction){if(currentSaleTransactions.has(String(transactionId)))currentSaleTransactions.delete(String(transactionId));const items=Array.isArray(transaction?.items)?transaction.items:(transaction?.productId?[{productId:transaction.productId,quantity:Number(transaction.qty)||1}]:[]);items.forEach(item=>{const id=String(item.productId||item.id||'');if(!cart[id])return;cart[id].quantity=Math.max(0,cart[id].quantity-(Number(item.quantity??item.qty)||1));if(cart[id].quantity===0)delete cart[id];});rebuildCartState();return true;},
@@ -2149,7 +2150,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    if(syncingBatch)return;
    syncingBatch=true;if(btn)btn.disabled=true;
    try{
-    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});if(!savedBatchId)throw new Error('Transaksi belum berhasil disimpan lokal.');}
+    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});if(!savedBatchId)throw new Error('Transaksi belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}
     const synced=await window.NongkiCore.syncBatchNow();
     if(!synced){const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi tersimpan lokal, tetapi sinkronisasi belum berhasil. Tekan PROSES lagi untuk mencoba ulang tanpa membuat transaksi ganda.</span>';if(btn)btn.disabled=false;return;}
     closeTunaiModal();resetCartState();
@@ -2163,7 +2164,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=138-fix-cart-reset-and-badge').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=138-realtime-qty-header').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
