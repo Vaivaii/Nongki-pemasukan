@@ -1,5 +1,5 @@
-// Nongki PWA v135-fix-batch-sync-jkl: sync cash batch only when Process is pressed.
-const CACHE_NAME = 'nongki-v135-fix-batch-sync-jkl';
+// Nongki PWA v136-fix-badge-and-cancel: sync cash batch only when Process is pressed.
+const CACHE_NAME = 'nongki-v136-fix-badge-and-cancel';
 
 const CORE_FILES = [
   './',
