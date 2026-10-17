@@ -1,4 +1,4 @@
-// Nongki PWA v125: accumulate current sale total.
+// Nongki PWA v131: sync cash batch only when Process is pressed.
 const CACHE_NAME = 'nongki-v131-sync-on-process-only';
 
 const CORE_FILES = [
