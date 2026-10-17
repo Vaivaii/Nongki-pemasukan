@@ -1151,7 +1151,14 @@ function hybridReportRows(month){
 }
 function renderServerReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
- const month=monthEl.value,hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
+ const month=monthEl.value,compactReport=serverReportData?.report;
+ if(compactReport&&typeof compactReport==='object'){
+  const raw=compactReport.itemTerjual||{},items=Array.isArray(raw)?raw.map((it,i)=>({name:String(it?.nama||it?.name||it?.produk||('Produk '+(i+1))),units:parseNominal(it?.jumlah??it?.qty??it?.units??it?.terjual??it?.total??0)})):Object.entries(raw).map(([name,value])=>({name,units:parseNominal(typeof value==='object'?(value?.jumlah??value?.qty??value?.units??value?.terjual??value?.total??0):value)}));
+  const units=typeof raw==='number'?parseNominal(raw):items.reduce((sum,it)=>sum+it.units,0);$('reportRevenue').textContent=rupiah(compactReport.totalOmset);$('reportTxCount').textContent=parseNominal(compactReport.totalTransaksi)+' transaksi · server';$('reportItems').textContent=units.toLocaleString('id-ID');
+  const max=Math.max(1,...items.map(it=>it.units));$('productChart').innerHTML=items.length?items.sort((a,b)=>b.units-a.units).slice(0,10).map(it=>'<div class="bar-row"><div class="bar-label" title="'+esc(it.name)+'">'+esc(it.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,it.units/max*100)+'%"></div></div><div class="bar-value">'+it.units+' unit</div></div>').join(''):'<div class="empty">Server belum mengembalikan rincian produk terjual.</div>';
+  $('reportItemsStatus').textContent='Rincian dari server';$('dailyChart').innerHTML='<div class="empty">Server hanya mengirim ringkasan total.</div>';$('dailyLabels').innerHTML='';$('dailySummary').textContent='Omzet server: '+rupiah(compactReport.totalOmset)+' · transaksi: '+parseNominal(compactReport.totalTransaksi);$('weeklyChart').innerHTML='<div class="empty">Belum tersedia pada respons ringkasan server.</div>';$('monthlyChart').innerHTML='<div class="empty">Belum tersedia pada respons ringkasan server.</div>';$('monthlyLabels').innerHTML='';renderTodaySummary();return;
+ }
+ const hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
  const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10);
  let monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
  if(!monthly.some(row=>row.revenue>0)){
@@ -1200,8 +1207,10 @@ async function fetchServerReport(){
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan JSON laporan.');
   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getReport bukan JSON.')}
   if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error'))throw new Error(String(result.error||result.message||'Server menolak permintaan laporan.'));
+  const report=result?.report;
   const payload=result?.data&&typeof result.data==='object'?result.data:result;
-  if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
+  const hasLegacyArrays=Array.isArray(payload?.productSales)&&Array.isArray(payload?.dailyReport)&&Array.isArray(payload?.monthlyReport);
+  if(!report&&!hasLegacyArrays)throw new Error('Respons getReport harus berisi report atau format laporan lama yang valid.');
   if(requestId!==serverReportRequestId)return false;
   // Transaksi utama dicatat di IndexedDB; localStorage hanya menyimpan ringkasan/cache lama.
   // Muat keduanya agar fallback tetap bekerja setelah aplikasi dibuka ulang.
@@ -1216,7 +1225,8 @@ async function fetchServerReport(){
    }):[];
   }catch(error){console.warn('Transaksi lokal IndexedDB tidak dapat dibaca untuk laporan:',error);localReportTransactions=[];}
   if(requestId!==serverReportRequestId)return false;
-  serverReportData={...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};serverReportError='';renderServerReports();updateReportServerStatus();return true;
+  serverReportData=report?{productSales:[],dailyReport:[],monthlyReport:[],report,summaryHariIni:report}:{...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};
+  serverReportError='';renderServerReports();updateReportServerStatus();return true;
  }catch(error){
   if(requestId===serverReportRequestId){serverReportError=error?.name==='AbortError'?'Waktu mengambil laporan server habis.':String(error?.message||error);console.error('Gagal mengambil laporan server:',error);updateReportServerStatus();}
   return false;
@@ -1283,7 +1293,7 @@ async function recordBatch(items,payment={}) {
   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:clean,kasir:activeProfileName(),metode_pembayaran:method,uang_diterima:received,kembalian:change});
   const names=[...new Set(clean.map(i=>i.productName))].join(', ');
   const tx={id:saved.id,productId:clean[0].productId,name:names,icon:data.products.find(p=>String(p.id)===clean[0].productId)?.icon||'🧾',category:clean[0].category,unitPrice:total,qty:clean.reduce((sum,i)=>sum+i.quantity,0),total,date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',items:clean};
-  data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();toast('Transaksi '+names+' · '+rupiah(total)+' tersimpan lokal, mulai sinkronisasi.');
+  data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());renderRecent();renderHeader();render();toast('Transaksi '+names+' · '+rupiah(total)+' tersimpan lokal, mulai sinkronisasi.');
   return saved.id;
  }catch(error){console.error('Batch transaction save failed:',error);toast('Gagal menyimpan transaksi lokal. Coba lagi.');return false;}
 }
@@ -1307,7 +1317,9 @@ async function cancelTx(id){
 
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
+async function loadReportData(){renderReports();try{const ok=await fetchReport();if(ok)return true;serverReportData=null;try{const local=await getAllRecords('transactions');if(Array.isArray(local))localReportTransactions=local.map(tx=>{const items=Array.isArray(tx.items)?tx.items:[],qty=items.reduce((n,it)=>n+(Number(it.quantity??it.qty)||1),0),amount=parseNominal(tx.total??tx.nominal??items.reduce((n,it)=>n+(Number(it.lineTotal??it.subtotal)||((Number(it.quantity??it.qty)||1)*(Number(it.unitPrice??it.harga_satuan)||0))),0)),old=Array.isArray(data?.transactions)?data.transactions.find(row=>String(row.id)===String(tx.id)||String(row.id)===String(tx.legacyId||'')):null;return {id:tx.id,date:tx.businessDate||tx.date||tx.createdAt,status:tx.status==='canceled'||tx.status==='cancelled'?'cancelled':'active',syncStatus:old?.syncStatus||(tx.syncStatus||'pending'),total:amount,qty:qty||1,createdAt:tx.createdAt};});}catch(e){console.warn('Fallback laporan IndexedDB gagal:',e);}renderReports();const status=$('reportServerStatus');if(status)status.textContent='Offline / server gagal · ringkasan lokal ditampilkan.';return false;}catch(e){console.warn('Laporan memakai fallback lokal:',e);serverReportData=null;renderReports();const status=$('reportServerStatus');if(status)status.textContent='Laporan server gagal · data lokal tetap ditampilkan.';return false;}}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void loadReportData();}}
+document.querySelectorAll('#tab-laporan-btn, .tab[data-view="reportsView"]').forEach(tab=>tab.addEventListener('click',event=>{event.stopPropagation();showView('reportsView');}));
 document.addEventListener('click',e=>{
 const clickTarget=e.target instanceof Element?e.target:e.target?.parentElement;
 let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){const price=Math.max(0,Number(product.price)||0);if(typeof window.NongkiPaymentUI?.begin==='function')window.NongkiPaymentUI.begin(id,price);else{window.currentTotalBelanja=Math.max(0,Number(window.currentTotalBelanja)||0)+price;const totalEl=document.getElementById('totalBelanjaModal');if(totalEl)totalEl.textContent=rupiah(window.currentTotalBelanja);}}}catch(error){console.error('Product click handler failed:',error);try{toast('Produk gagal ditambahkan ke keranjang.');}catch(_){}}return}
@@ -2086,18 +2098,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    inp.focus();
   }
   window.openTunaiModal=openTunaiModal;
-  async function processQris(){
-   if(!currentCartItems.length){const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Pilih satu atau beberapa produk terlebih dahulu sebelum memproses QRIS.</span>';return;}
-   if(syncingBatch)return;
-   const card=$('paymentQrisCard');if(card)card.disabled=true;syncingBatch=true;
-   try{
-    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'QRIS',uang_diterima:toAmount(window.currentTotalBelanja),kembalian:0});if(!savedBatchId)throw new Error('Transaksi QRIS belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}
-    const synced=await window.NongkiCore.syncBatchNow(savedBatchId);
-    if(!synced){const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi QRIS tersimpan lokal, tetapi sinkronisasi belum berhasil. Tekan QRIS lagi untuk mencoba ulang tanpa membuat transaksi ganda.</span>';return;}
-    closeTunaiModal();resetCartState();
-   }catch(error){console.error('QRIS batch transaction failed:',error);const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>QRIS gagal diproses. Periksa status sinkronisasi lalu coba lagi.</span>';}
-   finally{syncingBatch=false;if(card)card.disabled=false;}
-  }
+  async async function processQris(){const card=$('paymentQrisCard'),status=$('paymentMethodStatus');if(!currentCartItems.length){if(status)status.textContent='Pilih satu atau beberapa produk terlebih dahulu sebelum memproses QRIS.';return;}if(syncingBatch)return;syncingBatch=true;if(card)card.disabled=true;try{if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'QRIS',uang_diterima:toAmount(window.currentTotalBelanja),kembalian:0});if(!savedBatchId)throw new Error('Transaksi QRIS belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}const synced=await window.NongkiCore.syncBatchNow(savedBatchId);if(!synced){if(status)status.textContent='Transaksi QRIS tersimpan lokal, tetapi belum terkonfirmasi server. Tekan QRIS lagi untuk mencoba ulang tanpa membuat transaksi ganda.';return;}closeTunaiModal();resetCartState();if(status)status.textContent='Transaksi QRIS berhasil disinkronkan.';}catch(error){console.error('QRIS batch transaction failed:',error);if(status)status.textContent='QRIS belum selesai diproses. Data lokal dipertahankan; periksa koneksi lalu coba lagi.';}finally{syncingBatch=false;if(card)card.disabled=false;}}
   window.NongkiPaymentUI={
    initialized:true,getMethod:()=>selectedMethod,
    begin(id,price){
@@ -2130,20 +2131,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
    inp.value=shortcut==='exact'?String(window.currentTotalBelanja):String(toAmount(shortcut));
    updateCashPreview();inp.focus();
   });
-  bind('processCashDemo','click',async()=>{
-   const inp=input(),btn=process();if(!inp||!currentCartItems.length)return;
-   const raw=String(inp.value??''),received=raw===''?0:toAmount(inp.value),total=toAmount(window.currentTotalBelanja);
-   if(raw.trim()===''||received<total){updateCashPreview();inp.focus();return;}
-   if(syncingBatch)return;
-   syncingBatch=true;if(btn)btn.disabled=true;
-   try{
-    if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});if(!savedBatchId)throw new Error('Transaksi belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}
-    const synced=await window.NongkiCore.syncBatchNow(savedBatchId);
-    if(!synced){const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi tersimpan lokal, tetapi sinkronisasi belum berhasil. Tekan PROSES lagi untuk mencoba ulang tanpa membuat transaksi ganda.</span>';if(btn)btn.disabled=false;return;}
-    closeTunaiModal();resetCartState();
-   }catch(error){console.error('Cash batch transaction failed:',error);if(btn)btn.disabled=false;try{const status=$('paymentMethodStatus');if(status)status.innerHTML='<span class="status-dot"></span><span>Transaksi tunai gagal diproses. Periksa status sinkronisasi; ulangi PROSES untuk mencoba lagi.</span>';}catch(_){}}
-   finally{syncingBatch=false;if(btn&&modal()&&!modal().hidden&&!savedBatchId)updateCashPreview();}
-  });
+  bind('processCashDemo','click',async()=>{const inp=input(),btn=process(),status=$('paymentMethodStatus');if(!inp||!currentCartItems.length||syncingBatch)return;const raw=String(inp.value??''),received=raw.trim()===''?0:toAmount(inp.value),total=toAmount(window.currentTotalBelanja);if(raw.trim()===''||received<total){updateCashPreview();inp.focus();return;}syncingBatch=true;if(btn)btn.disabled=true;try{if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});if(!savedBatchId)throw new Error('Transaksi belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}const synced=await window.NongkiCore.syncBatchNow(savedBatchId);if(!synced){if(status)status.textContent='Transaksi tersimpan lokal, tetapi belum terkonfirmasi server. Tekan PROSES lagi untuk mencoba ulang tanpa membuat transaksi ganda.';return;}closeTunaiModal();resetCartState();if(status)status.textContent='Transaksi tunai berhasil disinkronkan.';}catch(error){console.error('Cash batch transaction failed:',error);if(status)status.textContent='Transaksi tunai belum selesai. Data lokal dipertahankan; periksa koneksi lalu coba lagi.';}finally{syncingBatch=false;if(btn)btn.disabled=false;if(btn&&modal()&&!modal().hidden)updateCashPreview();}});
   setMethod('TUNAI');updateCashPreview();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPaymentUI,{once:true});else initPaymentUI();
