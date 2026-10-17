@@ -796,7 +796,7 @@ function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
-function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayItems').textContent=itemCount(tx)}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx)+(typeof cartTotal==='function'?cartTotal():0));$('todayItems').textContent=itemCount(tx)+(typeof cartCount==='function'?cartCount():0)}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -809,7 +809,15 @@ const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
 function renderGrid(){
- let counts={};dayTx().forEach(t=>{if(t.productId)counts[t.productId]=(counts[t.productId]||0)+(Number(t.qty)||1)});
+ let counts={};
+ dayTx().forEach(t=>{
+  if(Array.isArray(t.items)&&t.items.length){
+   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
+  }else if(t.productId){
+   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
+  }
+ });
+ if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
  let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
  let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
@@ -1246,7 +1254,7 @@ function cartCount(){return cartLines().reduce((sum,x)=>sum+x.quantity,0);}
 function refreshPaymentUI(){
  const count=cartCount(),total=cartTotal(),enabled=count>0;
  ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
- ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count+' item';});
+ ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
  if($('paymentCartTotal'))$('paymentCartTotal').textContent=rupiah(total);
  if($('paymentCartItems'))$('paymentCartItems').textContent=count?cartLines().map(x=>x.productName+' × '+x.quantity).join(' · '):'Belum ada item — ketuk produk untuk menambahkan';
  if($('clearPaymentCart'))$('clearPaymentCart').disabled=!enabled||paymentBusy;
@@ -1257,7 +1265,7 @@ function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
+ refreshPaymentUI();renderHeader();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
@@ -1284,7 +1292,7 @@ async function completeCartPayment(method,paid){
   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items,metodePembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
   const d=new Date(),stamp=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
   const summary=items.map(x=>x.productName+' × '+x.quantity).join(', ');
-  data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',items:items.map(x=>({productId:String(x.productId),productName:x.productName,quantity:Number(x.quantity)||0,unitPrice:Number(x.unitPrice)||0,lineTotal:(Number(x.quantity)||0)*(Number(x.unitPrice)||0)})),name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
   save();paymentCart.clear();closeCashModal();if($('cashAmountInput'))$('cashAmountInput').value='';
   setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();refreshPaymentUI();
   toast('Pembayaran '+method+' tersimpan lokal · sinkronisasi otomatis dimulai.');
@@ -1318,7 +1326,7 @@ $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key=
 $('closeCashModal')?.addEventListener('click',closeCashModal);
 $('cashPaymentModal')?.addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal();});
 $('cashAmountInput')?.addEventListener('input',updateCashCalculation);
-$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderGrid();});
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
 document.querySelectorAll('[data-cash-shortcut]').forEach(button=>button.addEventListener('click',()=>{const v=button.dataset.cashShortcut==='exact'?cartTotal():Number(button.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();}));
 document.querySelectorAll('[data-cash-key]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();}));
 $('confirmCashPayment')?.addEventListener('click',()=>completeCartPayment('Tunai',parseCashAmount()));
