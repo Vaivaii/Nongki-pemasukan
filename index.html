@@ -871,8 +871,12 @@ function serverHistoryArray(result){
  if(Array.isArray(result))return result;
  if(!result||typeof result!=='object')return [];
  const candidates=[result?.history,result?.data,result?.transactions,result?.recentTransactions,result?.recent_transactions,result?.rows,result?.items,result?.result?.history,result?.result?.data,result?.result?.transactions,result?.result?.rows,result?.result?.items];
- for(const c of candidates){if(Array.isArray(c))return c;if(c&&typeof c==='object')for(const k of ['history','data','transactions','rows','items'])if(Array.isArray(c?.[k]))return c[k];}
- return [];
+ let emptyArray=null;
+ for(const c of candidates){
+  if(Array.isArray(c)){if(c.length)return c;emptyArray=c;continue;}
+  if(c&&typeof c==='object')for(const k of ['history','data','transactions','rows','items'])if(Array.isArray(c?.[k])){if(c[k].length)return c[k];emptyArray=c[k];}
+ }
+ return emptyArray||[];
 }
 function normalizeServerHistory(result){
  let rows=serverHistoryArray(result);
