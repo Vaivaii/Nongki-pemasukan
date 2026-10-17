@@ -1,5 +1,5 @@
-// Nongki PWA v140-fix-complete-payload: complete batch transaction payload.
-const CACHE_NAME = 'nongki-v140-fix-complete-payload';
+// Nongki PWA v141-payment-fields-force-refresh: payment status, received cash and change fields.
+const CACHE_NAME = 'nongki-v142-global-income-get';
 
 const CORE_FILES = [
   './',

@@ -556,6 +556,17 @@ body:not(.staff-mode) header>.stats{
 
 
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* Payment UI isolated to dev-ui; existing theme and screens are retained. */
+.payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 12px}
+.payment-method-card{display:flex;align-items:center;gap:9px;position:relative;min-width:0;padding:13px 10px;border:1px solid transparent;border-radius:15px;color:#fff;cursor:pointer;box-shadow:0 3px 9px #173d2c0d;user-select:none}
+.payment-method-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed;filter:saturate(.6)}
+.payment-cash{background:linear-gradient(135deg,#059669,#047857)}.payment-qris{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+.payment-icon{font-size:25px;line-height:1;flex-shrink:0}.payment-method-card b{display:block;font-size:13px;letter-spacing:.5px}.payment-method-card small{display:block;font-size:9px;opacity:.9;margin-top:3px}.payment-cart-count{margin-left:auto;align-self:flex-start;font-size:9px;white-space:nowrap;background:#ffffff24;border-radius:20px;padding:4px 6px}
+.cart-summary{display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:0 0 16px}.cart-summary>span{font-size:11px;color:var(--muted)}.cart-summary>b{font-size:16px;color:var(--green);text-align:right}.cart-summary>small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.cart-summary button{grid-column:1/-1;justify-self:start;padding:6px 9px;font-size:10px}.cart-summary button:disabled{opacity:.45}
+.cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
+
 </style>
 </head>
 <body>
@@ -581,7 +592,22 @@ body:not(.staff-mode) header>.stats{
 <main>
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
-<div class="products" id="productGrid"></div>
+<section class="payment-methods" aria-label="Metode pembayaran">
+<div class="payment-method-card payment-cash" id="paymentCashCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">💵</span><span><b>TUNAI</b><small>Bayar dengan uang tunai</small></span><span class="payment-cart-count" id="paymentCartCount">0 item</span></div>
+<div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
+</section>
+<div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
+<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
+<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
+<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
+<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
+<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
+<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
+<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
+<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
+<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
+<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
+</section></div><div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
@@ -682,7 +708,7 @@ function reqResult(r){return new Promise((resolve,reject)=>{r.onsuccess=()=>reso
 function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Transaksi database gagal'));tx.onabort=()=>reject(tx.error||new Error('Transaksi database dibatalkan'));});}
 async function getAllRecords(storeName){const db=await openNongkiDB();try{return await reqResult(db.transaction(storeName,'readonly').objectStore(storeName).getAll());}finally{db.close();}}
 async function putProduct(p){const db=await openNongkiDB();try{const tx=db.transaction('products','readwrite');const done=txDone(tx);tx.objectStore('products').put({...p,id:String(p.id),price:Number(p.price)||0,updatedAt:new Date().toISOString()});await done;}finally{db.close();}}
-async function recordTransaction({userId=null,deviceId=null,items}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function recordTransaction({userId=null,deviceId=null,items,metodePembayaran='Tunai',uangDiterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0),metode_pembayaran:metodePembayaran,uangDiterima:Number(uangDiterima)||0,kembalian:Number(kembalian)||0,statusEvent:'Sukses'};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function cancelTransaction(id,{userId=null,reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function migrateLegacyLocalData(){return {products:0,transactions:0,skipped:true};}
 
@@ -770,7 +796,7 @@ function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
-function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx));$('todayItems').textContent=itemCount(tx)}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx)+(typeof cartTotal==='function'?cartTotal():0));$('todayItems').textContent=itemCount(tx)+(typeof cartCount==='function'?cartCount():0)}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -783,7 +809,15 @@ const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
 function renderGrid(){
- let counts={};dayTx().forEach(t=>{if(t.productId)counts[t.productId]=(counts[t.productId]||0)+(Number(t.qty)||1)});
+ let counts={};
+ dayTx().forEach(t=>{
+  if(Array.isArray(t.items)&&t.items.length){
+   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
+  }else if(t.productId){
+   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
+  }
+ });
+ if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
  let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
  let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
@@ -1213,15 +1247,61 @@ function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('g
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function record(id){
- let p=data.products.find(x=>x.id===id);if(!p||p.active===false)return;
- const d=new Date();
- try {
-   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:Number(p.price)}]});
-   const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());void syncPending();render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · sinkronisasi otomatis');
- } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.'); }
+const paymentCart=new Map();let paymentBusy=false;let activePaymentMethod='Tunai';
+function cartLines(){return Array.from(paymentCart.values()).map(x=>({...x}));}
+function cartTotal(){return cartLines().reduce((sum,x)=>sum+x.unitPrice*x.quantity,0);}
+function cartCount(){return cartLines().reduce((sum,x)=>sum+x.quantity,0);}
+function refreshPaymentUI(){
+ const count=cartCount(),total=cartTotal(),enabled=count>0;
+ ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
+ ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
+ if($('paymentCartTotal'))$('paymentCartTotal').textContent=rupiah(total);
+ if($('paymentCartItems'))$('paymentCartItems').textContent=count?cartLines().map(x=>x.productName+' × '+x.quantity).join(' · '):'Belum ada item — ketuk produk untuk menambahkan';
+ if($('clearPaymentCart'))$('clearPaymentCart').disabled=!enabled||paymentBusy;
+ if($('cashTotalBelanja'))$('cashTotalBelanja').textContent=rupiah(total);
+ updateCashCalculation();
 }
+function addCartProduct(id){
+ const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
+ const old=paymentCart.get(String(p.id));
+ paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
+ refreshPaymentUI();renderHeader();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
+}
+function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
+function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
+function updateCashCalculation(){
+ const total=cartTotal(),paid=parseCashAmount(),change=Math.max(0,paid-total);
+ if($('cashChangeAmount'))$('cashChangeAmount').textContent=rupiah(change);
+ if($('cashPaymentHint'))$('cashPaymentHint').textContent=!total?'Keranjang kosong.':paid<total?'Uang masih kurang '+rupiah(total-paid):'Nominal cukup untuk pembayaran.';
+ if($('confirmCashPayment'))$('confirmCashPayment').disabled=paymentBusy||!total||paid<total;
+}
+function openCashModal(){
+ if(!cartCount()||paymentBusy)return;
+ activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
+ formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
+}
+function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
+function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
+async function completeCartPayment(method,paid){
+ if(paymentBusy||!cartCount())return;
+ const items=cartLines(),total=cartTotal(),change=Math.max(0,Number(paid)-total);
+ if(method==='Tunai'&&Number(paid)<total){toast('Uang diterima belum mencukupi.');return;}
+ lockPaymentUI(true);
+ const confirm=$('confirmCashPayment');if(confirm)confirm.textContent='Memproses pembayaran…';
+ try{
+  const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items,metodePembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  const d=new Date(),stamp=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const summary=items.map(x=>x.productName+' × '+x.quantity).join(', ');
+  data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',items:items.map(x=>({productId:String(x.productId),productName:x.productName,quantity:Number(x.quantity)||0,unitPrice:Number(x.unitPrice)||0,lineTotal:(Number(x.quantity)||0)*(Number(x.unitPrice)||0)})),name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  save();paymentCart.clear();closeCashModal();if($('cashAmountInput'))$('cashAmountInput').value='';
+  setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();refreshPaymentUI();
+  toast('Pembayaran '+method+' tersimpan lokal · sinkronisasi otomatis dimulai.');
+  void syncPending();
+ }catch(error){console.error('Pembayaran gagal disimpan:',error);toast('Pembayaran gagal disimpan. Keranjang tetap tersedia.');}
+ finally{lockPaymentUI(false);if(confirm)confirm.textContent='Konfirmasi Pembayaran';refreshPaymentUI();}
+}
+function record(id){addCartProduct(id);}
+
 
 async function cancelTx(id){
  let t=data.transactions.find(x=>x.id===id);if(!t||t.status==='cancelled')return;
@@ -1239,6 +1319,18 @@ async function cancelTx(id){
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
+$('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
+$('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
+$('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
+$('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
+$('closeCashModal')?.addEventListener('click',closeCashModal);
+$('cashPaymentModal')?.addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal();});
+$('cashAmountInput')?.addEventListener('input',updateCashCalculation);
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
+document.querySelectorAll('[data-cash-shortcut]').forEach(button=>button.addEventListener('click',()=>{const v=button.dataset.cashShortcut==='exact'?cartTotal():Number(button.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();}));
+document.querySelectorAll('[data-cash-key]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();}));
+$('confirmCashPayment')?.addEventListener('click',()=>completeCartPayment('Tunai',parseCashAmount()));
+
 document.addEventListener('click',e=>{
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
@@ -1648,11 +1740,17 @@ async function fetchGlobalTotal(){
  globalTotalFetchPromise=(async()=>{
   const display=$('todayGlobal');
   try{
+   // getGlobalIncome adalah aksi GET di Code.gs. Jangan POST ke doPost:
+   // doPost mencatat event transaksi dan POST di sini dapat membuat baris duplikat.
    const controller=typeof AbortController!=='undefined'?new AbortController():null;
-   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+   const timer=controller?setTimeout(()=>controller.abort(),35000):null;
    let response,raw;
    try{
-    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
+    const url=new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action','getGlobalIncome');
+    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
+    url.searchParams.set('tanggal',today());
+    response=await fetch(url.toString(),{method:'GET',signal:controller?controller.signal:undefined,cache:'no-store'});
     raw=await response.text();
    }finally{if(timer)clearTimeout(timer)}
    if(!response.ok)throw new Error('HTTP '+response.status);
@@ -1663,14 +1761,14 @@ async function fetchGlobalTotal(){
    if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
    if(display)display.textContent=rupiah(amount);
    globalServerConfirmed=true;
-    await refreshGlobalCardStatus();
+   await refreshGlobalCardStatus();
    return true;
   }catch(error){
    console.warn('Total penjualan global belum dapat diambil:',error);
    if(display)display.textContent='Rp0';
    const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
    globalServerConfirmed=false;
-    setGlobalSyncStatus('error',label);
+   setGlobalSyncStatus('error',label);
    const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
    return false;
   }finally{globalTotalFetchPromise=null}
@@ -1699,18 +1797,30 @@ function outboxToPayload(item){
  const user=userLabels[rawUser]||rawUser;
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
  const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
+ const metodeRaw=String(row.metode_pembayaran||row.metodePembayaran||row.metode||'Tunai').trim().toUpperCase();
+ const metodePembayaran=metodeRaw==='QRIS'?'QRIS':'Tunai';
+ const isCanceled=event==='cancelTransaction';
+ const statusEvent=isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
+ const uangRaw=row.uangDiterima??row.uang_diterima;
+ const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(uangRaw===undefined||uangRaw===null||uangRaw===''?amount:(Number(uangRaw)||0)));
+ const kembalian=isCanceled||metodePembayaran==='QRIS'?0:(Number(row.kembalian??row.kembalian_rp)||0);
  const transaction={
   id_event:eventId,
   id_transaksi:txId,
   waktu:localTimestamp(stamp),
-  jenis_event:event==='cancelTransaction'?'Pembatalan Transaksi':'Penjualan Baru',
+  jenis_event:isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
   ringkasan_produk:summary,
   jumlah_item:quantity,
   nominal:amount,
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
-  status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
+  status:isCanceled?'Dibatalkan':'Sukses',
+  statusEvent:statusEvent,
+  metode_pembayaran:metodePembayaran,
+  metodePembayaran:metodePembayaran,
+  uangDiterima:uangDiterima,
+  kembalian:kembalian,
   tanggal:date,
   // Backend Apps Script mengharapkan items[] dengan nama_produk/kategori/qty/harga_satuan/subtotal.
   items:items.map(i=>{
@@ -1725,7 +1835,18 @@ function outboxToPayload(item){
    };
   })
  };
- const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction};
+ const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction,
+  idEvent:eventId,idTransaksi:txId,id_transaksi:txId,timestamp:transaction.waktu,
+  jenisEvent:transaction.jenis_event,jenis_event:transaction.jenis_event,
+  ringkasan:transaction.ringkasan_produk,ringkasan_produk:transaction.ringkasan_produk,
+  namaProduk:transaction.ringkasan_produk,jumlah:transaction.jumlah_item,qty:transaction.jumlah_item,
+  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,
+  status:transaction.status,statusEvent:transaction.statusEvent,
+  uangDiterima:transaction.uangDiterima,uang_diterima:transaction.uangDiterima,
+  kembalian:transaction.kembalian,kembalian_rp:transaction.kembalian,
+  metode:transaction.metode_pembayaran,metodePembayaran:transaction.metode_pembayaran,
+  metode_pembayaran:transaction.metode_pembayaran
+ };
  if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
  return payload;
 }
@@ -1908,7 +2029,7 @@ load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('
 
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
-render();applyRole();refreshStaffSyncBadge();
+render();refreshPaymentUI();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
 const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
@@ -1918,7 +2039,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v107-clean-global-card').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v142-global-income-get').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
