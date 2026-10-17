@@ -1740,11 +1740,17 @@ async function fetchGlobalTotal(){
  globalTotalFetchPromise=(async()=>{
   const display=$('todayGlobal');
   try{
+   // getGlobalIncome adalah aksi GET di Code.gs. Jangan POST ke doPost:
+   // doPost mencatat event transaksi dan POST di sini dapat membuat baris duplikat.
    const controller=typeof AbortController!=='undefined'?new AbortController():null;
-   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+   const timer=controller?setTimeout(()=>controller.abort(),35000):null;
    let response,raw;
    try{
-    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
+    const url=new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action','getGlobalIncome');
+    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
+    url.searchParams.set('tanggal',today());
+    response=await fetch(url.toString(),{method:'GET',signal:controller?controller.signal:undefined,cache:'no-store'});
     raw=await response.text();
    }finally{if(timer)clearTimeout(timer)}
    if(!response.ok)throw new Error('HTTP '+response.status);
@@ -1755,14 +1761,14 @@ async function fetchGlobalTotal(){
    if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
    if(display)display.textContent=rupiah(amount);
    globalServerConfirmed=true;
-    await refreshGlobalCardStatus();
+   await refreshGlobalCardStatus();
    return true;
   }catch(error){
    console.warn('Total penjualan global belum dapat diambil:',error);
    if(display)display.textContent='Rp0';
    const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
    globalServerConfirmed=false;
-    setGlobalSyncStatus('error',label);
+   setGlobalSyncStatus('error',label);
    const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
    return false;
   }finally{globalTotalFetchPromise=null}
