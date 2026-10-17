@@ -1082,8 +1082,11 @@ function renderTodaySummary(){
  const unitsRaw=summary?reportField(summary,['totalUnit','totalUnits','unitTerjual','produkTerjual','totalProdukTerjual','jumlahProduk','unitsSold','totalItems','jumlah_unit','qty','total']):'';
  const successRaw=summary?reportField(summary,['sukses','success','berhasil','unitSukses','unitsSukses','jumlahSukses','transaksiSukses','successful']):'';
  const canceledRaw=summary?reportField(summary,['dibatalkan','batal','cancelled','canceled','unitDibatalkan','unitsCancelled','jumlahDibatalkan','transaksiDibatalkan']):'';
- const todayRow=reportDailyRows().find(row=>row.date===today());
- const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow?todayRow.units:0);
+ const todayDate=today();
+ const todayRow=reportDailyRows().find(row=>row.date===todayDate);
+ // Jika server belum menyediakan rincian unit harian, ambil dari riwayat transaksi lokal hari ini.
+ const localTodayRow=localReportRows(todayDate.slice(0,7),false).find(row=>row.date===todayDate);
+ const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow&&todayRow.units>0?todayRow.units:(localTodayRow?localTodayRow.units:0));
  $('reportItems').textContent=units.toLocaleString('id-ID')+' unit';
  const status=$('reportItemsStatus');
  if(status)status.textContent=summary&&(successRaw!==''||canceledRaw!=='')?'('+(successRaw!==''?reportNumber(successRaw):0).toLocaleString('id-ID')+' Sukses, '+(canceledRaw!==''?reportNumber(canceledRaw):0).toLocaleString('id-ID')+' Dibatalkan)':'Rincian status hari ini belum tersedia dari server';
@@ -1185,8 +1188,17 @@ async function fetchServerReport(){
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan JSON laporan.');
   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getReport bukan JSON.')}
   if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error'))throw new Error(String(result.error||result.message||'Server menolak permintaan laporan.'));
-  const payload=result?.data&&typeof result.data==='object'?result.data:result;
-  if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
+  const payload=result?.data&&typeof result.data==='object'?{...result.data}: {...result};
+  if(!payload||typeof payload!=='object')throw new Error('Struktur respons getReport tidak valid.');
+  // Apps Script lama mengirim productSales sebagai objek {namaProduk: jumlah},
+  // sedangkan renderer laporan memakai array. Normalisasikan tanpa mengubah backend.
+  if(!Array.isArray(payload.productSales)&&payload.productSales&&typeof payload.productSales==='object'){
+   payload.productSales=Object.entries(payload.productSales).map(([name,value])=>{
+    if(value&&typeof value==='object'&&!Array.isArray(value))return {name: value.name||value.nama_produk||value.productName||name, ...value};
+    return {name, unitsSold: reportNumber(value), revenue: 0};
+   });
+  }
+  if(!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport belum lengkap: server harus mengirim productSales, dailyReport, dan monthlyReport.');
   if(requestId!==serverReportRequestId)return false;
   // Transaksi utama dicatat di IndexedDB; localStorage hanya menyimpan ringkasan/cache lama.
   // Muat keduanya agar fallback tetap bekerja setelah aplikasi dibuka ulang.
@@ -2039,7 +2051,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v142-global-income-get').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v147-today-unit-card').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
