@@ -731,7 +731,7 @@ function reqResult(r){return new Promise((resolve,reject)=>{r.onsuccess=()=>reso
 function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Transaksi database gagal'));tx.onabort=()=>reject(tx.error||new Error('Transaksi database dibatalkan'));});}
 async function getAllRecords(storeName){const db=await openNongkiDB();try{return await reqResult(db.transaction(storeName,'readonly').objectStore(storeName).getAll());}finally{db.close();}}
 async function putProduct(p){const db=await openNongkiDB();try{const tx=db.transaction('products','readwrite');const done=txDone(tx);tx.objectStore('products').put({...p,id:String(p.id),price:Number(p.price)||0,updatedAt:new Date().toISOString()});await done;}finally{db.close();}}
-async function recordTransaction({userId=null,deviceId=null,kasir='Kasir / Admin',items,metode_pembayaran='TUNAI',uang_diterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id='TRX-'+now.getTime(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,kasir:String(kasir||'Kasir / Admin'),status:'active',canceledAt:null,canceledBy:null,cancelReason:null,metode_pembayaran:String(metode_pembayaran||'TUNAI').toUpperCase(),uang_diterima:Math.max(0,Number(uang_diterima)||0),kembalian:Math.max(0,Number(kembalian)||0),items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function recordTransaction({userId=null,deviceId=null,kasir='Kasir / Admin',items,metode_pembayaran='TUNAI',uang_diterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id='TRX-'+now.getTime(),date=today();const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,kasir:String(kasir||'Kasir / Admin'),status:'active',canceledAt:null,canceledBy:null,cancelReason:null,metode_pembayaran:String(metode_pembayaran||'TUNAI').toUpperCase(),uang_diterima:Math.max(0,Number(uang_diterima)||0),kembalian:Math.max(0,Number(kembalian)||0),items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function cancelTransaction(id,{userId=null,canceledByName='Kasir / Admin',reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,canceledByName:String(canceledByName||'Kasir / Admin'),cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function migrateLegacyLocalData(){return {products:0,transactions:0,skipped:true};}
 
@@ -806,7 +806,7 @@ function toast(msg){
  node._nongkiToastTimer=setTimeout(()=>node.classList.remove('show'),3200);
 }
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
-const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const today=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=t=>p.find(x=>x.type===t)?.value||'';return v('year')+'-'+v('month')+'-'+v('day')};
 const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
 function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));persistProducts().catch(e=>console.error('Produk belum tersimpan ke IndexedDB:',e));}
@@ -865,10 +865,10 @@ function serverHistoryField(row, names){
 }
 function serverHistoryArray(result){
  if(Array.isArray(result))return result;
- if(!result||typeof result!=='object')return null;
- const candidates=[result.data,result.transactions,result.history,result.recentTransactions,result.recent_transactions,result.rows,result.items,result.result?.data,result.result?.transactions,result.result?.history,result.result?.rows];
- for(const candidate of candidates)if(Array.isArray(candidate))return candidate;
- return null;
+ if(!result||typeof result!=='object')return [];
+ const candidates=[result?.history,result?.data,result?.transactions,result?.recentTransactions,result?.recent_transactions,result?.rows,result?.items,result?.result?.history,result?.result?.data,result?.result?.transactions,result?.result?.rows,result?.result?.items];
+ for(const c of candidates){if(Array.isArray(c))return c;if(c&&typeof c==='object')for(const k of ['history','data','transactions','rows','items'])if(Array.isArray(c?.[k]))return c[k];}
+ return [];
 }
 function normalizeServerHistory(result){
  let rows=serverHistoryArray(result);
@@ -942,11 +942,7 @@ function renderServerHistory(){
   list.innerHTML='<div class="empty">Sedang mengambil riwayat transaksi.</div>';
   return;
  }
- if(serverHistoryError&&!serverHistoryLoaded){
-  summary.innerHTML='<div class="sub">Riwayat server belum berhasil dimuat</div>';
-  list.innerHTML='<div class="empty">Tidak dapat mengambil riwayat. Periksa koneksi, URL Web App, dan token API.</div>';
-  return;
- }
+ if(serverHistoryError&&!serverHistoryLoaded){const rows=dayLog(date),active=rows.filter(tx=>tx.status!=='cancelled'&&tx.status!=='canceled');summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Fallback lokal</span><h2>'+rupiah(total(active))+'</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>'+rows.length+'</h2></div></div><div class="sub">Server tidak tersedia. Data lokal tetap ditampilkan.</div>';list.innerHTML=rows.map(tx=>txHtml(tx,true)).join('')||'<div class="empty">Belum ada transaksi lokal untuk tanggal ini.</div>';return;}
  const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
  const rows=dated.slice(0,20);
  const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
@@ -988,7 +984,7 @@ async function fetchServerHistory(){
   let response,raw;
   try{
    const url=new URL(APPS_SCRIPT_URL);
-   url.searchParams.set('action','getRecentTransactions');
+   url.searchParams.set('action','getHistory');
    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
    url.searchParams.set('limit','20');
    response=await fetch(url.toString(),{
