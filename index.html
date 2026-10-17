@@ -1767,32 +1767,30 @@ function outboxToPayload(item){
  const user=userLabels[rawUser]||rawUser;
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
  const eventId='EVT-'+String(item.id||item.entityId||txId+'-'+event);
- const method=String(row.metode_pembayaran||source.metode_pembayaran||'TUNAI').toUpperCase()==='QRIS'?'QRIS':'TUNAI';
- const statusEvent=event==='cancelTransaction'?'Dibatalkan':'Sukses ('+method+')';
- const cashierId=String(source.canceledByName||row.kasir||row.userName||row.userId||source.kasir||source.canceledBy||source.userId||'Kasir / Admin');
- const cashierLabels={owner:'Owner (Suami)',wife:'Owner (Istri)',staff:'Pegawai',OWNER:'Owner (Suami)',WIFE:'Owner (Istri)',STAFF:'Pegawai'};
- const cashier=cashierLabels[cashierId]||cashierId;
- const eventTimestamp=localTimestamp(stamp);
+ const metodeRaw=String(row.metode_pembayaran||row.metodePembayaran||row.metode||'Tunai').trim().toUpperCase();
+ const metodePembayaran=metodeRaw==='QRIS'?'QRIS':'Tunai';
+ const isCanceled=event==='cancelTransaction';
+ const statusEvent=isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
+ const uangRaw=row.uangDiterima??row.uang_diterima;
+ const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(uangRaw===undefined||uangRaw===null||uangRaw===''?amount:(Number(uangRaw)||0)));
+ const kembalian=isCanceled||metodePembayaran==='QRIS'?0:(Number(row.kembalian??row.kembalian_rp)||0);
  const transaction={
   id_event:eventId,
   id_transaksi:txId,
   waktu:localTimestamp(stamp),
-  jenis_event:event==='cancelTransaction'?'Pembatalan':'Penjualan Baru',
+  jenis_event:isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
   ringkasan_produk:summary,
-  namaProduk:summary,
   jumlah_item:quantity,
   nominal:amount,
-  totalHarga:amount,
-  metode_pembayaran:method,
-  statusEvent,
-  uangDiterima:event==='cancelTransaction'?0:(method==='QRIS'?amount:Math.max(0,Number(row.uang_diterima)||0)),
-  kembalian:event==='cancelTransaction'?0:(method==='QRIS'?0:Math.max(0,Number(row.kembalian)||0)),
-  uang_diterima:event==='cancelTransaction'?0:(method==='QRIS'?amount:Math.max(0,Number(row.uang_diterima)||0)),
-  kembalian:event==='cancelTransaction'?0:(method==='QRIS'?0:Math.max(0,Number(row.kembalian)||0)),
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
-  status:event==='cancelTransaction'?'Dibatalkan':'Sukses',
+  status:isCanceled?'Dibatalkan':'Sukses',
+  statusEvent:statusEvent,
+  metode_pembayaran:metodePembayaran,
+  metodePembayaran:metodePembayaran,
+  uangDiterima:uangDiterima,
+  kembalian:kembalian,
   tanggal:date,
   // Backend Apps Script mengharapkan items[] dengan nama_produk/kategori/qty/harga_satuan/subtotal.
   items:items.map(i=>{
@@ -1807,24 +1805,17 @@ function outboxToPayload(item){
    };
   })
  };
- const payload={
-  // Flat event fields requested by the PWA workflow, alongside the legacy envelope
-  // consumed by the existing Apps Script backend (Code.gs remains unchanged).
-  token:APPS_SCRIPT_TOKEN,
-  idEvent:eventId,
-  id_transaksi:txId,
-  timestamp:eventTimestamp,
-  jenis_event:event==='cancelTransaction'?'Pembatalan':'Penjualan Baru',
-  ringkasan:summary,
-  jumlah:quantity,
-  totalHarga:amount,
-  kasir:cashier,
-  metode_pembayaran:method,
-  statusEvent,
-  uangDiterima:event==='cancelTransaction'?0:(method==='QRIS'?amount:Math.max(0,Number(row.uang_diterima)||Number(row.uangDiterima)||0)),
-  kembalian:event==='cancelTransaction'?0:(method==='QRIS'?0:Math.max(0,Number(row.kembalian)||0)),
-  action:event,
-  transaction
+ const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction,
+  idEvent:eventId,idTransaksi:txId,id_transaksi:txId,timestamp:transaction.waktu,
+  jenisEvent:transaction.jenis_event,jenis_event:transaction.jenis_event,
+  ringkasan:transaction.ringkasan_produk,ringkasan_produk:transaction.ringkasan_produk,
+  namaProduk:transaction.ringkasan_produk,jumlah:transaction.jumlah_item,qty:transaction.jumlah_item,
+  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,
+  status:transaction.status,statusEvent:transaction.statusEvent,
+  uangDiterima:transaction.uangDiterima,uang_diterima:transaction.uangDiterima,
+  kembalian:transaction.kembalian,kembalian_rp:transaction.kembalian,
+  metode:transaction.metode_pembayaran,metodePembayaran:transaction.metode_pembayaran,
+  metode_pembayaran:transaction.metode_pembayaran
  };
  if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
  return payload;
@@ -2139,7 +2130,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=140-fix-complete-payload').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v143-android-sync-port').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
