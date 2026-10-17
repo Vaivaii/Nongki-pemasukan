@@ -1,5 +1,5 @@
-// Nongki PWA v136-fix-badge-and-cancel: sync cash batch only when Process is pressed.
-const CACHE_NAME = 'nongki-v136-fix-badge-and-cancel';
+// Nongki PWA v138-fix-cart-reset-and-badge: sync cash batch only when Process is pressed.
+const CACHE_NAME = 'nongki-v138-fix-cart-reset-and-badge';
 
 const CORE_FILES = [
   './',
