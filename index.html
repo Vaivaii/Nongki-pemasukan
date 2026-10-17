@@ -5,6 +5,10 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <meta content="#173d2c" name="theme-color"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Nongki"/>
+<link rel="apple-touch-icon" href="./nongki-icon.svg"/>
 <link href="./manifest.json" rel="manifest"/>
 <link href="./icon-192.png" rel="icon"/>
 <title>Nongki — Desain Disetujui · PWA</title>
@@ -552,48 +556,16 @@ body:not(.staff-mode) header>.stats{
 
 
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
-/* DEV prototype: payment method cards and cash modal. UI-only; no transaction logic changes. */
-.payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}
-.payment-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;min-height:100px;padding:14px;border:1.5px solid var(--line);border-radius:17px;background:#fff;color:var(--ink);text-align:left;cursor:pointer;box-shadow:0 3px 10px #173d2c08}
-.payment-card:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-.payment-card.active{border-color:var(--green);background:#edf5ee;box-shadow:0 0 0 2px #24563e12}
-.payment-card .payment-icon{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;background:#e6eee6;color:var(--green);font-size:20px}
-.payment-card strong{font-size:14px;letter-spacing:.4px}
-.payment-card small{font-size:10px;line-height:1.35;color:var(--muted)}
-.payment-card .payment-chip{position:absolute;right:9px;top:9px;border-radius:99px;background:#dcece0;color:var(--green);padding:4px 7px;font-size:9px;font-weight:800}
-.payment-status{display:flex;align-items:center;gap:7px;margin:-6px 2px 16px;color:var(--muted);font-size:11px;line-height:1.4}
-.payment-status .status-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#3b8d54}
-.payment-modal-backdrop[hidden]{display:none!important}
-.payment-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10251bcc;display:flex;align-items:center;justify-content:center;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:calc(14px + env(safe-area-inset-bottom));overflow-y:auto}
-.payment-modal{position:relative;width:min(100%,480px);max-height:100%;overflow-y:auto;background:var(--cream);border:1px solid #ffffff70;border-radius:25px;padding:20px 17px 17px;box-shadow:0 24px 70px #0004}
-.payment-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
-.payment-modal-head h2{font-size:19px;letter-spacing:-.3px;margin:0;color:var(--green)}
-.payment-modal-head p{font-size:11px;color:var(--muted);margin:4px 0 0}
-.payment-close{width:37px;height:37px;flex:0 0 37px;border-radius:50%;padding:0;font-size:21px;display:grid;place-items:center}
-.payment-total-box{border-radius:18px;padding:18px 16px;background:linear-gradient(145deg,var(--green),var(--green2));color:white;margin-bottom:16px}
-.payment-total-box span{display:block;font-size:11px;letter-spacing:1px;font-weight:800;color:#dbe5de}
-.payment-total-box strong{display:block;font-size:clamp(30px,8vw,39px);letter-spacing:-1px;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
-.payment-total-box small{display:block;color:#dbe5de;font-size:10px;margin-top:7px}
-.payment-input-label{display:block;color:var(--ink);font-size:12px;font-weight:800;margin:0 0 7px}
-.payment-cash-input{width:100%;border:1.5px solid #cbd8cb;border-radius:14px;background:#fff;padding:15px 14px;font-size:25px!important;font-weight:800;color:var(--green)!important;font-variant-numeric:tabular-nums}
-.payment-cash-input:focus{outline:2px solid #9db9a2;border-color:var(--green)}
-.payment-shortcut-title{font-size:11px;font-weight:800;color:var(--muted);margin:15px 0 8px}
-.payment-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.payment-shortcut{min-height:52px;border:1px solid #dfe5dc;border-radius:13px;background:#fff;padding:10px 5px;font-size:14px;font-weight:800;color:var(--green)}
-.payment-shortcut.exact{background:#fff8e7;border-color:#eadcb8;color:#73561b;font-size:12px}
-.payment-change-box{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #dfe5dc;background:#fff;border-radius:16px;padding:13px 14px;margin-top:15px}
-.payment-change-box span{font-size:11px;font-weight:800;letter-spacing:.7px;color:var(--muted)}
-.payment-change-box strong{font-size:clamp(22px,6vw,29px);font-weight:850;letter-spacing:-.5px;text-align:right;font-variant-numeric:tabular-nums}
-.payment-change-box.good strong{color:#258047}.payment-change-box.bad strong{color:#c13f35}
-.payment-validation{min-height:18px;margin:7px 2px 0;font-size:11px;font-weight:650}
-.payment-validation.good{color:#258047}.payment-validation.bad{color:#c13f35}
-.payment-modal-actions{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:8px;margin-top:14px}
-.payment-modal-actions button{min-height:49px;padding:11px 9px;font-size:11px}
-.payment-process{background:var(--green)!important;color:white!important;border-color:var(--green)!important;line-height:1.35}
-.payment-demo-note{font-size:10px;line-height:1.45;color:var(--muted);margin:12px 2px 0}
-@media(max-width:360px){.payment-card{padding:11px;min-height:96px}.payment-shortcuts{gap:6px}.payment-shortcut{min-height:48px;font-size:13px}.payment-modal{padding:17px 13px}.payment-modal-actions{grid-template-columns:1fr}.payment-modal-actions button{min-height:45px}}
-@media(min-height:780px){.payment-modal{padding:23px}.payment-total-box{padding:21px}.payment-shortcut{min-height:58px}}
 
+/* Payment UI isolated to dev-ui; existing theme and screens are retained. */
+.payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 12px}
+.payment-method-card{display:flex;align-items:center;gap:9px;position:relative;min-width:0;padding:13px 10px;border:1px solid transparent;border-radius:15px;color:#fff;cursor:pointer;box-shadow:0 3px 9px #173d2c0d;user-select:none}
+.payment-method-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed;filter:saturate(.6)}
+.payment-cash{background:linear-gradient(135deg,#059669,#047857)}.payment-qris{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+.payment-icon{font-size:25px;line-height:1;flex-shrink:0}.payment-method-card b{display:block;font-size:13px;letter-spacing:.5px}.payment-method-card small{display:block;font-size:9px;opacity:.9;margin-top:3px}.payment-cart-count{margin-left:auto;align-self:flex-start;font-size:9px;white-space:nowrap;background:#ffffff24;border-radius:20px;padding:4px 6px}
+.cart-summary{display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:0 0 16px}.cart-summary>span{font-size:11px;color:var(--muted)}.cart-summary>b{font-size:16px;color:var(--green);text-align:right}.cart-summary>small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.cart-summary button{grid-column:1/-1;justify-self:start;padding:6px 9px;font-size:10px}.cart-summary button:disabled{opacity:.45}
+.cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
 </style>
 </head>
@@ -619,18 +591,23 @@ body:not(.staff-mode) header>.stats{
 </header>
 <main>
 <section class="view active" id="salesView">
-<div class="payment-methods" role="group" aria-label="Metode pembayaran">
-<button class="payment-card active" id="paymentCashCard" type="button" aria-pressed="true">
-<span class="payment-icon" aria-hidden="true">💵</span><strong>TUNAI</strong><small>Input uang diterima &amp; kembalian</small><span class="payment-chip" id="paymentCashChip">AKTIF</span>
-</button>
-<button class="payment-card" id="paymentQrisCard" type="button" aria-pressed="false">
-<span class="payment-icon" aria-hidden="true">▦</span><strong>QRIS</strong><small>Pembayaran non-tunai</small><span class="payment-chip" id="paymentQrisChip" hidden>AKTIF</span>
-</button>
-</div>
-<div class="payment-status" id="paymentMethodStatus" role="status" aria-live="polite"><span class="status-dot"></span><span>Tunai aktif · pilih produk untuk memulai transaksi.</span></div>
-
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
-<div class="products" id="productGrid"></div>
+<section class="payment-methods" aria-label="Metode pembayaran">
+<div class="payment-method-card payment-cash" id="paymentCashCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">💵</span><span><b>TUNAI</b><small>Bayar dengan uang tunai</small></span><span class="payment-cart-count" id="paymentCartCount">0 item</span></div>
+<div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
+</section>
+<div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
+<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
+<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
+<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
+<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
+<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
+<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
+<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
+<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
+<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
+<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
+</section></div><div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
@@ -731,8 +708,8 @@ function reqResult(r){return new Promise((resolve,reject)=>{r.onsuccess=()=>reso
 function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Transaksi database gagal'));tx.onabort=()=>reject(tx.error||new Error('Transaksi database dibatalkan'));});}
 async function getAllRecords(storeName){const db=await openNongkiDB();try{return await reqResult(db.transaction(storeName,'readonly').objectStore(storeName).getAll());}finally{db.close();}}
 async function putProduct(p){const db=await openNongkiDB();try{const tx=db.transaction('products','readwrite');const done=txDone(tx);tx.objectStore('products').put({...p,id:String(p.id),price:Number(p.price)||0,updatedAt:new Date().toISOString()});await done;}finally{db.close();}}
-async function recordTransaction({userId=null,deviceId=null,kasir='Kasir / Admin',items,metode_pembayaran='TUNAI',uang_diterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id='TRX-'+now.getTime(),date=today();const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,kasir:String(kasir||'Kasir / Admin'),status:'active',canceledAt:null,canceledBy:null,cancelReason:null,metode_pembayaran:String(metode_pembayaran||'TUNAI').toUpperCase(),uang_diterima:Math.max(0,Number(uang_diterima)||0),kembalian:Math.max(0,Number(kembalian)||0),items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0)};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
-async function cancelTransaction(id,{userId=null,canceledByName='Kasir / Admin',reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,canceledByName:String(canceledByName||'Kasir / Admin'),cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function recordTransaction({userId=null,deviceId=null,items,metodePembayaran='Tunai',uangDiterima=0,kembalian=0}){if(!Array.isArray(items)||!items.length)throw Error('Transaksi kosong');const clean=items.map(i=>({productId:String(i.productId),productName:String(i.productName),quantity:Number(i.quantity),unitPrice:Number(i.unitPrice),lineTotal:Number(i.quantity)*Number(i.unitPrice)}));if(clean.some(i=>!i.productId||!i.productName||!Number.isInteger(i.quantity)||i.quantity<1||!Number.isFinite(i.unitPrice)||i.unitPrice<0))throw Error('Detail transaksi tidak valid');const now=new Date(),id=crypto.randomUUID(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');const row={id,createdAt:now.toISOString(),businessDate:date,userId,deviceId,status:'active',canceledAt:null,canceledBy:null,cancelReason:null,items:clean,total:clean.reduce((s,i)=>s+i.lineTotal,0),metode_pembayaran:metodePembayaran,uangDiterima:Number(uangDiterima)||0,kembalian:Number(kembalian)||0,statusEvent:'Sukses'};const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx);tx.objectStore('transactions').add(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.created',createdAt:now.toISOString(),payload:row,attempts:0,lastError:null});await done;return row;}finally{db.close();}}
+async function cancelTransaction(id,{userId=null,reason=''}={}){const db=await openNongkiDB();try{const tx=db.transaction(['transactions','outbox'],'readwrite'),done=txDone(tx),store=tx.objectStore('transactions'),old=await reqResult(store.get(id));if(!old){await done;return null;}if(old.status==='canceled'){await done;return old;}const now=new Date().toISOString(),row={...old,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:String(reason||'').trim()};store.put(row);tx.objectStore('outbox').add({id:crypto.randomUUID(),entityId:id,eventType:'transaction.canceled',createdAt:now,payload:{transactionId:id,status:'canceled',canceledAt:now,canceledBy:userId,cancelReason:row.cancelReason,total:Number(old.total)||0,items:Array.isArray(old.items)?old.items:[],businessDate:old.businessDate,createdAt:old.createdAt,userId:old.userId,deviceId:old.deviceId},attempts:0,lastError:null});await done;return row;}finally{db.close();}}
 async function migrateLegacyLocalData(){return {products:0,transactions:0,skipped:true};}
 
 (async function(){
@@ -806,7 +783,7 @@ function toast(msg){
  node._nongkiToastTimer=setTimeout(()=>node.classList.remove('show'),3200);
 }
 const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
-const today=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=t=>p.find(x=>x.type===t)?.value||'';return v('year')+'-'+v('month')+'-'+v('day')};
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const dateText=s=>{if(!s)return '';let d=new Date(s+'T12:00:00');return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})};
 function load(){try{let raw=localStorage.getItem(KEY);if(raw){let parsed=JSON.parse(raw);if(parsed&&Array.isArray(parsed.products)&&Array.isArray(parsed.transactions)){data=parsed;if(data.products.length===0){data.products=defaults.map(p=>({...p}));save();}}}}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));persistProducts().catch(e=>console.error('Produk belum tersimpan ke IndexedDB:',e));}
@@ -817,9 +794,9 @@ let sheetsSyncTimer = null;
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
 function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
-function total(tx){return tx.reduce((s,t)=>s+((t.status==='cancelled'||t.status==='canceled')?0:(Number(t.total)||0)),0)}
-function itemCount(tx){return tx.reduce((s,t)=>s+((t.status==='cancelled'||t.status==='canceled')?0:(Number(t.qty)||0)),0)}
-let serverHeaderItemsToday=null; function renderHeader(){const tx=dayTx();$('todayLabel').textContent=dateText(today());const paymentUI=window.NongkiPaymentUI;const cartCounts=paymentUI?.getHeaderCartCounts?.()||{};const cartQty=Object.values(cartCounts).reduce((sum,qty)=>sum+Math.max(0,Number(qty)||0),0);const cartTotal=Math.max(0,Number(paymentUI?.getHeaderCartTotal?.())||0);const pendingQty=itemCount(tx.filter(t=>t.syncStatus==='pending'||t.syncStatus==='failed'));const qtyBase=serverHeaderItemsToday===null?itemCount(tx):serverHeaderItemsToday+pendingQty;$('todayTotal').textContent=rupiah(total(tx)+cartTotal);$('todayItems').textContent=qtyBase+cartQty}
+function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
+function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
+function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx)+(typeof cartTotal==='function'?cartTotal():0));$('todayItems').textContent=itemCount(tx)+(typeof cartCount==='function'?cartCount():0)}
 function productGroup(p){
  let c=String(p.category||'').toLowerCase(), n=String(p.name||'').toLowerCase();
  if(c==='minuman') return (n.includes('kopi')||n.includes('americano'))?'Coffee':'Non Coffee';
@@ -832,12 +809,20 @@ const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
 function renderGrid(){
- let counts={};try{const cartCounts=window.NongkiPaymentUI?.getCartCounts?.()||{};Object.keys(cartCounts).forEach(id=>{const qty=Number(cartCounts[id])||0;if(qty>0)counts[id]=qty;});}catch(badgeError){console.warn('Cart badge refresh skipped:',badgeError)}
+ let counts={};
+ dayTx().forEach(t=>{
+  if(Array.isArray(t.items)&&t.items.length){
+   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
+  }else if(t.productId){
+   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
+  }
+ });
+ if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
  let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
  let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
   const collapsed=collapsedCategory(g);
-  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button type="button" class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
+  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
  }).join('');
  $('productGrid').innerHTML=html||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';
 }
@@ -865,14 +850,10 @@ function serverHistoryField(row, names){
 }
 function serverHistoryArray(result){
  if(Array.isArray(result))return result;
- if(!result||typeof result!=='object')return [];
- const candidates=[result?.history,result?.data,result?.transactions,result?.recentTransactions,result?.recent_transactions,result?.rows,result?.items,result?.result?.history,result?.result?.data,result?.result?.transactions,result?.result?.rows,result?.result?.items];
- let emptyArray=null;
- for(const c of candidates){
-  if(Array.isArray(c)){if(c.length)return c;emptyArray=c;continue;}
-  if(c&&typeof c==='object')for(const k of ['history','data','transactions','rows','items'])if(Array.isArray(c?.[k])){if(c[k].length)return c[k];emptyArray=c[k];}
- }
- return emptyArray||[];
+ if(!result||typeof result!=='object')return null;
+ const candidates=[result.data,result.transactions,result.history,result.recentTransactions,result.recent_transactions,result.rows,result.items,result.result?.data,result.result?.transactions,result.result?.history,result.result?.rows];
+ for(const candidate of candidates)if(Array.isArray(candidate))return candidate;
+ return null;
 }
 function normalizeServerHistory(result){
  let rows=serverHistoryArray(result);
@@ -946,7 +927,11 @@ function renderServerHistory(){
   list.innerHTML='<div class="empty">Sedang mengambil riwayat transaksi.</div>';
   return;
  }
- if(serverHistoryError&&!serverHistoryLoaded){const rows=dayLog(date),active=rows.filter(tx=>tx.status!=='cancelled'&&tx.status!=='canceled');summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Fallback lokal</span><h2>'+rupiah(total(active))+'</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>'+rows.length+'</h2></div></div><div class="sub">Server tidak tersedia. Data lokal tetap ditampilkan.</div>';list.innerHTML=rows.map(tx=>txHtml(tx,true)).join('')||'<div class="empty">Belum ada transaksi lokal untuk tanggal ini.</div>';return;}
+ if(serverHistoryError&&!serverHistoryLoaded){
+  summary.innerHTML='<div class="sub">Riwayat server belum berhasil dimuat</div>';
+  list.innerHTML='<div class="empty">Tidak dapat mengambil riwayat. Periksa koneksi, URL Web App, dan token API.</div>';
+  return;
+ }
  const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
  const rows=dated.slice(0,20);
  const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
@@ -988,7 +973,7 @@ async function fetchServerHistory(){
   let response,raw;
   try{
    const url=new URL(APPS_SCRIPT_URL);
-   url.searchParams.set('action','getHistory');
+   url.searchParams.set('action','getRecentTransactions');
    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
    url.searchParams.set('limit','20');
    response=await fetch(url.toString(),{
@@ -1151,14 +1136,7 @@ function hybridReportRows(month){
 }
 function renderServerReports(){
  const monthEl=$('reportMonth');if(!monthEl.value)monthEl.value=today().slice(0,7);
- const month=monthEl.value,compactReport=serverReportData?.report;
- if(compactReport&&typeof compactReport==='object'){
-  const raw=compactReport.itemTerjual||{},items=Array.isArray(raw)?raw.map((it,i)=>({name:String(it?.nama||it?.name||it?.produk||('Produk '+(i+1))),units:parseNominal(it?.jumlah??it?.qty??it?.units??it?.terjual??it?.total??0)})):Object.entries(raw).map(([name,value])=>({name,units:parseNominal(typeof value==='object'?(value?.jumlah??value?.qty??value?.units??value?.terjual??value?.total??0):value)}));
-  const units=typeof raw==='number'?parseNominal(raw):items.reduce((sum,it)=>sum+it.units,0);$('reportRevenue').textContent=rupiah(compactReport.totalOmset);$('reportTxCount').textContent=parseNominal(compactReport.totalTransaksi)+' transaksi · server';$('reportItems').textContent=units.toLocaleString('id-ID');
-  const max=Math.max(1,...items.map(it=>it.units));$('productChart').innerHTML=items.length?items.sort((a,b)=>b.units-a.units).slice(0,10).map(it=>'<div class="bar-row"><div class="bar-label" title="'+esc(it.name)+'">'+esc(it.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(1,it.units/max*100)+'%"></div></div><div class="bar-value">'+it.units+' unit</div></div>').join(''):'<div class="empty">Server belum mengembalikan rincian produk terjual.</div>';
-  $('reportItemsStatus').textContent='Rincian dari server';$('dailyChart').innerHTML='<div class="empty">Server hanya mengirim ringkasan total.</div>';$('dailyLabels').innerHTML='';$('dailySummary').textContent='Omzet server: '+rupiah(compactReport.totalOmset)+' · transaksi: '+parseNominal(compactReport.totalTransaksi);$('weeklyChart').innerHTML='<div class="empty">Belum tersedia pada respons ringkasan server.</div>';$('monthlyChart').innerHTML='<div class="empty">Belum tersedia pada respons ringkasan server.</div>';$('monthlyLabels').innerHTML='';renderTodaySummary();return;
- }
- const hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
+ const month=monthEl.value,hybrid=hybridReportRows(month),daily=hybrid.rows.sort((a,b)=>a.date.localeCompare(b.date));
  const products=reportProductRows().sort((a,b)=>b.units-a.units).slice(0,10);
  let monthly=reportMonthlyRows().sort((a,b)=>a.month.localeCompare(b.month)).slice(-6);
  if(!monthly.some(row=>row.revenue>0)){
@@ -1207,10 +1185,8 @@ async function fetchServerReport(){
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan JSON laporan.');
   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getReport bukan JSON.')}
   if(result&&(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error'))throw new Error(String(result.error||result.message||'Server menolak permintaan laporan.'));
-  const report=result?.report;
   const payload=result?.data&&typeof result.data==='object'?result.data:result;
-  const hasLegacyArrays=Array.isArray(payload?.productSales)&&Array.isArray(payload?.dailyReport)&&Array.isArray(payload?.monthlyReport);
-  if(!report&&!hasLegacyArrays)throw new Error('Respons getReport harus berisi report atau format laporan lama yang valid.');
+  if(!payload||!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport harus berisi productSales, dailyReport, dan monthlyReport berupa array.');
   if(requestId!==serverReportRequestId)return false;
   // Transaksi utama dicatat di IndexedDB; localStorage hanya menyimpan ringkasan/cache lama.
   // Muat keduanya agar fallback tetap bekerja setelah aplikasi dibuka ulang.
@@ -1225,8 +1201,7 @@ async function fetchServerReport(){
    }):[];
   }catch(error){console.warn('Transaksi lokal IndexedDB tidak dapat dibaca untuk laporan:',error);localReportTransactions=[];}
   if(requestId!==serverReportRequestId)return false;
-  serverReportData=report?{productSales:[],dailyReport:[],monthlyReport:[],report,summaryHariIni:report}:{...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};
-  serverReportError='';renderServerReports();updateReportServerStatus();return true;
+  serverReportData={...payload,summaryHariIni:payload.summaryHariIni||result.summaryHariIni||(result.data&&result.data.summaryHariIni)||null};serverReportError='';renderServerReports();updateReportServerStatus();return true;
  }catch(error){
   if(requestId===serverReportRequestId){serverReportError=error?.name==='AbortError'?'Waktu mengambil laporan server habis.':String(error?.message||error);console.error('Gagal mengambil laporan server:',error);updateReportServerStatus();}
   return false;
@@ -1267,39 +1242,66 @@ function renderReports(){
  $('monthlyLabels').innerHTML=months.map(m=>`<span style="font-size:9px;color:var(--muted);width:16%;text-align:center">${m.sum?rupiah(m.sum):'—'}</span>`).join('');
  const staff=!!(currentUser&&currentUser.role==='staff');$('rolePreviewText').textContent=staff?'Akun pegawai dapat mencatat penjualan dan melihat laporan.':'Akun pemilik dapat melihat laporan dan mengelola produk.';
 }
-function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}window.renderGrid=renderGrid;
+function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
 function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const staffDot=$('staffSyncDot'),staffText=$('staffSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':state==='offline'?'offline':'waiting';const statusText=normalized==='connected'?'Status: Tersinkron':normalized==='syncing'?'Status: Menyinkronkan…':normalized==='error'?'Status: Gagal sinkron':normalized==='offline'?'Status: Offline · antrean disimpan':'Status: Menunggu sinkronisasi';[dot,staffDot].forEach(el=>{if(el){el.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');el.classList.add('status-'+normalized);el.setAttribute('aria-label',statusText)}});if(text)text.textContent=statusText;if(staffText)staffText.textContent=statusText}
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
 async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function record(id,payment={}){
- let p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return false;
- const d=new Date();
- try {
-   const total=Number(p.price)||0;const method=String(payment.metode_pembayaran||'TUNAI').toUpperCase();const received=method==='QRIS'?total:Math.max(0,Number(payment.uang_diterima)||0);const change=method==='QRIS'?0:Math.max(0,received-total);if(method==='TUNAI'&&received<total){toast('Uang diterima kurang dari total belanja.');return false;}const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:[{productId:p.id,productName:p.name,quantity:1,unitPrice:total}],kasir:activeProfileName(),metode_pembayaran:method,uang_diterima:received,kembalian:change});
-   const tx={id:saved.id,productId:p.id,name:p.name,icon:p.icon,category:p.category,unitPrice:Number(p.price),qty:1,total:Number(p.price),date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending'};
-   data.transactions.push({...tx});try{window.NongkiPaymentUI?.trackTransaction?.(saved.id,Number(tx.total)||0)}catch(paymentTrackError){console.warn('Payment accumulator tracking skipped:',paymentTrackError)}save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());void syncPending();render();toast(p.name+' · '+rupiah(p.price)+' tercatat lokal · sinkronisasi otomatis');return true;
- } catch(error) { console.error(error);toast('Gagal menyimpan transaksi lokal. Coba lagi.');return false; }
+const paymentCart=new Map();let paymentBusy=false;let activePaymentMethod='Tunai';
+function cartLines(){return Array.from(paymentCart.values()).map(x=>({...x}));}
+function cartTotal(){return cartLines().reduce((sum,x)=>sum+x.unitPrice*x.quantity,0);}
+function cartCount(){return cartLines().reduce((sum,x)=>sum+x.quantity,0);}
+function refreshPaymentUI(){
+ const count=cartCount(),total=cartTotal(),enabled=count>0;
+ ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
+ ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
+ if($('paymentCartTotal'))$('paymentCartTotal').textContent=rupiah(total);
+ if($('paymentCartItems'))$('paymentCartItems').textContent=count?cartLines().map(x=>x.productName+' × '+x.quantity).join(' · '):'Belum ada item — ketuk produk untuk menambahkan';
+ if($('clearPaymentCart'))$('clearPaymentCart').disabled=!enabled||paymentBusy;
+ if($('cashTotalBelanja'))$('cashTotalBelanja').textContent=rupiah(total);
+ updateCashCalculation();
 }
-
-async function recordBatch(items,payment={}) {
- if(!Array.isArray(items)||!items.length){toast('Keranjang masih kosong.');return false;}
- const clean=items.map(i=>{const p=data.products.find(x=>String(x.id)===String(i.productId));return p&&p.active!==false?{productId:String(p.id),productName:String(p.name),quantity:Math.max(1,Number(i.quantity)||1),unitPrice:Math.max(0,Number(p.price)||0),category:String(p.category||'Lainnya')}:null;}).filter(Boolean);
- if(!clean.length)return false;
- const total=clean.reduce((sum,i)=>sum+i.quantity*i.unitPrice,0),method=String(payment.metode_pembayaran||'TUNAI').toUpperCase()==='QRIS'?'QRIS':'TUNAI',received=method==='QRIS'?total:Math.max(0,Number(payment.uang_diterima)||0),change=method==='QRIS'?0:Math.max(0,received-total);
- if(method==='TUNAI'&&received<total){toast('Uang diterima kurang dari total belanja.');return false;}
- const d=new Date();
+function addCartProduct(id){
+ const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
+ const old=paymentCart.get(String(p.id));
+ paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
+ refreshPaymentUI();renderHeader();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
+}
+function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
+function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
+function updateCashCalculation(){
+ const total=cartTotal(),paid=parseCashAmount(),change=Math.max(0,paid-total);
+ if($('cashChangeAmount'))$('cashChangeAmount').textContent=rupiah(change);
+ if($('cashPaymentHint'))$('cashPaymentHint').textContent=!total?'Keranjang kosong.':paid<total?'Uang masih kurang '+rupiah(total-paid):'Nominal cukup untuk pembayaran.';
+ if($('confirmCashPayment'))$('confirmCashPayment').disabled=paymentBusy||!total||paid<total;
+}
+function openCashModal(){
+ if(!cartCount()||paymentBusy)return;
+ activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
+ formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
+}
+function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
+function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
+async function completeCartPayment(method,paid){
+ if(paymentBusy||!cartCount())return;
+ const items=cartLines(),total=cartTotal(),change=Math.max(0,Number(paid)-total);
+ if(method==='Tunai'&&Number(paid)<total){toast('Uang diterima belum mencukupi.');return;}
+ lockPaymentUI(true);
+ const confirm=$('confirmCashPayment');if(confirm)confirm.textContent='Memproses pembayaran…';
  try{
-  const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items:clean,kasir:activeProfileName(),metode_pembayaran:method,uang_diterima:received,kembalian:change});
-  const names=[...new Set(clean.map(i=>i.productName))].join(', ');
-  const tx={id:saved.id,productId:clean[0].productId,name:names,icon:data.products.find(p=>String(p.id)===clean[0].productId)?.icon||'🧾',category:clean[0].category,unitPrice:total,qty:clean.reduce((sum,i)=>sum+i.quantity,0),total,date:saved.businessDate,time:d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',items:clean};
-  data.transactions.push({...tx});save();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());renderRecent();renderHeader();render();toast('Transaksi '+names+' · '+rupiah(total)+' tersimpan lokal, mulai sinkronisasi.');
-  return saved.id;
- }catch(error){console.error('Batch transaction save failed:',error);toast('Gagal menyimpan transaksi lokal. Coba lagi.');return false;}
+  const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items,metodePembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  const d=new Date(),stamp=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const summary=items.map(x=>x.productName+' × '+x.quantity).join(', ');
+  data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',items:items.map(x=>({productId:String(x.productId),productName:x.productName,quantity:Number(x.quantity)||0,unitPrice:Number(x.unitPrice)||0,lineTotal:(Number(x.quantity)||0)*(Number(x.unitPrice)||0)})),name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  save();paymentCart.clear();closeCashModal();if($('cashAmountInput'))$('cashAmountInput').value='';
+  setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(today());render();refreshPaymentUI();
+  toast('Pembayaran '+method+' tersimpan lokal · sinkronisasi otomatis dimulai.');
+  void syncPending();
+ }catch(error){console.error('Pembayaran gagal disimpan:',error);toast('Pembayaran gagal disimpan. Keranjang tetap tersedia.');}
+ finally{lockPaymentUI(false);if(confirm)confirm.textContent='Konfirmasi Pembayaran';refreshPaymentUI();}
 }
-async function syncBatchNow(transactionId){const ok=await syncPending();if(!ok)return false;if(transactionId){const pending=(await getAllRecords('outbox')).some(item=>String(item.entityId||'')===String(transactionId));if(pending)return false;const tx=data.transactions.find(item=>String(item.id)===String(transactionId));if(tx&&tx.syncStatus!=='synced')return false;}await fetchGlobalTotal();await fetchServerHistory();const reportOk=await fetchReport();if(reportOk){const todayRow=reportDailyRows().find(row=>row.date===today());if(todayRow)serverHeaderItemsToday=Math.max(0,Number(todayRow.units)||0);}renderHeader();return true;}
-// API sempit untuk UI pembayaran di script terpisah; data dan record tetap berada di scope inti.
-window.NongkiCore={getProduct:(id)=>Array.isArray(data.products)?data.products.find(p=>String(p.id)===String(id)):null,record:(id,payment)=>record(id,payment),recordBatch:(items,payment)=>recordBatch(items,payment),syncBatchNow:()=>syncBatchNow(),refreshHeader:()=>renderHeader(),money:(value)=>rupiah(value)};
+function record(id){addCartProduct(id);}
+
 
 async function cancelTx(id){
  let t=data.transactions.find(x=>x.id===id);if(!t||t.status==='cancelled')return;
@@ -1307,22 +1309,30 @@ async function cancelTx(id){
  try {
    const indexed=await getAllRecords('transactions');
    const saved=indexed.find(x=>x.id===id||String(x.legacyId||'')===String(id));
-   if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',canceledByName:activeProfileName(),reason:'Dibatalkan dari riwayat Nongki'});
-   t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';serverHeaderItemsToday=null;
-   try{window.NongkiPaymentUI?.transactionCancelled?.(String(id),Number(t.total)||0,t)}catch(paymentCancelError){console.warn('Payment accumulator adjustment skipped:',paymentCancelError)}
+   if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
+   t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
    const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-   save();saveCloudPreview();const globalEl=$('todayGlobal');if(globalEl&&String(t.date||today()).slice(0,10)===today()){const currentGlobal=Number(String(globalEl.textContent||'').replace(/[^0-9]/g,''))||0;globalEl.textContent=rupiah(Math.max(0,currentGlobal-(Number(t.total)||0)));}setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());render();try{window.NongkiPaymentUI?.refreshPreview?.()}catch(previewError){console.warn('Income preview refresh skipped:',previewError)}try{const cancelSyncOk=await syncPending();if(cancelSyncOk){await fetchGlobalTotal();await fetchServerHistory();}else{console.warn('Pembatalan tersimpan lokal; sinkronisasi server menunggu koneksi/konfigurasi.');}}catch(cancelSyncError){console.warn('Pembatalan tersimpan lokal; sinkronisasi server tertunda:',cancelSyncError)}render();try{window.NongkiPaymentUI?.refreshPreview?.()}catch(previewError){console.warn('Income preview refresh skipped:',previewError)}toast('Transaksi dibatalkan · pemasukan dan badge diperbarui'+(navigator.onLine?' · sinkronisasi server dicoba':' · menunggu koneksi'));
+   save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
  } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
 
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-async function loadReportData(){renderReports();try{const ok=await fetchReport();if(ok)return true;serverReportData=null;try{const local=await getAllRecords('transactions');if(Array.isArray(local))localReportTransactions=local.map(tx=>{const items=Array.isArray(tx.items)?tx.items:[],qty=items.reduce((n,it)=>n+(Number(it.quantity??it.qty)||1),0),amount=parseNominal(tx.total??tx.nominal??items.reduce((n,it)=>n+(Number(it.lineTotal??it.subtotal)||((Number(it.quantity??it.qty)||1)*(Number(it.unitPrice??it.harga_satuan)||0))),0)),old=Array.isArray(data?.transactions)?data.transactions.find(row=>String(row.id)===String(tx.id)||String(row.id)===String(tx.legacyId||'')):null;return {id:tx.id,date:tx.businessDate||tx.date||tx.createdAt,status:tx.status==='canceled'||tx.status==='cancelled'?'cancelled':'active',syncStatus:old?.syncStatus||(tx.syncStatus||'pending'),total:amount,qty:qty||1,createdAt:tx.createdAt};});}catch(e){console.warn('Fallback laporan IndexedDB gagal:',e);}renderReports();const status=$('reportServerStatus');if(status)status.textContent='Offline / server gagal · ringkasan lokal ditampilkan.';return false;}catch(e){console.warn('Laporan memakai fallback lokal:',e);serverReportData=null;renderReports();const status=$('reportServerStatus');if(status)status.textContent='Laporan server gagal · data lokal tetap ditampilkan.';return false;}}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void loadReportData();}}
-document.querySelectorAll('#tab-laporan-btn, .tab[data-view="reportsView"]').forEach(tab=>tab.addEventListener('click',event=>{event.stopPropagation();showView('reportsView');}));
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
+$('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
+$('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
+$('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
+$('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
+$('closeCashModal')?.addEventListener('click',closeCashModal);
+$('cashPaymentModal')?.addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal();});
+$('cashAmountInput')?.addEventListener('input',updateCashCalculation);
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
+document.querySelectorAll('[data-cash-shortcut]').forEach(button=>button.addEventListener('click',()=>{const v=button.dataset.cashShortcut==='exact'?cartTotal():Number(button.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();}));
+document.querySelectorAll('[data-cash-key]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();}));
+$('confirmCashPayment')?.addEventListener('click',()=>completeCartPayment('Tunai',parseCashAmount()));
+
 document.addEventListener('click',e=>{
-const clickTarget=e.target instanceof Element?e.target:e.target?.parentElement;
-let sell=clickTarget?.closest('[data-sell]');if(sell){try{const id=sell.dataset.sell;const product=data.products.find(p=>String(p.id)===String(id));if(product&&product.active!==false){const price=Math.max(0,Number(product.price)||0);if(typeof window.NongkiPaymentUI?.begin==='function')window.NongkiPaymentUI.begin(id,price);else{window.currentTotalBelanja=Math.max(0,Number(window.currentTotalBelanja)||0)+price;const totalEl=document.getElementById('totalBelanjaModal');if(totalEl)totalEl.textContent=rupiah(window.currentTotalBelanja);}}}catch(error){console.error('Product click handler failed:',error);try{toast('Produk gagal ditambahkan ke keranjang.');}catch(_){}}return}
+let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
 let tog=e.target.closest('[data-toggle-product]');if(tog){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengelola produk');return}let p=data.products.find(x=>x.id===tog.dataset.toggleProduct);if(p){p.active=p.active===false;markSharedMenuPending();save();render();toast(p.active?'Produk diaktifkan':'Produk dinonaktifkan');publishSharedMenu()}return}
@@ -1684,7 +1694,7 @@ let globalServerConfirmed=false;
 function extractGlobalTotal(result){
  if(!result||typeof result!=='object')return null;
  if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')return null;
- const candidates=[result.globalIncome,result.total,result.penjualan_global,result.data?.globalIncome,result.data?.total,result.data?.penjualan_global,result.result?.globalIncome,result.result?.total,result.result?.penjualan_global,result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan];
+ const candidates=[result.penjualan_global,result.data?.penjualan_global,result.result?.penjualan_global,result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.total,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.total,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan,result.result?.total];
  for(const value of candidates){
   if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0)return Number(value);
  }
@@ -1722,30 +1732,50 @@ async function syncAllData(){
  });
  return masterSyncPromise;
 }
-const GLOBAL_TOTAL_CACHE_KEY='nongki_global_total_confirmed_wib_v1';
-function localTxDate(tx){const raw=String(tx?.date||tx?.businessDate||tx?.business_date||'').trim(),m=raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');const stamp=tx?.createdAt||tx?.timestamp;if(stamp){const d=new Date(stamp);if(!Number.isNaN(d.getTime()))return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}return '';}
-function pendingLocalIncomeToday(){return (Array.isArray(data?.transactions)?data.transactions:[]).filter(tx=>{const st=String(tx?.status||'').toLowerCase(),sy=String(tx?.syncStatus||'').toLowerCase();return localTxDate(tx)===today()&&st!=='cancelled'&&st!=='canceled'&&(sy==='pending'||sy==='failed');}).reduce((n,tx)=>n+Math.max(0,Number(tx?.total)||0),0);}
-function readConfirmedGlobalCache(){try{const c=JSON.parse(localStorage.getItem(GLOBAL_TOTAL_CACHE_KEY)||'null');if(c&&c.date===today())return Math.max(0,Number(c.total)||0);}catch(e){console.warn('Cache total global tidak valid:',e);}return 0;}
-let confirmedGlobalIncomeToday=readConfirmedGlobalCache();
-function renderGlobalIncomeFallback(serverAmount=confirmedGlobalIncomeToday){const amount=Math.max(0,Number(serverAmount)||0)+pendingLocalIncomeToday(),display=$('todayGlobal');if(display)display.textContent=rupiah(amount);return amount;}
 async function fetchGlobalTotal(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
- loadAppsScriptSettings();confirmedGlobalIncomeToday=readConfirmedGlobalCache();renderGlobalIncomeFallback();
- if(!navigator.onLine||!appScriptConfigured()){globalServerConfirmed=false;setGlobalSyncStatus('offline','Offline · total lokal tetap ditampilkan');const status=$('sheetsConnectionStatus');if(status)status.textContent='Perangkat offline atau konfigurasi server belum tersedia. Total lokal tetap ditampilkan.';return false;}
- globalTotalFetchPromise=(async()=>{const c=typeof AbortController!=='undefined'?new AbortController():null,t=c?setTimeout(()=>c.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
- try{
-  const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:c?c.signal:undefined,cache:'no-store'}),raw=await response.text();
-  if(!response.ok)throw new Error('HTTP '+response.status);if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data total.');
-  let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getGlobalIncome bukan JSON valid.')}
-  if(result?.success===false||result?.ok===false||String(result?.status||'').toLowerCase()==='error')throw new Error(String(result?.message||result?.error||'Apps Script menolak permintaan total.'));
-  const amount=extractGlobalTotal(result);if(amount===null)throw new Error('Respons getGlobalIncome tidak berisi globalIncome atau total yang valid.');
-  if(amount>0||confirmedGlobalIncomeToday===0){confirmedGlobalIncomeToday=amount;try{localStorage.setItem(GLOBAL_TOTAL_CACHE_KEY,JSON.stringify({date:today(),total:amount}));}catch(e){console.warn('Cache total global tidak dapat disimpan:',e);}}
-  globalServerConfirmed=amount>0;renderGlobalIncomeFallback(confirmedGlobalIncomeToday);await refreshGlobalCardStatus();return true;
- }catch(error){console.warn('Total penjualan global belum dapat diambil:',error);globalServerConfirmed=false;renderGlobalIncomeFallback(confirmedGlobalIncomeToday);const label=error?.name==='AbortError'?'Timeout mengambil total global':'Server offline/gagal dihubungi';setGlobalSyncStatus('offline',label);const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · total server tersimpan dan antrean lokal tetap ditampilkan.';return false;}
- finally{if(t)clearTimeout(t);globalTotalFetchPromise=null;}
- })();return globalTotalFetchPromise;
+ loadAppsScriptSettings();
+ if(!navigator.onLine){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
+ if(!appScriptConfigured()){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
+ globalTotalFetchPromise=(async()=>{
+  const display=$('todayGlobal');
+  try{
+   // getGlobalIncome adalah aksi GET di Code.gs. Jangan POST ke doPost:
+   // doPost mencatat event transaksi dan POST di sini dapat membuat baris duplikat.
+   const controller=typeof AbortController!=='undefined'?new AbortController():null;
+   const timer=controller?setTimeout(()=>controller.abort(),35000):null;
+   let response,raw;
+   try{
+    const url=new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action','getGlobalIncome');
+    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
+    url.searchParams.set('tanggal',today());
+    response=await fetch(url.toString(),{method:'GET',signal:controller?controller.signal:undefined,cache:'no-store'});
+    raw=await response.text();
+   }finally{if(timer)clearTimeout(timer)}
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data total.');
+   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons Apps Script bukan JSON.')}
+   if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')throw new Error(String(result.message||result.error||'Apps Script menolak permintaan total.'));
+   const amount=extractGlobalTotal(result);
+   if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
+   if(display)display.textContent=rupiah(amount);
+   globalServerConfirmed=true;
+   await refreshGlobalCardStatus();
+   return true;
+  }catch(error){
+   console.warn('Total penjualan global belum dapat diambil:',error);
+   if(display)display.textContent='Rp0';
+   const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
+   globalServerConfirmed=false;
+   setGlobalSyncStatus('error',label);
+   const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
+   return false;
+  }finally{globalTotalFetchPromise=null}
+ })();
+ return globalTotalFetchPromise;
 }
-function activeProfileName(user=currentUser){const role=String(user?.role||'').toLowerCase();if(role==='owner')return 'Owner (Suami)';if(role==='wife')return 'Owner (Istri)';if(role==='staff')return String(user?.name||user?.displayName||'Pegawai');const id=String(user?.id||'');const labels={owner:'Owner (Suami)',OWNER:'Owner (Suami)',wife:'Owner (Istri)',WIFE:'Owner (Istri)',staff:'Pegawai',STAFF:'Pegawai',STAFF001:'Pegawai'};return String(user?.name||user?.displayName||labels[id]||'Pegawai');} function localTimestamp(value){
+function localTimestamp(value){
  const d=value?new Date(value):new Date();
  if(Number.isNaN(d.getTime()))return new Date().toISOString().slice(0,19).replace('T',' ');
  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')+' '+[String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0')].join(':');
@@ -1762,7 +1792,7 @@ function outboxToPayload(item){
  const amount=Number(row.total??source.total??source.nominal??0)||0;
  const stamp=event==='cancelTransaction'?(source.canceledAt||item.createdAt):(row.createdAt||item.createdAt);
  const date=String(row.businessDate||source.businessDate||source.date||localTimestamp(stamp).slice(0,10));
- const rawUser=String(source.canceledByName||row.kasir||row.userName||row.userId||source.kasir||source.canceledBy||source.userId||'Kasir / Admin');
+ const rawUser=String(row.userId||source.canceledBy||source.userId||'Kasir / Admin');
  const userLabels={owner:'Owner (Suami)',wife:'Owner (Istri)',staff:'Pegawai',OWNER:'Owner (Suami)',WIFE:'Owner (Istri)',STAFF:'Pegawai'};
  const user=userLabels[rawUser]||rawUser;
  const device=String(row.deviceId||localStorage.getItem('nongki_device_id_v1')||'Perangkat ini');
@@ -1999,7 +2029,7 @@ load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('
 
 // Migrasi lokal non-destruktif. Tidak menghapus localStorage lama.
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
-render();applyRole();refreshStaffSyncBadge();
+render();refreshPaymentUI();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
 const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
@@ -2007,154 +2037,11 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
 </script>
 <script>
-/* Payment UI v122: product taps update background state; payment cards are explicit triggers. */
-(function(){
- function initPaymentUI(){
-  if(window.NongkiPaymentUI&&window.NongkiPaymentUI.initialized)return;
-  const $=id=>document.getElementById(id);
-  const money=n=>'Rp'+Math.max(0,Number(n)||0).toLocaleString('id-ID');
-  const toAmount=value=>{
-   if(typeof value==='number')return Number.isFinite(value)?Math.max(0,Math.round(value)):0;
-   const digits=String(value??'').replace(/[^0-9]/g,'');
-   return digits?Math.max(0,parseInt(digits,10)||0):0;
-  };
-  let selectedMethod='TUNAI',pendingProductId=null,lastProductId=null,lastProductTotal=0,lastProductRecorded=false,savedBatchId=null,syncingBatch=false;
-  const currentSaleTransactions=new Map();
-  const cart=Object.create(null);
-  const currentCartItems=[];
-  window.currentTotalBelanja=0;
-  const modal=()=> $('modalTunai'),input=()=> $('inputUangDiterima'),process=()=> $('processCashDemo');
-  function updateTodayIncomePreview(cartTotal){
-   const el=$('todayTotal');if(!el)return;
-   let base=0;
-   try{base=typeof dayTx==='function'?dayTx().reduce((sum,tx)=>sum+(tx.status==='cancelled'?0:(Number(tx.total)||0)),0):toAmount(el.textContent);}catch(_){base=toAmount(el.textContent);}
-   el.textContent=money(base+toAmount(cartTotal));
-  }
-  function rebuildCartState(){
-   currentCartItems.length=0;
-   let total=0;
-   Object.keys(cart).forEach(id=>{const item=cart[id];if(!item||item.quantity<1){delete cart[id];return;}currentCartItems.push({productId:id,quantity:item.quantity});total+=item.quantity*item.unitPrice;});
-   window.currentTotalBelanja=toAmount(total);lastProductTotal=window.currentTotalBelanja;
-   const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(window.currentTotalBelanja);
-   updateTodayIncomePreview(window.currentTotalBelanja);
-   try{if(typeof window.renderGrid==='function')window.renderGrid();}catch(renderError){console.warn('Cart badge refresh skipped:',renderError)}
-   try{window.NongkiCore?.refreshHeader?.();}catch(headerError){console.warn('Header quantity refresh skipped:',headerError)}
-   updateCashPreview();
-   return window.currentTotalBelanja;
-  }
-  function resetCartState(){Object.keys(cart).forEach(id=>delete cart[id]);currentCartItems.length=0;currentSaleTransactions.clear();lastProductId=null;lastProductTotal=0;lastProductRecorded=false;savedBatchId=null;window.currentTotalBelanja=0;const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(0);updateTodayIncomePreview(0);updateCashPreview();try{if(typeof window.renderGrid==='function')window.renderGrid();}catch(renderError){console.warn('Cart badge reset skipped:',renderError)}try{window.NongkiCore?.refreshHeader?.();}catch(headerError){console.warn('Header quantity reset skipped:',headerError)}}
-  function updateCashPreview(){
-   const inp=input(),totalEl=$('totalBelanjaModal')||$('paymentDemoTotal'),changeEl=$('textKembalian'),changeBox=$('paymentChangeBox'),validation=$('paymentValidation'),btn=process();
-   if(!inp)return;
-   const total=toAmount(window.currentTotalBelanja),raw=String(inp.value??''),received=raw===''?0:toAmount(inp.value),delta=received-total;
-   if(totalEl)totalEl.textContent=money(total);
-   if(changeEl){changeEl.textContent=(delta<0?'−':'')+money(Math.abs(delta));changeEl.style.color=raw!==''&&delta>=0?'#16803d':'';}
-   if(changeBox){changeBox.classList.toggle('good',raw!==''&&delta>=0);changeBox.classList.toggle('bad',raw===''||delta<0);}
-   if(validation){validation.classList.toggle('good',raw!==''&&delta>=0);validation.classList.toggle('bad',raw===''||delta<0);validation.textContent=raw===''?'Masukkan uang diterima atau pilih nominal cepat.':delta<0?'Uang diterima kurang '+money(-delta)+'.':delta===0?'Uang pas · tidak ada kembalian.':'Kembalian untuk pelanggan: '+money(delta)+'.';}
-   if(btn)btn.disabled=!pendingProductId||raw===''||received<total;
-  }
-  function setMethod(method){
-   selectedMethod=method==='QRIS'?'QRIS':'TUNAI';const cash=selectedMethod==='TUNAI';
-   const cashCard=$('paymentCashCard'),qrisCard=$('paymentQrisCard'),cashChip=$('paymentCashChip'),qrisChip=$('paymentQrisChip'),status=$('paymentMethodStatus');
-   if(cashCard){cashCard.classList.toggle('active',cash);cashCard.setAttribute('aria-pressed',String(cash));}
-   if(qrisCard){qrisCard.classList.toggle('active',!cash);qrisCard.setAttribute('aria-pressed',String(!cash));}
-   if(cashChip)cashChip.hidden=!cash;if(qrisChip)qrisChip.hidden=cash;
-   if(status)status.innerHTML='<span class="status-dot"></span><span>'+(cash?'Tunai aktif · ketuk produk lalu pilih TUNAI untuk membuka kalkulator.':'QRIS aktif · ketuk produk lalu pilih QRIS untuk memproses pembayaran.')+'</span>';
-  }
-  function closeTunaiModal(){
-   const m=modal(),inp=input();if(m){m.hidden=true;m.removeAttribute('data-open');}
-   if(inp)inp.value='';pendingProductId=null;updateCashPreview();
-  }
-  function rememberProduct(productId,total){
-   const product=window.NongkiCore?.getProduct?.(productId);if(!product||product.active===false)return window.currentTotalBelanja;
-   if(savedBatchId){toast('Ada transaksi yang menunggu sinkronisasi. Selesaikan sinkronisasi sebelum menambah keranjang baru.');return window.currentTotalBelanja;}
-   const id=String(productId),itemPrice=toAmount(total!==undefined&&total!==null?total:product.price);
-   if(!cart[id])cart[id]={productId:id,quantity:0,unitPrice:itemPrice};
-   cart[id].quantity+=1;cart[id].unitPrice=itemPrice;lastProductId=id;lastProductRecorded=false;
-   rebuildCartState();
-   // Product taps update background state only; never reveal the modal here.
-   const m=modal();if(m&&m.hidden)m.removeAttribute('data-open');
-   return window.currentTotalBelanja;
-  }
-  function openTunaiModal(productId,total){
-   const m=modal(),inp=input();
-   if(!m||!inp||!$('textKembalian')||!process())throw new Error('Modal Tunai tidak lengkap atau tidak tersedia');
-   const chosenId=productId??lastProductId,chosenTotal=total===undefined?window.currentTotalBelanja:toAmount(total);
-   pendingProductId=chosenId==null?null:String(chosenId);
-   window.currentTotalBelanja=toAmount(chosenTotal);
-   const title=$('cashPaymentTitle');if(title)title.textContent='Kalkulator Tunai';
-   const totalEl=$('totalBelanjaModal')||$('paymentDemoTotal');if(totalEl)totalEl.textContent=money(window.currentTotalBelanja);
-   inp.value='';m.hidden=false;m.setAttribute('data-open','true');updateCashPreview();
-   const dialog=m.querySelector('.payment-modal');if(dialog&&typeof dialog.focus==='function')dialog.focus({preventScroll:true});
-   inp.focus();
-  }
-  window.openTunaiModal=openTunaiModal;
-  async function processQris(){const card=$('paymentQrisCard'),status=$('paymentMethodStatus');if(!currentCartItems.length){if(status)status.textContent='Pilih satu atau beberapa produk terlebih dahulu sebelum memproses QRIS.';return;}if(syncingBatch)return;syncingBatch=true;if(card)card.disabled=true;try{if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'QRIS',uang_diterima:toAmount(window.currentTotalBelanja),kembalian:0});if(!savedBatchId)throw new Error('Transaksi QRIS belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}const synced=await window.NongkiCore.syncBatchNow(savedBatchId);if(!synced){if(status)status.textContent='Transaksi QRIS tersimpan lokal, tetapi belum terkonfirmasi server. Tekan QRIS lagi untuk mencoba ulang tanpa membuat transaksi ganda.';return;}closeTunaiModal();resetCartState();if(status)status.textContent='Transaksi QRIS berhasil disinkronkan.';}catch(error){console.error('QRIS batch transaction failed:',error);if(status)status.textContent='QRIS belum selesai diproses. Data lokal dipertahankan; periksa koneksi lalu coba lagi.';}finally{syncingBatch=false;if(card)card.disabled=false;}}
-  window.NongkiPaymentUI={
-   initialized:true,getMethod:()=>selectedMethod,
-   begin(id,price){
-    const product=window.NongkiCore?.getProduct?.(id);
-    const resolvedPrice=price!==undefined&&price!==null?price:product?.price;
-    if(resolvedPrice===undefined||resolvedPrice===null||product?.active===false)return;
-    rememberProduct(id,resolvedPrice);
-   },
-   getCurrentTotal:()=>toAmount(window.currentTotalBelanja),refreshPreview:()=>updateTodayIncomePreview(window.currentTotalBelanja),getCartCounts:()=>Object.keys(cart).reduce((counts,id)=>{counts[id]=Number(cart[id]?.quantity)||0;return counts;},{}),getHeaderCartCounts:()=>savedBatchId?{}:Object.keys(cart).reduce((counts,id)=>{counts[id]=Number(cart[id]?.quantity)||0;return counts;},{}),getHeaderCartTotal:()=>savedBatchId?0:toAmount(window.currentTotalBelanja),
-   markRecorded(id,total){if(lastProductId===String(id))lastProductRecorded=true;},
-   trackTransaction(transactionId,amount){currentSaleTransactions.set(String(transactionId),toAmount(amount));},
-   transactionCancelled(transactionId,amount,transaction){if(currentSaleTransactions.has(String(transactionId)))currentSaleTransactions.delete(String(transactionId));const items=Array.isArray(transaction?.items)?transaction.items:(transaction?.productId?[{productId:transaction.productId,quantity:Number(transaction.qty)||1}]:[]);items.forEach(item=>{const id=String(item.productId||item.id||'');if(!cart[id])return;cart[id].quantity=Math.max(0,cart[id].quantity-(Number(item.quantity??item.qty)||1));if(cart[id].quantity===0)delete cart[id];});rebuildCartState();return true;},
-   openCash:()=>openTunaiModal(lastProductId,window.currentTotalBelanja)
-  };
-  const bind=(id,event,fn)=>{const el=$(id);if(el)el.addEventListener(event,fn);};
-  bind('paymentCashCard','click',()=>{setMethod('TUNAI');openTunaiModal(lastProductId,window.currentTotalBelanja);});
-  bind('paymentQrisCard','click',()=>{setMethod('QRIS');void processQris();});
-  bind('cashPaymentClose','click',closeTunaiModal);bind('cashPaymentCancel','click',closeTunaiModal);
-  const m=modal();if(m)m.addEventListener('click',e=>{if(e.target===m)closeTunaiModal();});
-  document.addEventListener('keydown',e=>{
-   const current=modal();if(e.key==='Escape'&&current&&!current.hidden){closeTunaiModal();return;}
-   if(e.key==='Enter'&&current&&!current.hidden&&e.target===input()){e.preventDefault();process()?.click();}
-  });
-  bind('inputUangDiterima','input',updateCashPreview);
-  document.addEventListener('click',e=>{
-   const target=e.target instanceof Element?e.target:null;
-   const btn=target?.closest('[data-payment-shortcut]');if(!btn)return;
-   const currentModal=modal(),inp=input();if(!currentModal||currentModal.hidden||!inp)return;
-   const shortcut=btn.dataset.paymentShortcut;
-   inp.value=shortcut==='exact'?String(window.currentTotalBelanja):String(toAmount(shortcut));
-   updateCashPreview();inp.focus();
-  });
-  bind('processCashDemo','click',async()=>{const inp=input(),btn=process(),status=$('paymentMethodStatus');if(!inp||!currentCartItems.length||syncingBatch)return;const raw=String(inp.value??''),received=raw.trim()===''?0:toAmount(inp.value),total=toAmount(window.currentTotalBelanja);if(raw.trim()===''||received<total){updateCashPreview();inp.focus();return;}syncingBatch=true;if(btn)btn.disabled=true;try{if(!savedBatchId){savedBatchId=await window.NongkiCore.recordBatch(currentCartItems.map(i=>({...i})),{metode_pembayaran:'TUNAI',uang_diterima:received,kembalian:Math.max(0,received-total)});if(!savedBatchId)throw new Error('Transaksi belum berhasil disimpan lokal.');window.NongkiCore?.refreshHeader?.();}const synced=await window.NongkiCore.syncBatchNow(savedBatchId);if(!synced){if(status)status.textContent='Transaksi tersimpan lokal, tetapi belum terkonfirmasi server. Tekan PROSES lagi untuk mencoba ulang tanpa membuat transaksi ganda.';return;}closeTunaiModal();resetCartState();if(status)status.textContent='Transaksi tunai berhasil disinkronkan.';}catch(error){console.error('Cash batch transaction failed:',error);if(status)status.textContent='Transaksi tunai belum selesai. Data lokal dipertahankan; periksa koneksi lalu coba lagi.';}finally{syncingBatch=false;if(btn)btn.disabled=false;if(btn&&modal()&&!modal().hidden)updateCashPreview();}});
-  setMethod('TUNAI');updateCashPreview();
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPaymentUI,{once:true});else initPaymentUI();
-})();</script>
-<script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v143-android-sync-port').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v142-global-income-get').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
-
-<!-- Payment UI v121: manual modal trigger and background product state to the existing local transaction/save/sync path. -->
-<div class="payment-modal-backdrop" id="modalTunai" hidden>
-<section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="cashPaymentTitle" tabindex="-1">
-<div class="payment-modal-head"><div><h2 id="cashPaymentTitle">Pembayaran Tunai</h2><p>Masukkan uang yang diterima dari pelanggan</p></div><button class="payment-close" id="cashPaymentClose" type="button" aria-label="Tutup dialog">×</button></div>
-<div class="payment-total-box"><span>TOTAL BELANJA</span><strong id="totalBelanjaModal">Rp0</strong><small>Total dihitung dari akumulasi produk yang dipilih.</small></div>
-<label class="payment-input-label" for="inputUangDiterima">Uang Diterima</label>
-<input class="payment-cash-input" id="inputUangDiterima" type="number" inputmode="numeric" min="0" step="500" placeholder="Masukkan nominal" autocomplete="off">
-<div class="payment-shortcut-title">PILIH NOMINAL CEPAT</div>
-<div class="payment-shortcuts">
-<button class="payment-shortcut exact" type="button" data-payment-shortcut="exact">Uang Pas</button>
-<button class="payment-shortcut" type="button" data-payment-shortcut="5000">5rb</button>
-<button class="payment-shortcut" type="button" data-payment-shortcut="10000">10rb</button>
-<button class="payment-shortcut" type="button" data-payment-shortcut="20000">20rb</button>
-<button class="payment-shortcut" type="button" data-payment-shortcut="50000">50rb</button>
-<button class="payment-shortcut" type="button" data-payment-shortcut="100000">100rb</button>
-</div>
-<div class="payment-change-box bad" id="paymentChangeBox"><span>KEMBALIAN</span><strong id="textKembalian">Rp0</strong></div>
-<div class="payment-validation bad" id="paymentValidation" aria-live="polite">Uang diterima belum mencukupi.</div>
-<div class="payment-modal-actions"><button id="cashPaymentCancel" type="button">Kembali</button><button class="payment-process" id="processCashDemo" type="button">✓ PROSES TRANSAKSI TUNAI</button></div>
-<p class="payment-demo-note">Transaksi dan seluruh item disimpan sebagai satu batch. Sinkronisasi dimulai hanya saat tombol PROSES TRANSAKSI TUNAI ditekan.</p>
-</section></div>
 </body>
 </html>
