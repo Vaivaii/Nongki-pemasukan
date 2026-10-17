@@ -1192,7 +1192,7 @@ async function fetchServerReport(){
   if(!Array.isArray(payload.productSales)&&payload.productSales&&typeof payload.productSales==='object'){
    payload.productSales=Object.entries(payload.productSales).map(([name,value])=>{
     if(value&&typeof value==='object'&&!Array.isArray(value))return {name: value.name||value.nama_produk||value.productName||name, ...value};
-    return {name, units: reportNumber(value), revenue: 0};
+    return {name, unitsSold: reportNumber(value), revenue: 0};
    });
   }
   if(!Array.isArray(payload.productSales)||!Array.isArray(payload.dailyReport)||!Array.isArray(payload.monthlyReport))throw new Error('Respons getReport belum lengkap: server harus mengirim productSales, dailyReport, dan monthlyReport.');
