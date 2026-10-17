@@ -1672,7 +1672,7 @@ let globalServerConfirmed=false;
 function extractGlobalTotal(result){
  if(!result||typeof result!=='object')return null;
  if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')return null;
- const candidates=[result.penjualan_global,result.data?.penjualan_global,result.result?.penjualan_global,result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.total,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.total,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan,result.result?.total];
+ const candidates=[result.globalIncome,result.total,result.penjualan_global,result.data?.globalIncome,result.data?.total,result.data?.penjualan_global,result.result?.globalIncome,result.result?.total,result.result?.penjualan_global,result.totalHariIni,result.totalPenjualanHariIni,result.totalPenjualan,result.totalSalesToday,result.dailyTotal,result.nominal,result.data?.totalHariIni,result.data?.totalPenjualanHariIni,result.data?.totalPenjualan,result.data?.nominal,result.result?.totalHariIni,result.result?.totalPenjualan];
  for(const value of candidates){
   if(value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0)return Number(value);
  }
@@ -1710,42 +1710,28 @@ async function syncAllData(){
  });
  return masterSyncPromise;
 }
+const GLOBAL_TOTAL_CACHE_KEY='nongki_global_total_confirmed_wib_v1';
+function localTxDate(tx){const raw=String(tx?.date||tx?.businessDate||tx?.business_date||'').trim(),m=raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');const stamp=tx?.createdAt||tx?.timestamp;if(stamp){const d=new Date(stamp);if(!Number.isNaN(d.getTime()))return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}return '';}
+function pendingLocalIncomeToday(){return (Array.isArray(data?.transactions)?data.transactions:[]).filter(tx=>{const st=String(tx?.status||'').toLowerCase(),sy=String(tx?.syncStatus||'').toLowerCase();return localTxDate(tx)===today()&&st!=='cancelled'&&st!=='canceled'&&(sy==='pending'||sy==='failed');}).reduce((n,tx)=>n+Math.max(0,Number(tx?.total)||0),0);}
+function readConfirmedGlobalCache(){try{const c=JSON.parse(localStorage.getItem(GLOBAL_TOTAL_CACHE_KEY)||'null');if(c&&c.date===today())return Math.max(0,Number(c.total)||0);}catch(e){console.warn('Cache total global tidak valid:',e);}return 0;}
+let confirmedGlobalIncomeToday=readConfirmedGlobalCache();
+function renderGlobalIncomeFallback(serverAmount=confirmedGlobalIncomeToday){const amount=Math.max(0,Number(serverAmount)||0)+pendingLocalIncomeToday(),display=$('todayGlobal');if(display)display.textContent=rupiah(amount);return amount;}
 async function fetchGlobalTotal(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
- loadAppsScriptSettings();
- if(!navigator.onLine){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
- if(!appScriptConfigured()){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
- globalTotalFetchPromise=(async()=>{
-  const display=$('todayGlobal');
-  try{
-   const controller=typeof AbortController!=='undefined'?new AbortController():null;
-   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
-   let response,raw;
-   try{
-    response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:controller?controller.signal:undefined});
-    raw=await response.text();
-   }finally{if(timer)clearTimeout(timer)}
-   if(!response.ok)throw new Error('HTTP '+response.status);
-   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data total.');
-   let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons Apps Script bukan JSON.')}
-   if(result.success===false||result.ok===false||String(result.status||'').toLowerCase()==='error')throw new Error(String(result.message||result.error||'Apps Script menolak permintaan total.'));
-   const amount=extractGlobalTotal(result);
-   if(amount===null)throw new Error('Respons sukses belum berisi field total penjualan yang dikenali.');
-   if(display)display.textContent=rupiah(amount);
-   globalServerConfirmed=true;
-    await refreshGlobalCardStatus();
-   return true;
-  }catch(error){
-   console.warn('Total penjualan global belum dapat diambil:',error);
-   if(display)display.textContent='Rp0';
-   const label=error?.name==='AbortError'?'Timeout mengambil total global':'Total global gagal diperbarui';
-   globalServerConfirmed=false;
-    setGlobalSyncStatus('error',label);
-   const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · '+String(error?.message||error);
-   return false;
-  }finally{globalTotalFetchPromise=null}
- })();
- return globalTotalFetchPromise;
+ loadAppsScriptSettings();confirmedGlobalIncomeToday=readConfirmedGlobalCache();renderGlobalIncomeFallback();
+ if(!navigator.onLine||!appScriptConfigured()){globalServerConfirmed=false;setGlobalSyncStatus('offline','Offline · total lokal tetap ditampilkan');const status=$('sheetsConnectionStatus');if(status)status.textContent='Perangkat offline atau konfigurasi server belum tersedia. Total lokal tetap ditampilkan.';return false;}
+ globalTotalFetchPromise=(async()=>{const c=typeof AbortController!=='undefined'?new AbortController():null,t=c?setTimeout(()=>c.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
+ try{
+  const response=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getGlobalIncome',token:APPS_SCRIPT_TOKEN,date:today()}),signal:c?c.signal:undefined,cache:'no-store'}),raw=await response.text();
+  if(!response.ok)throw new Error('HTTP '+response.status);if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw))throw new Error('Apps Script mengembalikan HTML, bukan data total.');
+  let result;try{result=JSON.parse(raw)}catch{throw new Error('Respons getGlobalIncome bukan JSON valid.')}
+  if(result?.success===false||result?.ok===false||String(result?.status||'').toLowerCase()==='error')throw new Error(String(result?.message||result?.error||'Apps Script menolak permintaan total.'));
+  const amount=extractGlobalTotal(result);if(amount===null)throw new Error('Respons getGlobalIncome tidak berisi globalIncome atau total yang valid.');
+  if(amount>0||confirmedGlobalIncomeToday===0){confirmedGlobalIncomeToday=amount;try{localStorage.setItem(GLOBAL_TOTAL_CACHE_KEY,JSON.stringify({date:today(),total:amount}));}catch(e){console.warn('Cache total global tidak dapat disimpan:',e);}}
+  globalServerConfirmed=amount>0;renderGlobalIncomeFallback(confirmedGlobalIncomeToday);await refreshGlobalCardStatus();return true;
+ }catch(error){console.warn('Total penjualan global belum dapat diambil:',error);globalServerConfirmed=false;renderGlobalIncomeFallback(confirmedGlobalIncomeToday);const label=error?.name==='AbortError'?'Timeout mengambil total global':'Server offline/gagal dihubungi';setGlobalSyncStatus('offline',label);const status=$('sheetsConnectionStatus');if(status)status.textContent=label+' · total server tersimpan dan antrean lokal tetap ditampilkan.';return false;}
+ finally{if(t)clearTimeout(t);globalTotalFetchPromise=null;}
+ })();return globalTotalFetchPromise;
 }
 function activeProfileName(user=currentUser){const role=String(user?.role||'').toLowerCase();if(role==='owner')return 'Owner (Suami)';if(role==='wife')return 'Owner (Istri)';if(role==='staff')return String(user?.name||user?.displayName||'Pegawai');const id=String(user?.id||'');const labels={owner:'Owner (Suami)',OWNER:'Owner (Suami)',wife:'Owner (Istri)',WIFE:'Owner (Istri)',staff:'Pegawai',STAFF:'Pegawai',STAFF001:'Pegawai'};return String(user?.name||user?.displayName||labels[id]||'Pegawai');} function localTimestamp(value){
  const d=value?new Date(value):new Date();
