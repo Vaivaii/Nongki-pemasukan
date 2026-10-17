@@ -2014,11 +2014,8 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
   const modal=()=> $('modalTunai'),input=()=> $('inputUangDiterima'),process=()=> $('processCashDemo');
   function updateTodayIncomePreview(cartTotal){
    const el=$('todayTotal');if(!el)return;
-   if(!el.dataset.nongkiBaseIncome){
-    const digits=String(el.textContent||'').replace(/[^0-9]/g,'');
-    el.dataset.nongkiBaseIncome=String(digits?parseInt(digits,10)||0:0);
-   }
-   const base=toAmount(el.dataset.nongkiBaseIncome);
+   let base=0;
+   try{base=typeof dayTx==='function'?dayTx().reduce((sum,tx)=>sum+(tx.status==='cancelled'?0:(Number(tx.total)||0)),0):toAmount(el.textContent);}catch(_){base=toAmount(el.textContent);}
    el.textContent=money(base+toAmount(cartTotal));
   }
   function updateCashPreview(){
