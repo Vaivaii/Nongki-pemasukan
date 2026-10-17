@@ -1082,8 +1082,11 @@ function renderTodaySummary(){
  const unitsRaw=summary?reportField(summary,['totalUnit','totalUnits','unitTerjual','produkTerjual','totalProdukTerjual','jumlahProduk','unitsSold','totalItems','jumlah_unit','qty','total']):'';
  const successRaw=summary?reportField(summary,['sukses','success','berhasil','unitSukses','unitsSukses','jumlahSukses','transaksiSukses','successful']):'';
  const canceledRaw=summary?reportField(summary,['dibatalkan','batal','cancelled','canceled','unitDibatalkan','unitsCancelled','jumlahDibatalkan','transaksiDibatalkan']):'';
- const todayRow=reportDailyRows().find(row=>row.date===today());
- const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow?todayRow.units:0);
+ const todayDate=today();
+ const todayRow=reportDailyRows().find(row=>row.date===todayDate);
+ // Jika server belum menyediakan rincian unit harian, ambil dari riwayat transaksi lokal hari ini.
+ const localTodayRow=localReportRows(todayDate.slice(0,7),false).find(row=>row.date===todayDate);
+ const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow&&todayRow.units>0?todayRow.units:(localTodayRow?localTodayRow.units:0));
  $('reportItems').textContent=units.toLocaleString('id-ID')+' unit';
  const status=$('reportItemsStatus');
  if(status)status.textContent=summary&&(successRaw!==''||canceledRaw!=='')?'('+(successRaw!==''?reportNumber(successRaw):0).toLocaleString('id-ID')+' Sukses, '+(canceledRaw!==''?reportNumber(canceledRaw):0).toLocaleString('id-ID')+' Dibatalkan)':'Rincian status hari ini belum tersedia dari server';
