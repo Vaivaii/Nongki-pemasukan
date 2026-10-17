@@ -1795,7 +1795,8 @@ function outboxToPayload(item){
  const metodePembayaran=metodeRaw==='QRIS'?'QRIS':'Tunai';
  const isCanceled=event==='cancelTransaction';
  const statusEvent=isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
- const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(Number(row.uangDiterima??row.uang_diterima)||0));
+ const uangRaw=row.uangDiterima??row.uang_diterima;
+ const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(uangRaw===undefined||uangRaw===null||uangRaw===''?amount:(Number(uangRaw)||0)));
  const kembalian=isCanceled||metodePembayaran==='QRIS'?0:(Number(row.kembalian??row.kembalian_rp)||0);
  const transaction={
   id_event:eventId,
