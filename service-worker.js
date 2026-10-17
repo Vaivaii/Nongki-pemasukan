@@ -1,5 +1,5 @@
 // Nongki PWA v145-report-array-compat: verified transaction payload and cache refresh.
-const CACHE_NAME = 'nongki-v145-report-array-compat';
+const CACHE_NAME = 'nongki-v146-report-units';
 
 const CORE_FILES = [
   './',
