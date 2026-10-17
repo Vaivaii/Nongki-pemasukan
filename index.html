@@ -1089,7 +1089,35 @@ function renderTodaySummary(){
  const units=unitsRaw!==''?reportNumber(unitsRaw):(todayRow&&todayRow.units>0?todayRow.units:(localTodayRow?localTodayRow.units:0));
  $('reportItems').textContent=units.toLocaleString('id-ID')+' unit';
  const status=$('reportItemsStatus');
- if(status)status.textContent=summary&&(successRaw!==''||canceledRaw!=='')?'('+(successRaw!==''?reportNumber(successRaw):0).toLocaleString('id-ID')+' Sukses, '+(canceledRaw!==''?reportNumber(canceledRaw):0).toLocaleString('id-ID')+' Dibatalkan)':'Rincian status hari ini belum tersedia dari server';
+ if(status){
+  // Komponen ini hanya membaca transaksi hari ini; tidak mengubah sinkronisasi atau parser laporan.
+  const todayTransactions=[
+   ...(Array.isArray(serverHistoryTransactions)?serverHistoryTransactions.map(t=>({...t, __source:'server'})):[]),
+   ...(Array.isArray(data?.transactions)?data.transactions.map(t=>({...t, __source:'local'})):[]),
+   ...(Array.isArray(localReportTransactions)?localReportTransactions.map(t=>({...t, __source:'local-report'})):[])
+  ];
+  const seen=new Set();
+  let success=0,canceled=0,cash=0,qris=0;
+  for(const tx of todayTransactions){
+   if(!tx||typeof tx!=='object')continue;
+   const raw=tx.raw&&typeof tx.raw==='object'?tx.raw:tx;
+   const date=reportDateKey(tx.date||tx.businessDate||tx.createdAt||tx.timestamp||reportField(raw,['tanggal','tanggal_transaksi','date','businessDate','createdAt','timestamp']));
+   if(date!==todayDate)continue;
+   const id=String(tx.id||tx.transactionId||tx.transaction_id||reportField(raw,['id_transaksi','id','transactionId','transaction_id','id_event'])||'').trim();
+   const event=String(reportField(raw,['statusEvent','status_event','jenis_event','event','status','status_transaksi'])||tx.statusEvent||tx.status||'').trim().toLowerCase();
+   const isCanceled=/batal|cancel|dibatalkan/.test(event)||!!(tx.canceledAt||tx.cancelledAt||raw.canceledAt||raw.cancelledAt)||tx.status==='canceled'||tx.status==='cancelled';
+   const isSuccess=!isCanceled&&(/sukses|success|berhasil/.test(event)||tx.status==='active'||tx.status==='success'||tx.status==='sukses');
+   if(!isCanceled&&!isSuccess)continue;
+   const dedupeKey=id||[date,String(tx.time||tx.createdAt||''),String(tx.amount||tx.total||''),String(tx.name||'')].join('|');
+   if(seen.has(dedupeKey))continue;
+   seen.add(dedupeKey);
+   if(isCanceled){canceled++;continue;}
+   success++;
+   const payment=String(reportField(raw,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment'])||tx.payment||tx.metode_pembayaran||'').toLowerCase();
+   if(/qris|qr/.test(payment))qris++;else if(/tunai|cash/.test(payment))cash++;
+  }
+  status.textContent=success+' transaksi sukses'+(cash+qris?' ('+cash+' Tunai, '+qris+' QRIS)':'')+' · '+canceled+' dibatalkan';
+ }
 }
 function localReportRows(month,onlyPending=false){
  const rows=new Map();
