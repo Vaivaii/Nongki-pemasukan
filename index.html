@@ -1813,7 +1813,14 @@ function outboxToPayload(item){
    };
   })
  };
- const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction};
+ const payload={token:APPS_SCRIPT_TOKEN,action:event,transaction,
+  idEvent:eventId,id_transaksi:txId,timestamp:transaction.waktu,
+  ringkasan:transaction.ringkasan_produk,jumlah:transaction.jumlah_item,
+  totalHarga:transaction.nominal,kasir:transaction.pengguna,
+  statusEvent:transaction.statusEvent,
+  uangDiterima:transaction.uangDiterima,kembalian:transaction.kembalian,
+  metode_pembayaran:transaction.metode_pembayaran
+ };
  if(event==='cancelTransaction'){payload.id_transaksi=txId;payload.nominal=amount;}
  return payload;
 }
