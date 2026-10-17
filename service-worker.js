@@ -1,5 +1,5 @@
 // Nongki PWA v141-payment-fields-force-refresh: payment status, received cash and change fields.
-const CACHE_NAME = 'nongki-v141-payment-fields-force-refresh';
+const CACHE_NAME = 'nongki-v142-global-income-get';
 
 const CORE_FILES = [
   './',
