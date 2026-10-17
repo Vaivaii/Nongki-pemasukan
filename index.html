@@ -694,6 +694,99 @@ a{color:#e8c978}
 :focus-visible{outline-color:#e8c978}
 ::selection{background:#d5b36a55;color:#fff}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* ===== Structural redesign v2: workstation layout, not a color-only reskin ===== */
+@media (min-width: 900px) {
+  body { padding-bottom: 28px; }
+  header { padding: 26px clamp(22px, 4vw, 58px) 24px; }
+  main { width: min(1440px, calc(100% - 48px)); margin: 24px auto 40px; }
+  .brand { margin-bottom: 22px; }
+  .owner-header-meta { display:grid; grid-template-columns: minmax(0,1fr) auto; align-items:end; gap:24px; }
+  .staff-income-summary { min-width: 260px; text-align:right; }
+  .total { font-size: clamp(38px, 4vw, 56px); letter-spacing:-.055em; }
+  .stats { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:14px; margin-top:22px; }
+  .stat { min-height:88px; display:grid; grid-template-columns:1fr auto; align-content:center; gap:6px 16px; padding:18px 22px; }
+  .stat b { grid-column:1; grid-row:2; font-size:24px; }
+  .stat .sync-dot { grid-column:2; grid-row:1 / span 2; align-self:center; }
+  #salesView {
+    display:grid;
+    grid-template-columns:minmax(0,1.65fr) minmax(300px,.85fr);
+    grid-template-areas:
+      "heading heading"
+      "products payment"
+      "products cart"
+      "actions actions"
+      "recentheading recentheading"
+      "recent recent"
+      "note note";
+    align-items:start;
+    gap:18px 24px;
+  }
+  #salesView > .section-head:nth-child(1) { grid-area:heading; margin:0; align-self:center; }
+  #salesView > .payment-methods { grid-area:payment; display:grid; grid-template-columns:1fr; gap:10px; margin:0; position:sticky; top:16px; }
+  #salesView > .cart-summary { grid-area:cart; display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-content:start; margin:0; }
+  #salesView > .cart-summary small { grid-column:1 / -1; }
+  #salesView > .cart-summary button { grid-column:1 / -1; width:100%; }
+  #salesView > #productGrid { grid-area:products; width:100%; min-width:0; margin:0; align-self:stretch; }
+  #salesView > .toolbar.action-buttons-container { grid-area:actions; margin:2px 0 0; padding-top:14px; border-top:1px solid var(--line); }
+  #salesView > .section-head:nth-last-of-type(1) { grid-area:recentheading; margin:6px 0 -8px; }
+  #salesView > #recentList { grid-area:recent; margin:0; }
+  #salesView > .note { grid-area:note; margin-top:0; }
+  #salesView > .cash-modal-backdrop { position:fixed; inset:0; z-index:1000; }
+  .payment-method-card { min-height:92px; padding:18px 20px; }
+  .payment-method-card > span:nth-child(2) { display:flex; flex-direction:column; gap:5px; }
+  .payment-method-card b { font-size:14px; letter-spacing:.1em; }
+  .payment-method-card small { font-size:12px; }
+  .products { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .product-card { min-height:144px; padding:17px; display:flex; flex-direction:column; justify-content:space-between; }
+  #historyView, #productsView, #reportsView { padding:4px 0; }
+  #historyView > .panel, #productsView > .panel { padding:22px; }
+  #reportsView { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; }
+  #reportsView > .report-refresh-row, #reportsView > .report-filter { grid-column:1 / -1; }
+  #reportsView > .report-cards { grid-column:1 / -1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  #reportsView > .chart-box { min-width:0; margin:0; height:100%; }
+  #reportsView > .panel { grid-column:1 / -1; }
+  .tabs { position:sticky; bottom:14px; z-index:40; width:min(600px,calc(100% - 32px)); margin:18px auto 0; border:1px solid var(--line); border-radius:20px; box-shadow:0 14px 44px #0007; }
+}
+@media (min-width: 1200px) {
+  #salesView { grid-template-columns:minmax(0,1.8fr) minmax(340px,.8fr); gap:20px 30px; }
+  .products { grid-template-columns:repeat(auto-fill,minmax(172px,1fr)); }
+}
+@media (max-width: 899px) {
+  main { padding:0 14px 100px; }
+  #salesView { display:flex; flex-direction:column; gap:15px; }
+  #salesView > .section-head:nth-child(1) { order:0; width:100%; }
+  #salesView > .payment-methods { order:1; width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #salesView > .cart-summary { order:2; width:100%; }
+  #salesView > #productGrid { order:3; width:100%; }
+  #salesView > .toolbar.action-buttons-container { order:4; width:100%; }
+  #salesView > .section-head:nth-last-of-type(1) { order:5; width:100%; }
+  #salesView > #recentList { order:6; width:100%; }
+  #salesView > .note { order:7; width:100%; }
+  .payment-method-card { min-width:0; min-height:96px; padding:13px 11px; gap:8px; }
+  .payment-method-card .payment-icon { font-size:23px; }
+  .payment-method-card > span:nth-child(2) { display:flex; flex-direction:column; gap:4px; }
+  .payment-method-card b { font-size:12px; letter-spacing:.08em; }
+  .payment-method-card small { font-size:10px; line-height:1.35; }
+  .payment-cart-count { grid-column:1 / -1; justify-self:start; }
+  .products { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .product-card { min-height:126px; padding:14px; }
+  #reportsView { display:flex; flex-direction:column; gap:14px; }
+  #reportsView > * { width:100%; }
+  #reportsView > .report-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .report-card { min-width:0; padding:16px 13px; }
+  .report-card b { font-size:clamp(19px,5vw,27px); overflow-wrap:anywhere; }
+  .tabs { position:fixed; bottom:max(10px,env(safe-area-inset-bottom)); left:12px; right:12px; width:auto; z-index:80; border:1px solid var(--line); border-radius:18px; box-shadow:0 10px 36px #0009; }
+}
+@media (max-width: 390px) {
+  .payment-method-card { grid-template-columns:auto minmax(0,1fr); }
+  .payment-cart-count { font-size:10px; }
+  .products { gap:8px; }
+  .product-card { padding:11px; }
+  #reportsView > .report-cards { grid-template-columns:1fr; }
+}
+/* ===== End structural redesign v2 ===== */
 </style>
 </head>
 <body>
