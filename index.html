@@ -568,110 +568,6 @@ body:not(.staff-mode) header>.stats{
 @media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
 </style>
-
-<style id="nongki-pos-v1">
-:root{--pos-bg:#f4f6fa;--pos-surface:#fff;--pos-ink:#171c28;--pos-muted:#747e90;--pos-line:#e3e7ef;--pos-blue:#2858e8;--pos-blue-soft:#edf2ff;--pos-green:#198765}
-html,body{background:var(--pos-bg)!important;color:var(--pos-ink)!important}
-header{display:grid!important;grid-template-columns:minmax(130px,1fr) auto!important;grid-template-areas:"brand meta" "stats stats"!important;align-items:center!important;gap:14px!important;padding:16px 22px!important;background:#fff!important;border:0!important;border-bottom:1px solid var(--pos-line)!important;border-radius:0!important;box-shadow:none!important}
-header .brand{grid-area:brand!important;min-width:0!important}
-header .brand-logo-card{width:160px!important;max-width:160px!important}
-header .brand-logo-card img{max-height:44px!important;filter:grayscale(1) brightness(.25)!important}
-header .owner-header-meta{grid-area:meta!important;text-align:right!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:4px!important}
-header .date{color:var(--pos-muted)!important;font-size:12px!important}
-header .staff-income-summary{display:flex!important;align-items:baseline!important;gap:10px!important}
-header .total-label{font-size:12px!important;color:var(--pos-muted)!important}
-header .total{font-size:28px!important;line-height:1!important;font-weight:800!important;letter-spacing:-1px!important;color:var(--pos-ink)!important}
-header .stats{grid-area:stats!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:100%!important;margin:0!important}
-header .stat{position:relative!important;display:grid!important;grid-template-columns:1fr auto!important;gap:5px 10px!important;padding:12px 15px!important;background:#f8f9fc!important;border:1px solid var(--pos-line)!important;border-radius:13px!important;box-shadow:none!important;min-width:0!important}
-header .stat span:first-child{grid-column:1/-1!important;color:var(--pos-muted)!important;font-size:11px!important}
-header .stat b{color:var(--pos-ink)!important;font-size:19px!important;font-weight:750!important}
-header .stat .sync-dot{grid-column:2!important;grid-row:2!important;align-self:center!important}
-main{max-width:1500px!important;padding:22px!important;background:transparent!important}
-#salesView{display:block!important}
-.pos-page-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 18px;padding:0 2px}
-.pos-eyebrow{display:block;color:var(--pos-blue);font-size:10px;font-weight:850;letter-spacing:1.8px}
-.pos-page-heading h2,.pos-catalog-header h2,.pos-checkout-title h2{margin:5px 0 4px!important;color:var(--pos-ink)!important;font-size:26px!important;font-weight:800!important;letter-spacing:-.8px!important}
-.pos-page-heading p,.pos-catalog-header p{margin:0!important;color:var(--pos-muted)!important;font-size:12px!important}
-.pos-live-indicator{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--pos-line);border-radius:99px;background:#fff;color:#586477;font-size:9px;font-weight:800;letter-spacing:.7px;white-space:nowrap}
-.pos-live-indicator span{width:7px;height:7px;border-radius:50%;background:#20a477;box-shadow:0 0 0 3px #20a47720}
-.pos-workspace{display:grid;grid-template-columns:minmax(0,1fr) 330px;align-items:start;gap:18px}
-.pos-catalog-pane,.pos-checkout-pane{min-width:0;background:#fff;border:1px solid var(--pos-line);border-radius:18px;box-shadow:0 5px 20px #15234708}
-.pos-catalog-pane{padding:20px}
-.pos-catalog-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}
-.pos-catalog-count{padding:7px 9px;background:#f2f4f9;border-radius:8px;color:#7a8496;font-size:9px;font-weight:850;letter-spacing:1px}
-#productGrid.products{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
-#productGrid .product{position:relative!important;min-width:0!important;min-height:145px!important;padding:14px!important;border:1px solid #e5e9f1!important;border-radius:14px!important;background:#fff!important;box-shadow:none!important;transition:border-color .15s,transform .15s,box-shadow .15s!important}
-#productGrid .product:active{transform:scale(.985)!important;border-color:var(--pos-blue)!important;box-shadow:0 0 0 3px #2858e817!important}
-#productGrid .product .emoji{width:39px!important;height:39px!important;display:grid!important;place-items:center!important;border-radius:11px!important;background:#f0f3fa!important}
-#productGrid .product .name{color:var(--pos-ink)!important;font-size:12px!important;font-weight:750!important;line-height:1.4!important}
-#productGrid .product .price{color:var(--pos-blue)!important;font-size:15px!important;font-weight:850!important}
-#productGrid .product .hint{color:#8a93a2!important;font-size:10px!important}
-.pos-checkout-pane{position:sticky;top:12px;padding:17px}
-.pos-checkout-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:19px}
-.pos-checkout-title h2{font-size:22px!important}
-.pos-order-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--pos-blue);color:white;font-size:17px;font-weight:850}
-.pos-payment-label,.pos-order-label{margin:0 0 9px;color:#727c8e;font-size:10px;font-weight:850;letter-spacing:1px;text-transform:uppercase}
-.payment-methods{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;margin:0 0 18px!important}
-.payment-method-card{display:grid!important;grid-template-columns:38px minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;min-height:62px!important;padding:10px 12px!important;border:1px solid var(--pos-line)!important;border-radius:12px!important;background:#fff!important;cursor:pointer!important}
-.payment-method-card.payment-cash{border-color:#cdd8ff!important;background:#f5f7ff!important}
-.payment-method-card .payment-icon{display:grid!important;place-items:center!important;width:36px!important;height:36px!important;border-radius:10px!important;background:#e8eeff!important}
-.payment-method-card b{font-size:12px!important;color:var(--pos-ink)!important}
-.payment-method-card small{display:block!important;margin-top:3px!important;color:var(--pos-muted)!important;font-size:10px!important}
-.payment-cart-count{padding:5px 7px!important;border-radius:7px!important;background:#edf0f6!important;color:#707b8d!important;font-size:9px!important;font-weight:800!important}
-.cart-summary{display:grid!important;grid-template-columns:1fr auto!important;gap:6px 10px!important;padding:13px!important;margin:0!important;border:1px solid var(--pos-line)!important;border-radius:13px!important;background:#f8f9fc!important}
-.cart-summary>span{color:#6d7788!important;font-size:11px!important}
-.cart-summary>b{color:var(--pos-ink)!important;font-size:22px!important;font-weight:850!important;letter-spacing:-.6px!important}
-.cart-summary>small{grid-column:1/-1!important;color:var(--pos-muted)!important;font-size:10px!important;line-height:1.4!important}
-.cart-summary>button{grid-column:1/-1!important;justify-self:start!important;min-height:30px!important;padding:5px 9px!important;font-size:10px!important}
-.pos-checkout-foot{margin-top:13px;color:#8791a0;font-size:10px;line-height:1.5}
-#salesView>.section-head,#salesView>.toolbar.action-buttons-container{margin-top:18px!important}
-#salesView>.section-head h2{font-size:14px!important}
-.tabs{border:1px solid var(--pos-line)!important;border-radius:16px!important;box-shadow:0 8px 28px #1c2d5012!important}
-.tabs .tab.active{background:var(--pos-blue-soft)!important;color:var(--pos-blue)!important}
-.btn.primary,.cash-confirm{background:var(--pos-blue)!important;border-color:var(--pos-blue)!important}
-@media(min-width:1100px){#productGrid.products{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
-@media(max-width:850px){main{padding:14px!important}.pos-workspace{grid-template-columns:minmax(0,1fr) 285px!important;gap:12px!important}.pos-catalog-pane{padding:14px!important}#productGrid.products{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:620px){
-header{grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"brand meta" "stats stats"!important;padding:12px 14px!important;gap:12px!important}
-header .brand-logo-card{width:125px!important;max-width:125px!important}
-header .brand-logo-card img{max-height:33px!important}
-header .date{font-size:9px!important}
-header .staff-income-summary{display:block!important}
-header .total-label{font-size:9px!important}
-header .total{font-size:22px!important;margin-top:3px!important}
-header .stats{gap:7px!important}
-header .stat{padding:9px!important;border-radius:11px!important}
-header .stat span:first-child{font-size:9px!important}
-header .stat b{font-size:16px!important}
-main{padding:12px 10px 90px!important}
-.pos-page-heading{margin-bottom:12px!important}
-.pos-page-heading h2{font-size:23px!important}
-.pos-live-indicator{padding:7px 8px;font-size:8px}
-.pos-workspace{display:flex!important;flex-direction:column!important;gap:12px!important}
-.pos-catalog-pane{width:100%!important;padding:13px!important;border-radius:15px!important}
-.pos-catalog-header{margin-bottom:13px!important}
-.pos-catalog-header h2{font-size:21px!important}
-.pos-catalog-header p{font-size:10px!important}
-#productGrid.products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
-#productGrid .product{min-height:122px!important;padding:10px!important;border-radius:12px!important}
-#productGrid .product .emoji{width:33px!important;height:33px!important;margin-bottom:8px!important}
-#productGrid .product .name{font-size:11px!important}
-#productGrid .product .price{font-size:13px!important;margin-top:7px!important}
-#productGrid .product .hint{font-size:9px!important}
-.pos-checkout-pane{position:relative!important;top:auto!important;width:100%!important;padding:13px!important;border-radius:15px!important}
-.pos-checkout-title{margin-bottom:13px!important}
-.pos-checkout-title h2{font-size:19px!important}
-.payment-methods{grid-template-columns:1fr 1fr!important;gap:7px!important;margin-bottom:12px!important}
-.payment-method-card{grid-template-columns:28px minmax(0,1fr)!important;gap:7px!important;min-height:62px!important;padding:8px!important}
-.payment-method-card .payment-icon{width:28px!important;height:28px!important;font-size:13px!important}
-.payment-method-card b{font-size:10px!important}
-.payment-method-card small{font-size:9px!important}
-.payment-cart-count{grid-column:2!important;justify-self:start!important;font-size:8px!important}
-.cart-summary{padding:10px!important}
-.cart-summary>b{font-size:20px!important}
-.pos-checkout-foot{font-size:9px}
-}
-</style>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -695,26 +591,12 @@ main{padding:12px 10px 90px!important}
 </header>
 <main>
 <section class="view active" id="salesView">
-<div class="pos-page-heading"><div><span class="pos-eyebrow">KASIR NONGKI</span><h2>Kasir</h2><p>Ketuk produk untuk memulai transaksi.</p></div><div class="pos-live-indicator"><span></span> SIAP MELAYANI</div></div>
-<div class="pos-workspace">
-<section class="pos-catalog-pane" aria-label="Katalog produk">
-<div class="pos-catalog-header"><div><span class="pos-eyebrow">NONGKI · POINT OF SALE</span><h2>Menu hari ini</h2><p>Pilih produk untuk menambah pesanan.</p></div><span class="pos-catalog-count" id="posCatalogBadge">KATALOG</span></div>
-<div class="products" id="productGrid"></div>
-</section>
-<aside class="pos-checkout-pane" aria-label="Pesanan dan pembayaran">
-<div class="pos-checkout-title"><div><span class="pos-eyebrow">CHECKOUT</span><h2>Pesanan</h2></div><span class="pos-order-mark">N.</span></div>
-<div class="pos-payment-label">Metode pembayaran</div>
+<div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
 <section class="payment-methods" aria-label="Metode pembayaran">
 <div class="payment-method-card payment-cash" id="paymentCashCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">💵</span><span><b>TUNAI</b><small>Bayar dengan uang tunai</small></span><span class="payment-cart-count" id="paymentCartCount">0 item</span></div>
 <div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
 </section>
-
-<div class="pos-order-label">Ringkasan belanja</div>
 <div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
-
-<div class="pos-checkout-foot">Pilih produk, lalu pilih metode pembayaran untuk menyelesaikan transaksi.</div>
-</aside>
-</div>
 <div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
@@ -725,8 +607,7 @@ main{padding:12px 10px 90px!important}
 <div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
 <button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
-</section></div>
-
+</section></div><div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
