@@ -1689,7 +1689,9 @@ async function fetchServerHistory(){
   if(requestId===serverHistoryRequestId){
    serverHistoryLoading=false;
    if(button)button.disabled=false;
-   renderServerHistory();
+   // Respons server hanya boleh memperbarui panel ketika pengguna masih memilih Riwayat Server.
+   // Jangan biarkan penyelesaian sinkronisasi menimpa tampilan Riwayat Lokal.
+   if(historySource==='cloud')renderServerHistory();
    if(serverHistoryRefreshPending){serverHistoryRefreshPending=false;setTimeout(()=>void fetchServerHistory(),150);}
   }
  }
@@ -2861,7 +2863,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v158-local-history-first').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v159-preserve-local-history').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
