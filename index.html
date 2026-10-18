@@ -720,12 +720,14 @@ body:not(.staff-mode) header>.stats{
 #salesView .product-category-tab{flex:0 0 auto;min-width:64px;max-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font:inherit;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #salesView .product-category-tab:active{transform:scale(.96)}
 #salesView .product-category-tab.active{background:#dcece2;border-color:#c4ddce;color:var(--green);box-shadow:inset 0 0 0 1px #c4ddce}
-#salesView .product-category-icon{font-size:20px;line-height:1.1}
+#salesView .product-category-icon{display:inline-block;font-size:20px;line-height:1.1;transform-origin:50% 75%}
+ #salesView .product-category-tab.icon-pop .product-category-icon{animation:productCategoryIconPop .42s cubic-bezier(.2,.8,.25,1.25) both}
+ @keyframes productCategoryIconPop{0%{transform:translateY(0) scale(1) rotate(0)}32%{transform:translateY(-5px) scale(1.18) rotate(-8deg)}62%{transform:translateY(0) scale(.94) rotate(5deg)}82%{transform:translateY(-2px) scale(1.04) rotate(-2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
 #salesView .product-category-name{font-size:10px;line-height:1.15;font-weight:750;white-space:nowrap}
 #salesView .product-group-selected{margin:0 0 10px;animation:productGroupReveal .22s ease-out both}
 #salesView .product-group-selected .product-group-grid{display:grid}
 @media(max-width:380px){#salesView .product-category-tabs{gap:5px}#salesView .product-category-tab{min-width:58px;padding:7px 8px}#salesView .product-category-icon{font-size:18px}#salesView .product-category-name{font-size:9px}}
-@media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-group-selected{transition:none!important;animation:none!important}}
+@media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-category-tab.icon-pop .product-category-icon,#salesView .product-group-selected{transition:none!important;animation:none!important}}
 
 /* Final override: hide only the cart summary card; retain its DOM and all transaction logic. */
 #salesView>#paymentCartSummary{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
@@ -1434,7 +1436,16 @@ function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CA
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
 let activeProductCategory='';
 const CATEGORY_ICONS={'Coffee':'☕','Non Coffee':'🧋','Snack':'🍟','Others':'🥤','Extra Topping':'🧀','Topping':'🍫'};
-function selectProductCategory(name){activeProductCategory=name;renderGrid();}
+function selectProductCategory(name){
+ activeProductCategory=name;
+ renderGrid();
+ const selected=[...document.querySelectorAll('#salesView .product-category-tab')].find(tab=>tab.dataset.productCategory===name);
+ if(selected){
+  selected.classList.remove('icon-pop');
+  const icon=selected.querySelector('.product-category-icon');
+  if(icon){void icon.offsetWidth;selected.classList.add('icon-pop');}
+ }
+}
 function renderGrid(){
  let counts={};
  dayTx().forEach(t=>{
