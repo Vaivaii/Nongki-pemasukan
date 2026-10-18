@@ -1,5 +1,5 @@
-// Nongki PWA v159-preserve-local-history: server fetch must not overwrite local history.
-const CACHE_NAME = 'nongki-v159-preserve-local-history'
+// Nongki PWA v160-local-history-loading-guard: don't render server loading state over local history.
+const CACHE_NAME = 'nongki-v160-local-history-loading-guard'
 
 const CORE_FILES = [
   './',
