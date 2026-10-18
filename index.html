@@ -580,6 +580,16 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Payment selector remains sticky at top; cart summary flows below it. */
+#salesView>.payment-checkout-card{padding:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 7px;overflow:visible}
+#salesView>.payment-checkout-card::before{display:none}
+#salesView>.payment-checkout-card .payment-methods{padding:0}
+#salesView>#paymentCartSummary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;margin:0 0 12px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 7px #173d2c08}
+#salesView>#paymentCartSummary>span{font-size:11px;line-height:1.2;color:var(--muted)}
+#salesView>#paymentCartSummary>b{grid-column:2;grid-row:1/3;font-size:18px;line-height:1.15;color:var(--green);white-space:nowrap}
+#salesView>#paymentCartSummary>small{font-size:10px;line-height:1.25;color:var(--muted);padding-right:4px}
+#salesView>#paymentCartSummary button{grid-column:1/-1;justify-self:start;padding:4px 8px;margin-top:3px;font-size:10px;border-radius:20px}
+@media(max-width:380px){#salesView>#paymentCartSummary{padding:7px 9px}#salesView>#paymentCartSummary>b{font-size:16px}}
 /* Minimal one-line payment selector + collapsible-height cart summary. */
 #salesView>.payment-checkout-card{padding:8px 9px;margin:0 0 8px;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px #173d2c12}
 #salesView .payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}
@@ -699,13 +709,13 @@ body:not(.staff-mode) header>.stats{
 <main>
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
-<section class="payment-checkout-card" aria-label="Pembayaran dan keranjang">
+<section class="payment-checkout-card" aria-label="Metode pembayaran">
 <section class="payment-methods" aria-label="Pilih metode pembayaran">
 <div class="payment-method-card payment-cash" id="paymentCashCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">💵</span><span><b>TUNAI</b><small>Bayar dengan uang tunai</small></span><span class="payment-cart-count" id="paymentCartCount">0 item</span></div>
 <div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
 </section>
-<div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang · ringkasan belanja</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
 </section>
+<div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang · ringkasan belanja</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
 <div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
