@@ -1,5 +1,5 @@
-// Nongki PWA v161-cart-cancel-audit-sync: sync canceled cart drafts as zero-value audit events.
-const CACHE_NAME = 'nongki-v161-cart-cancel-audit-sync'
+// Nongki PWA v162-audit-as-zero-value-event: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v162-audit-as-zero-value-event'
 
 const CORE_FILES = [
   './',
