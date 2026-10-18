@@ -580,6 +580,24 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Denser mobile POS layout: reduce whitespace without changing behavior. */
+#salesView>.payment-checkout-card{padding:8px;margin:0 0 10px;border-radius:16px;box-shadow:0 3px 12px #173d2c12}
+#salesView .payment-methods{gap:7px}
+#salesView .payment-method-card{min-height:40px;padding:8px 9px;border-radius:11px;gap:6px}
+#salesView .payment-icon{font-size:18px}
+#salesView .payment-method-card b{font-size:12px}
+#salesView .payment-cart-count{font-size:9px;padding:3px 6px}
+#salesView .cart-summary{gap:2px 8px;padding:7px 2px 0;margin-top:6px}
+#salesView .cart-summary>span{font-size:10px}
+#salesView .cart-summary>b{font-size:17px}
+#salesView .cart-summary>small{font-size:10px;line-height:1.25}
+#salesView .cart-summary button{padding:4px 8px;margin-top:1px}
+#salesView>.section-head{margin:0 2px 8px}
+#salesView .product-group{margin-bottom:13px}
+#salesView .product-group-title{padding-bottom:6px;margin-bottom:7px}
+#salesView .product-group-grid{gap:8px}
+#salesView .product{padding:11px 11px;min-height:96px}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:7px}#salesView .payment-method-card{padding:7px 6px;gap:4px}#salesView .payment-cart-count{font-size:8px;padding:3px 4px}#salesView .cart-summary>b{font-size:16px}}
 /* Sticky checkout: scrolls naturally, then stays at the top of the sales view. */
 #salesView>.payment-checkout-card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:4;isolation:isolate;box-shadow:0 5px 18px #173d2c16;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);scroll-margin-top:8px}
 #salesView>.payment-checkout-card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:rgba(255,255,255,.92)}
