@@ -773,6 +773,31 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
  .cash-confirm{min-height:48px!important;margin-top:8px!important}
 }
 
+
+/* Restore the older cash calculator presentation: broad, centered, and non-scrollable. */
+.cash-modal-backdrop{position:fixed!important;inset:0!important;z-index:1000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
+.cash-modal-backdrop[hidden]{display:none!important}
+.cash-modal{box-sizing:border-box!important;position:relative!important;width:min(92vw,640px)!important;max-width:640px!important;max-height:calc(100dvh - 24px)!important;height:auto!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;padding:clamp(14px,2vh,24px)!important;border-radius:28px!important}
+.cash-modal h2{font-size:clamp(20px,3vh,30px)!important;line-height:1.15!important;margin:0 42px 4px 0!important}
+.cash-modal-subtitle{font-size:clamp(11px,1.8vh,16px)!important;margin:0 0 clamp(8px,1.5vh,16px)!important}
+.cash-total,.cash-change{padding:clamp(9px,1.7vh,18px)!important;margin:clamp(6px,1vh,10px) 0!important}
+.cash-total span,.cash-change span{font-size:clamp(12px,1.9vh,17px)!important}
+.cash-total b,.cash-change b{font-size:clamp(18px,3vh,28px)!important}
+.cash-modal label{display:block!important;margin:clamp(6px,1vh,10px) 0 5px!important;font-size:clamp(12px,1.8vh,17px)!important}
+#cashAmountInput{box-sizing:border-box!important;width:100%!important;height:clamp(46px,6.3vh,64px)!important;min-height:clamp(46px,6.3vh,64px)!important;margin:0 0 clamp(7px,1.2vh,12px)!important;padding:8px 12px!important;font-size:clamp(20px,3.2vh,28px)!important;border:1px solid #dfe4dc!important;border-radius:16px!important;box-shadow:none!important;caret-color:transparent!important;user-select:none!important;-webkit-user-select:none!important}
+.cash-shortcuts,.cash-numpad{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(5px,.9vh,10px)!important;margin:0 0 clamp(7px,1.2vh,12px)!important}
+.cash-shortcuts button,.cash-numpad button{box-sizing:border-box!important;min-width:0!important;height:clamp(36px,5.1vh,54px)!important;min-height:clamp(36px,5.1vh,54px)!important;padding:4px 6px!important;font-size:clamp(14px,2.2vh,21px)!important;border-radius:15px!important}
+.cash-change small{font-size:clamp(10px,1.6vh,14px)!important}
+.cash-confirm{height:clamp(48px,6.3vh,66px)!important;min-height:clamp(48px,6.3vh,66px)!important;margin-top:clamp(5px,1vh,10px)!important;font-size:clamp(14px,2.2vh,21px)!important}
+@media(max-height:780px){
+ .cash-modal{padding:10px!important;border-radius:20px!important}
+ .cash-modal-subtitle{margin-bottom:5px!important}
+ .cash-total,.cash-change{padding:7px 10px!important;margin:5px 0!important}
+ #cashAmountInput{height:38px!important;min-height:38px!important;margin-bottom:5px!important}
+ .cash-shortcuts,.cash-numpad{gap:4px!important;margin-bottom:5px!important}
+ .cash-shortcuts button,.cash-numpad button{height:31px!important;min-height:31px!important;border-radius:10px!important}
+ .cash-confirm{height:40px!important;min-height:40px!important;margin-top:5px!important}
+}
 </style>
 </head>
 <body>
