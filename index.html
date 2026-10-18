@@ -1911,24 +1911,11 @@ function renderReports(){
 function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
 function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const staffDot=$('staffSyncDot'),staffText=$('staffSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':state==='offline'?'offline':'waiting';const statusText=normalized==='connected'?'Status: Tersinkron':normalized==='syncing'?'Status: Menyinkronkan…':normalized==='error'?'Status: Gagal sinkron':normalized==='offline'?'Status: Offline · antrean disimpan':'Status: Menunggu sinkronisasi';[dot,staffDot].forEach(el=>{if(el){el.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');el.classList.add('status-'+normalized);el.setAttribute('aria-label',statusText)}});if(text)text.textContent=statusText;if(staffText)staffText.textContent=statusText}
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
-async function refreshStaffSyncBadge(){
+function refreshStaffSyncBadge(){
+ // Tombol sinkronisasi melayang dinonaktifkan untuk SEMUA profil.
  const button=$('staffSyncFab'),badge=$('staffSyncCount');
- if(!button||!badge)return;
- // Sembunyikan secara sinkron saat profil bukan Pegawai.
- if(currentUser?.role!=='staff'){button.hidden=true;badge.hidden=true;return;}
- button.hidden=false;
- try{
-  const count=(await getAllRecords('outbox')).length;
-  // Profil bisa berubah selama pembacaan IndexedDB berlangsung.
-  // Jangan biarkan hasil async dari sesi Pegawai menampilkan FAB pada Owner/Istri.
-  if(currentUser?.role!=='staff'){button.hidden=true;badge.hidden=true;return;}
-  badge.textContent=count>99?'99+':String(count);
-  badge.hidden=count<1;
-  button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean';
- }catch(error){
-  if(currentUser?.role!=='staff'){button.hidden=true;badge.hidden=true;return;}
-  badge.textContent='!';badge.hidden=false;
- }
+ if(button)button.hidden=true;
+ if(badge)badge.hidden=true;
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const paymentCart=new Map();let paymentBusy=false;let activePaymentMethod='Tunai';
