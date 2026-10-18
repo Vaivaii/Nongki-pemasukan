@@ -1627,7 +1627,7 @@ function renderHistory(){
  document.querySelectorAll('[data-history-source]').forEach(b=>b.classList.toggle('active',b.dataset.historySource===historySource));
  if(historySource==='local'){
   $('serverHistoryToolbar')?.classList.add('hidden');
-  const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled');
+  const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft');
   $('historySummary').innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Perangkat ini</span><h2>'+rupiah(total(active))+'</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>'+tx.length+'</h2></div></div><div class="sub">'+itemCount(active)+' produk aktif · '+tx.filter(t=>t.status==='cancelled').length+' dibatalkan</div>';
   $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat lokal pada tanggal ini.</div>';
  }else renderServerHistory();
