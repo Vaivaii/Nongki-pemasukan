@@ -1990,15 +1990,19 @@ $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
 $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
-$('closeCashModal')?.addEventListener('click',closeCashModal);
-$('cashPaymentModal')?.addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal();});
-$('cashAmountInput')?.addEventListener('input',updateCashCalculation);
 $('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
-document.querySelectorAll('[data-cash-shortcut]').forEach(button=>button.addEventListener('click',()=>{const v=button.dataset.cashShortcut==='exact'?cartTotal():Number(button.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();}));
-document.querySelectorAll('[data-cash-key]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();}));
-$('confirmCashPayment')?.addEventListener('click',()=>completeCartPayment('Tunai',parseCashAmount()));
 
 document.addEventListener('click',e=>{
+/* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
+const cashClose=e.target.closest('#closeCashModal');
+if(cashClose){closeCashModal();return;}
+if(e.target===$('cashPaymentModal')){closeCashModal();return;}
+const shortcut=e.target.closest('#cashPaymentModal [data-cash-shortcut]');
+if(shortcut){e.preventDefault();const v=shortcut.dataset.cashShortcut==='exact'?cartTotal():Number(shortcut.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();return;}
+const keyButton=e.target.closest('#cashPaymentModal [data-cash-key]');
+if(keyButton){e.preventDefault();const key=keyButton.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();return;}
+const confirmCash=e.target.closest('#confirmCashPayment');
+if(confirmCash){e.preventDefault();completeCartPayment('Tunai',parseCashAmount());return;}
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
