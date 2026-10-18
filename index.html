@@ -707,6 +707,19 @@ body:not(.staff-mode) header>.stats{
 #salesView>#paymentCartSummary>b{grid-column:2!important;grid-row:1/3!important;font-size:18px!important;white-space:nowrap!important}
 #salesView>#paymentCartSummary>small{font-size:10px!important;line-height:1.25!important}
 #salesView>#paymentCartSummary button{grid-column:1/-1!important;justify-self:start!important;padding:4px 8px!important;margin-top:3px!important;font-size:10px!important}
+
+/* Icon category tabs: keep product categories reachable without scrolling to headers. */
+#salesView .product-category-tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 57px);z-index:5;display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:5px 1px 8px;margin:0 0 8px;background:rgba(246,246,240,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);scroll-padding-inline:8px}
+#salesView .product-category-tabs::-webkit-scrollbar{display:none}
+#salesView .product-category-tab{flex:0 0 auto;min-width:64px;max-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font:inherit;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#salesView .product-category-tab:active{transform:scale(.96)}
+#salesView .product-category-tab.active{background:#dcece2;border-color:#c4ddce;color:var(--green);box-shadow:inset 0 0 0 1px #c4ddce}
+#salesView .product-category-icon{font-size:20px;line-height:1.1}
+#salesView .product-category-name{font-size:10px;line-height:1.15;font-weight:750;white-space:nowrap}
+#salesView .product-group-selected{margin:0 0 10px;animation:productGroupReveal .22s ease-out both}
+#salesView .product-group-selected .product-group-grid{display:grid}
+@media(max-width:380px){#salesView .product-category-tabs{gap:5px}#salesView .product-category-tab{min-width:58px;padding:7px 8px}#salesView .product-category-icon{font-size:18px}#salesView .product-category-name{font-size:9px}}
+@media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-group-selected{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -950,23 +963,25 @@ function productGroup(p){
 const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
+let activeProductCategory='';
+const CATEGORY_ICONS={'Coffee':'☕','Non Coffee':'🧋','Snack':'🍟','Others':'🥤','Extra Topping':'➕','Topping':'🍫'};
+function selectProductCategory(name){activeProductCategory=name;renderGrid();}
 function renderGrid(){
  let counts={};
  dayTx().forEach(t=>{
   if(Array.isArray(t.items)&&t.items.length){
    t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
-  }else if(t.productId){
-   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
-  }
+  }else if(t.productId){counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);}
  });
  if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
- let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
+ let active=data.products.filter(p=>p.active!==false),order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
- let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
-  const collapsed=collapsedCategory(g);
-  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
- }).join('');
- $('productGrid').innerHTML=html||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';
+ let categories=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length);
+ if(!categories.length){$('productGrid').innerHTML='<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';return;}
+ if(!categories.includes(activeProductCategory))activeProductCategory=categories[0];
+ const tabs='<nav class="product-category-tabs" aria-label="Kategori produk">'+categories.map(g=>'<button type="button" class="product-category-tab'+(g===activeProductCategory?' active':'')+'" data-product-category="'+esc(g)+'" aria-pressed="'+(g===activeProductCategory)+'"><span class="product-category-icon" aria-hidden="true">'+(CATEGORY_ICONS[g]||'🥤')+'</span><span class="product-category-name">'+esc(g)+'</span></button>').join('')+'</nav>';
+ const items=groups[activeProductCategory].map(p=>{let sold=counts[p.id]||0;return '<button class="product" data-sell="'+esc(String(p.id))+'"><span class="sold-badge'+(sold===0?' zero':'')+'" aria-label="Terjual hari ini">'+sold+'</span><div><div class="emoji">'+esc(p.icon||'🥤')+'</div><div class="name">'+esc(p.name)+'</div></div><div><div class="price">'+rupiah(p.price)+'</div><div class="hint">Ketuk untuk catat</div></div></button>';}).join('');
+ $('productGrid').innerHTML=tabs+'<section class="product-group product-group-selected" aria-label="'+esc(activeProductCategory)+'"><div class="product-group-grid">'+items+'</div></section>';
 }
 function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
@@ -1775,7 +1790,7 @@ if($('loginPin')){$('loginPin').disabled=false;$('loginPin').hidden=false;}
 const loginPinLabel=document.querySelector('label[for="loginPin"]');if(loginPinLabel)loginPinLabel.hidden=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
 document.addEventListener('click',e=>{
- const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
+ const productCategory=e.target.closest('[data-product-category]');if(productCategory){selectProductCategory(productCategory.dataset.productCategory);return;}const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
  const b=e.target.closest('[data-user-toggle]');
  if(b){toast('Manajemen akun dinonaktifkan pada mode 3 profil lokal.');}
 });
