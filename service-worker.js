@@ -1,5 +1,5 @@
-// Nongki PWA v145-report-array-compat: payment status, received cash and change fields.
-const CACHE_NAME = 'nongki-v155-bottom-sheet-cash'
+// Nongki PWA v156-history-live: refresh local history immediately after cart changes.
+const CACHE_NAME = 'nongki-v156-history-live'
 
 const CORE_FILES = [
   './',
