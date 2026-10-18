@@ -1,5 +1,5 @@
-// Nongki PWA v160-local-history-loading-guard: don't render server loading state over local history.
-const CACHE_NAME = 'nongki-v160-local-history-loading-guard'
+// Nongki PWA v161-cart-cancel-audit-sync: sync canceled cart drafts as zero-value audit events.
+const CACHE_NAME = 'nongki-v161-cart-cancel-audit-sync'
 
 const CORE_FILES = [
   './',
