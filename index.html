@@ -580,6 +580,28 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Extra-compact checkout and category spacing; preserve existing IDs and logic. */
+#salesView>.payment-checkout-card{padding:5px;margin:0 0 6px;border-radius:14px;box-shadow:0 2px 8px #173d2c10}
+#salesView .payment-methods{gap:5px}
+#salesView .payment-method-card{min-height:34px;padding:6px 7px;border-radius:9px;gap:5px}
+#salesView .payment-icon{font-size:16px}
+#salesView .payment-method-card b{font-size:11px;letter-spacing:.2px}
+#salesView .payment-cart-count{font-size:8px;padding:2px 5px}
+#salesView .cart-summary{gap:1px 6px;padding:5px 1px 0;margin-top:4px}
+#salesView .cart-summary>span{font-size:9px}
+#salesView .cart-summary>b{font-size:15px}
+#salesView .cart-summary>small{font-size:9px;line-height:1.15}
+#salesView .cart-summary button{padding:3px 7px;font-size:9px;margin-top:0}
+#salesView .product-group{margin-bottom:8px}
+#salesView .product-group-title{padding:9px 10px;margin-bottom:6px;border-radius:11px}
+#salesView .product-group-grid{gap:7px}
+#salesView .product{padding:9px 9px;min-height:88px;border-radius:14px}
+#salesView .product .emoji{font-size:17px}
+#salesView .product .name{font-size:12px}
+#salesView .product .price{font-size:14px}
+.product-group-title .category-chevron{transform:none!important}
+.product-group-title[aria-expanded="true"] .category-chevron{transform:none!important}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:4px}#salesView .payment-method-card{min-height:32px;padding:5px 5px}#salesView .cart-summary>b{font-size:14px}}
 /* Denser mobile POS layout: reduce whitespace without changing behavior. */
 #salesView>.payment-checkout-card{padding:8px;margin:0 0 10px;border-radius:16px;box-shadow:0 3px 12px #173d2c12}
 #salesView .payment-methods{gap:7px}
