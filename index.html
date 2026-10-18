@@ -755,6 +755,23 @@ main{padding-top:3px!important}
 #salesView>.payment-checkout-card{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding-left:0!important;padding-right:0!important}
 #salesView>.payment-checkout-card .payment-methods{width:100%!important;box-sizing:border-box!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}
 #salesView>.payment-checkout-card .payment-method-card{min-width:0!important;box-sizing:border-box!important}
+
+/* Cash calculator: centered fixed overlay, no page/modal scrolling or system keyboard. */
+body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:100%!important;touch-action:none!important}
+.cash-modal-backdrop{position:fixed!important;inset:0!important;overflow:hidden!important;padding:10px!important;align-items:center!important;justify-content:center!important;overscroll-behavior:none!important;touch-action:none!important}
+.cash-modal{width:min(100%,390px)!important;max-height:calc(100dvh - 20px)!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:pan-x!important;padding:clamp(12px,2.5vh,20px)!important;border-radius:22px!important}
+.cash-modal input{caret-color:transparent!important;user-select:none!important;-webkit-user-select:none!important}
+@media(max-height:850px){
+ .cash-modal{padding:12px!important;border-radius:18px!important}
+ .cash-modal h2{font-size:19px!important}
+ .cash-modal-subtitle{margin-bottom:8px!important}
+ .cash-total,.cash-change{padding:8px 10px!important;margin:5px 0!important}
+ .cash-shortcuts,.cash-numpad{gap:6px!important}
+ .cash-shortcuts button,.cash-numpad button{min-height:40px!important;padding:7px!important}
+ .cash-modal label{margin:7px 0 4px!important}
+ .cash-modal input{min-height:42px!important}
+ .cash-confirm{min-height:48px!important;margin-top:8px!important}
+}
 </style>
 </head>
 <body>
@@ -792,7 +809,7 @@ main{padding-top:3px!important}
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
 <h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
 <div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
-<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
+<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="none" readonly aria-label="Nominal uang diterima, gunakan tombol angka di bawah" autocomplete="off" placeholder="Pilih nominal di bawah" />
 <div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
 <div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
@@ -1511,9 +1528,10 @@ function updateCashCalculation(){
 function openCashModal(){
  if(!cartCount()||paymentBusy)return;
  activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
- formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
+ document.body.classList.add('cash-modal-open');
+ formatCashInput(cartTotal());updateCashCalculation();
 }
-function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
+function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;document.body.classList.remove('cash-modal-open');}
 function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
 async function completeCartPayment(method,paid){
  if(paymentBusy||!cartCount())return;
