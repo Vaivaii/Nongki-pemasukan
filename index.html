@@ -1265,7 +1265,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 <button class="history-switch-btn active" data-history-source="local">Riwayat Lokal <span id="localCount">0</span></button>
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
-<div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
+<div class="locked-note">Riwayat lokal tetap tersedia saat offline. Input produk yang dibatalkan sebelum pembayaran dicatat lokal dan tidak menambah penjualan; transaksi selesai dan pembatalan transaksi tersimpan masuk antrean IndexedDB untuk dikirim ke Apps Script saat koneksi tersedia.</div>
 <div class="panel hidden" id="serverHistoryToolbar">
   <div class="toolbar" style="margin:0 0 6px"><button class="btn" id="refreshServerHistoryBtn" type="button">Refresh Server Data</button></div>
   <div class="sub" id="serverHistoryStatus" role="status" aria-live="polite">Riwayat server belum dimuat.</div>
