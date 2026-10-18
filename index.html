@@ -2102,7 +2102,7 @@ async function cancelTx(id){
 }
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){historySource='local';renderHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
 $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
@@ -2133,7 +2133,7 @@ $('publishSharedMenuBtn')?.addEventListener('click',()=>publishSharedMenu());
 $('refreshSharedMenuBtn')?.addEventListener('click',()=>fetchSharedMenu());
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&!serverHistoryLoaded)void fetchServerHistory()}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud')void fetchServerHistory()}));
 $('refreshServerHistoryBtn')?.addEventListener('click',()=>{void fetchServerHistory()});
 const globalSalesCard=$('globalSalesCard');
 globalSalesCard?.addEventListener('click',()=>{void syncAllData()});
@@ -2861,7 +2861,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v157-draft-sync-guard').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v158-local-history-first').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
