@@ -2035,7 +2035,28 @@ const globalSalesCard=$('globalSalesCard');
 globalSalesCard?.addEventListener('click',()=>{void syncAllData()});
 globalSalesCard?.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();void syncAllData();}});
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);$('refreshReportBtn')?.addEventListener('click',()=>{void fetchServerReport()});
-$('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
+$('undoBtn').addEventListener('click',()=>{
+  if(paymentBusy){toast('Pembayaran sedang diproses. Tunggu sampai selesai.');return;}
+  // Prioritas: bila ada item yang belum dibayar, batalkan satu item terakhir
+  // dari kalkulator saja; jangan membuat event pembatalan server.
+  if(cartCount()){
+   const lines=cartLines();
+   const last=lines[lines.length-1];
+   if(!last)return;
+   const current=paymentCart.get(String(last.productId));
+   if(current){
+    if(Number(current.quantity)>1)paymentCart.set(String(last.productId),{...current,quantity:Number(current.quantity)-1});
+    else paymentCart.delete(String(last.productId));
+   }
+   refreshPaymentUI();renderHeader();renderGrid();
+   toast(last.productName+' dibatalkan dari kalkulator · total diperbarui.');
+   return;
+  }
+  // Jika keranjang kosong, batalkan transaksi tersimpan terakhir.
+  const tx=dayTx().filter(t=>!['cancelled','canceled'].includes(String(t.status||'').toLowerCase())).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.time||'').localeCompare(String(a.time||'')))[0];
+  if(!tx){toast('Tidak ada item kalkulator atau transaksi tersimpan hari ini untuk dibatalkan.');return;}
+  cancelTx(tx.id);
+ });
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
 $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
