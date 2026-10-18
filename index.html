@@ -1508,7 +1508,7 @@ function renderGrid(){
  const enteringGrid=$('productGrid').querySelector('.product-grid-entering');
  if(enteringGrid)setTimeout(()=>enteringGrid.classList.remove('product-grid-entering'),650);
 }
-function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled',draft=t.status==='draft';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':draft?'DI KERANJANG':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}<small>${esc(t.time)}</small></div><div class="history-price">${rupiah(t.total)}</div></div>`}
+function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled',draft=t.status==='draft';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':draft?'DI KERANJANG':'AKTIF'}</span>${showSync&&!draft?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}<small>${esc(t.time)}</small></div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
 let serverHistoryTransactions=[];
@@ -2717,7 +2717,7 @@ async function updateOutboxError(item,error){
 }
 async function enqueueLegacyPendingTransactions(outbox){
  const queuedEntities=new Set(outbox.map(x=>String(x.entityId||'')));
- const legacy=data.transactions.filter(t=>t&&t.id&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
+ const legacy=data.transactions.filter(t=>t&&t.id&&t.status!=='draft'&&!t.auditOnly&&t.syncStatus!=='local-only'&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
  if(!legacy.length)return;
  const db=await openNongkiDB();
  try{
@@ -2861,7 +2861,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v156-history-live').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v157-draft-sync-guard').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
