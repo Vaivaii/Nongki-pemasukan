@@ -1,5 +1,5 @@
-// Nongki PWA v156-history-live: refresh local history immediately after cart changes.
-const CACHE_NAME = 'nongki-v156-history-live'
+// Nongki PWA v157-draft-sync-guard: never sync unpaid cart drafts as sales.
+const CACHE_NAME = 'nongki-v157-draft-sync-guard'
 
 const CORE_FILES = [
   './',
