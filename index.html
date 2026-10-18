@@ -726,6 +726,9 @@ body:not(.staff-mode) header>.stats{
 #salesView .product-group-selected .product-group-grid{display:grid}
 @media(max-width:380px){#salesView .product-category-tabs{gap:5px}#salesView .product-category-tab{min-width:58px;padding:7px 8px}#salesView .product-category-icon{font-size:18px}#salesView .product-category-name{font-size:9px}}
 @media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-group-selected{transition:none!important;animation:none!important}}
+
+/* Final override: hide only the cart summary card; retain its DOM and all transaction logic. */
+#salesView>#paymentCartSummary{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
 </style>
 </head>
 <body>
