@@ -580,6 +580,21 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Minimal one-line payment selector + collapsible-height cart summary. */
+#salesView>.payment-checkout-card{padding:8px 9px;margin:0 0 8px;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px #173d2c12}
+#salesView .payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#salesView .payment-method-card{min-height:42px;padding:8px 11px;border-radius:12px;gap:8px;justify-content:flex-start}
+#salesView .payment-icon{font-size:18px}
+#salesView .payment-method-card b{font-size:12px;letter-spacing:.3px}
+#salesView .payment-method-card small{display:none}
+#salesView .payment-cart-count{margin-left:auto;align-self:center;font-size:10px;padding:4px 7px;background:#ffffff2b}
+#salesView .cart-summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;padding:8px 2px 0;margin:7px 0 0;border-top:1px solid #e8ece7;border-radius:0;background:transparent}
+#salesView .cart-summary>span{font-size:11px;line-height:1.2;color:var(--muted)}
+#salesView .cart-summary>b{grid-column:2;grid-row:1/3;font-size:19px;line-height:1.15;color:var(--green);white-space:nowrap}
+#salesView .cart-summary>small{font-size:10px;line-height:1.25;color:var(--muted);padding-right:4px}
+#salesView .cart-summary button{grid-column:1/-1;justify-self:start;padding:4px 8px;margin-top:3px;font-size:10px;border-radius:20px}
+#salesView .cart-summary:has(#paymentCartTotal:empty){display:none}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:7px}#salesView .payment-method-card{padding:7px 8px;gap:6px}#salesView .payment-cart-count{font-size:9px;padding:3px 5px}#salesView .cart-summary>b{font-size:17px}}
 /* Extra-compact checkout and category spacing; preserve existing IDs and logic. */
 #salesView>.payment-checkout-card{padding:5px;margin:0 0 6px;border-radius:14px;box-shadow:0 2px 8px #173d2c10}
 #salesView .payment-methods{gap:5px}
