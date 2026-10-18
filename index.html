@@ -2084,7 +2084,20 @@ $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key=
 $('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
 
 document.addEventListener('click',e=>{
-/* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
+/* Modal berada tepat sebelum <!-- Cash payment modal moved outside app containers to avoid sticky stacking contexts. -->
+<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
+<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
+<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
+<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
+<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
+<label for="cashAmountInput">Uang Diterima</label><input type="text" id="cashAmountInput" inputmode="none" readonly autocomplete="off" placeholder="Masukkan nominal" />
+<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
+<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
+<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
+<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
+</section></div>
+
+</body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
 const cashClose=e.target.closest('#closeCashModal');
 if(cashClose){closeCashModal();return;}
 if(e.target===$('cashPaymentModal')){closeCashModal();return;}
