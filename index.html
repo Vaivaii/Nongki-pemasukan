@@ -564,7 +564,7 @@ body:not(.staff-mode) header>.stats{
 .product-group-title .category-chevron{display:inline-block;transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
 .product-group-title[aria-expanded="true"] .category-chevron{transform:rotate(90deg)}
 .product-group-grid{overflow:hidden;animation:productGroupReveal .34s cubic-bezier(.2,.8,.2,1) both}
-.product-group-grid .product{animation:productCardReveal .32s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(min(var(--product-index,0),8)*24ms)}
+.product-group-grid .product.product-tap-pop{animation:productCardTapPop .34s cubic-bezier(.2,.8,.2,1.15) both;transform-origin:center}
 .product-group-grid .product:nth-child(1){--product-index:0}.product-group-grid .product:nth-child(2){--product-index:1}.product-group-grid .product:nth-child(3){--product-index:2}.product-group-grid .product:nth-child(4){--product-index:3}.product-group-grid .product:nth-child(5){--product-index:4}.product-group-grid .product:nth-child(6){--product-index:5}.product-group-grid .product:nth-child(7){--product-index:6}.product-group-grid .product:nth-child(8){--product-index:7}.product-group-grid .product:nth-child(n+9){--product-index:8}
 .tabs{transition:box-shadow .25s ease,background .25s ease;isolation:isolate}
 .tab{position:relative;overflow:hidden;isolation:isolate;transition:color .22s ease,background .28s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -576,10 +576,10 @@ body:not(.staff-mode) header>.stats{
 .tab.active{box-shadow:inset 0 0 0 1px #d5e6d9}
 .view.active{animation:ownerViewEnter .24s ease-out both}
 @keyframes productGroupReveal{from{opacity:.55;clip-path:inset(0 0 100% 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
-@keyframes productCardReveal{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes productCardTapPop{0%{transform:scale(1)}38%{transform:scale(1.035)}72%{transform:scale(.99)}100%{transform:scale(1)}}
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+@media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product.product-tap-pop,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
 /* Hide the visible cart summary while preserving its elements and payment logic. */
 #salesView>#paymentCartSummary{display:none!important}
 /* Compact sales heading so payment cards sit slightly higher. */
@@ -1948,7 +1948,7 @@ function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderHeader();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
+ refreshPaymentUI();renderHeader();renderGrid();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
