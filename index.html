@@ -580,6 +580,8 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Hide the visible cart summary while preserving its elements and payment logic. */
+#salesView>#paymentCartSummary{display:none!important}
 /* Compact sales heading so payment cards sit slightly higher. */
 #salesView>.section-head{margin:0 2px 5px}
 #salesView>.section-head h2{font-size:13px;line-height:1.2}
