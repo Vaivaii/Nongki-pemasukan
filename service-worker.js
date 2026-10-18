@@ -1,5 +1,5 @@
 // Nongki PWA v145-report-array-compat: payment status, received cash and change fields.
-const CACHE_NAME = 'nongki-v148-category-icon-tabs';
+const CACHE_NAME = 'nongki-v147-report-array-compat';
 
 const CORE_FILES = [
   './',
