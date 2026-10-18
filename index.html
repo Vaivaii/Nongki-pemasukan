@@ -2127,8 +2127,12 @@ $('undoBtn').addEventListener('click',()=>{
    // sebelum pembayaran dan sinkronisasi server dilakukan.
    const canceledCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(last.productId));
    if(canceledCard){
-    canceledCard.classList.remove('cancelled-product-flash');void canceledCard.offsetWidth;canceledCard.classList.add('cancelled-product-flash');
-    setTimeout(()=>canceledCard.classList.remove('cancelled-product-flash'),650);
+    // Hapus animasi ketukan produk yang masih aktif/menempel agar tidak menimpa
+    // animasi pembatalan pada seluruh kartu.
+    canceledCard.classList.remove('product-tap-pop','cancelled-product-flash');
+    void canceledCard.offsetWidth;
+    canceledCard.classList.add('cancelled-product-flash');
+    setTimeout(()=>canceledCard.classList.remove('cancelled-product-flash'),700);
    }
    refreshPaymentUI();renderHeader();updateProductBadges();
    toast(last.productName+' dibatalkan dari kalkulator · total diperbarui.');
