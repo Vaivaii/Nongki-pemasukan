@@ -2090,7 +2090,7 @@ $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
 $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
-$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;const items=cartLines();items.forEach(item=>recordLocalCartCancellation(item,Number(item.quantity)||1,'Keranjang dikosongkan sebelum pembayaran'));paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;const items=cartLines();items.forEach(item=>recordLocalCartCancellation(item,Number(item.quantity)||1,'Keranjang dikosongkan sebelum pembayaran'));paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderRecent();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
 
 document.addEventListener('click',e=>{
 /* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
@@ -2148,7 +2148,7 @@ $('undoBtn').addEventListener('click',()=>{
     setTimeout(()=>canceledCard.classList.remove('cancelled-product-flash'),700);
    }
    refreshPaymentUI();renderHeader();updateProductBadges();
-   renderHistory();
+   renderRecent();renderHistory();
    toast(last.productName+' dibatalkan dari kalkulator · tercatat di riwayat lokal dan tidak dihitung sebagai penjualan.');
    return;
   }
