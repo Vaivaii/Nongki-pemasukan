@@ -684,6 +684,29 @@ body:not(.staff-mode) header>.stats{
 .cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
+
+/* FINAL OVERRIDE: separate sticky payment controls from normal-flow cart card. */
+#salesView>.payment-checkout-card{
+ position:sticky!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;z-index:8!important;
+ display:block!important;padding:6px!important;margin:0 0 8px!important;
+ background:transparent!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+ overflow:visible!important;isolation:auto!important
+}
+#salesView>.payment-checkout-card::before{display:none!important}
+#salesView>.payment-checkout-card .payment-methods{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;padding:0!important;margin:0!important}
+#salesView>.payment-checkout-card .payment-method-card{min-height:42px!important;padding:8px 10px!important;border-radius:11px!important}
+#salesView>#paymentCartSummary{
+ position:relative!important;top:auto!important;z-index:1!important;
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;
+ gap:3px 8px!important;margin:0 0 10px!important;padding:8px 10px!important;
+ background:#fff!important;border:1px solid var(--line)!important;border-radius:12px!important;
+ box-shadow:0 2px 7px #173d2c08!important
+}
+#salesView>#paymentCartSummary>span{font-size:11px!important;line-height:1.2!important}
+#salesView>#paymentCartSummary>b{grid-column:2!important;grid-row:1/3!important;font-size:18px!important;white-space:nowrap!important}
+#salesView>#paymentCartSummary>small{font-size:10px!important;line-height:1.25!important}
+#salesView>#paymentCartSummary button{grid-column:1/-1!important;justify-self:start!important;padding:4px 8px!important;margin-top:3px!important;font-size:10px!important}
 </style>
 </head>
 <body>
