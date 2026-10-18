@@ -1604,7 +1604,9 @@ function normalizeServerHistory(result){
    date,time,name,amount,
    payment:String(rawPayment||'Tidak tercatat').trim(),
    profile,
-   status:(/audit|keranjang/i.test(String(serverHistoryField(row,['jenis_event','jenisEvent','event_type'])||''))||row.auditOnly===true||String(row.auditOnly||'').toLowerCase()==='true')?'Dibatalkan (Audit)':String(rawStatus||'').trim(),
+   // Catatan pra-pembayaran dikirim dengan nominal nol. Beberapa versi backend menyimpan status generik 'Sukses',
+   // jadi gunakan jenis event/flag audit terlebih dahulu, lalu nominal nol + status sukses sebagai fallback.
+   status:(/audit|keranjang|sebelum pembayaran/i.test(String(serverHistoryField(row,['jenis_event','jenisEvent','event_type','auditReason','audit_reason'])||''))||row.auditOnly===true||String(row.auditOnly||'').toLowerCase()==='true'||(amount===0&&/sukses|success|tunai|qris/i.test(String(rawStatus||''))))?'Dibatalkan (Audit)':String(rawStatus||'').trim(),
    raw:row
   };
  }).sort((a,b)=>(String(b.date)+' '+String(b.time)).localeCompare(String(a.date)+' '+String(a.time))).slice(0,20);
@@ -2880,7 +2882,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v164-audit-history-status').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v165-zero-amount-audit-fallback').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
