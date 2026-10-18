@@ -773,31 +773,6 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
  .cash-confirm{min-height:48px!important;margin-top:8px!important}
 }
 
-/* Match the compact, fully visible legacy cash calculator layout. */
-body.cash-modal-open{overflow:hidden!important;touch-action:none!important}
-.cash-modal-backdrop{position:fixed!important;inset:0!important;z-index:2000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
-.cash-modal-backdrop[hidden]{display:none!important}
-.cash-modal{position:relative!important;box-sizing:border-box!important;width:min(100%,640px)!important;max-width:640px!important;height:auto!important;max-height:calc(100dvh - 24px)!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;padding:clamp(14px,2.2vh,22px)!important;border-radius:28px!important}
-.cash-modal h2{font-size:clamp(20px,3.2vh,30px)!important;line-height:1.15!important;margin-bottom:5px!important}
-.cash-modal-subtitle{font-size:clamp(11px,1.8vh,16px)!important;margin:0 0 clamp(8px,1.5vh,16px)!important}
-.cash-total{padding:clamp(9px,1.8vh,18px)!important;margin:0 0 clamp(8px,1.5vh,16px)!important}
-.cash-modal label{display:block!important;margin:0 0 5px!important;font-size:clamp(12px,1.9vh,17px)!important}
-#cashAmountInput{box-sizing:border-box!important;width:100%!important;min-height:clamp(44px,6.2vh,62px)!important;height:clamp(44px,6.2vh,62px)!important;margin:0 0 clamp(8px,1.4vh,14px)!important;font-size:clamp(20px,3.2vh,28px)!important;padding:8px 12px!important;border:1px solid #dfe4dc!important;border-radius:16px!important;background:#fff!important;color:var(--ink)!important;outline:none!important;box-shadow:none!important;caret-color:transparent!important;user-select:none!important;-webkit-user-select:none!important}
-.cash-shortcuts,.cash-numpad{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(5px,1vh,10px)!important;margin-bottom:clamp(8px,1.4vh,14px)!important}
-.cash-shortcuts button,.cash-numpad button{box-sizing:border-box!important;min-width:0!important;min-height:clamp(36px,5.1vh,54px)!important;height:clamp(36px,5.1vh,54px)!important;padding:4px 6px!important;font-size:clamp(14px,2.2vh,21px)!important;border-radius:15px!important}
-.cash-change{padding:clamp(9px,1.7vh,17px)!important;margin:0 0 clamp(8px,1.4vh,14px)!important}
-.cash-change small{font-size:clamp(10px,1.6vh,14px)!important}
-.cash-confirm{min-height:clamp(48px,6.3vh,66px)!important;height:clamp(48px,6.3vh,66px)!important;margin-top:0!important;font-size:clamp(14px,2.2vh,21px)!important}
-@media(max-height:760px){
- .cash-modal{padding:10px!important;border-radius:20px!important}
- .cash-modal-subtitle{margin-bottom:6px!important}
- .cash-total{padding:7px 10px!important;margin-bottom:6px!important}
- #cashAmountInput{min-height:38px!important;height:38px!important;margin-bottom:6px!important}
- .cash-shortcuts,.cash-numpad{gap:4px!important;margin-bottom:6px!important}
- .cash-shortcuts button,.cash-numpad button{min-height:32px!important;height:32px!important;border-radius:10px!important}
- .cash-change{padding:7px 10px!important;margin-bottom:6px!important}
- .cash-confirm{min-height:42px!important;height:42px!important}
-}
 </style>
 </head>
 <body>
@@ -835,7 +810,7 @@ body.cash-modal-open{overflow:hidden!important;touch-action:none!important}
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
 <h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
 <div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
-<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="none" readonly aria-label="Nominal uang diterima, gunakan tombol angka di bawah" autocomplete="off" placeholder="Pilih nominal di bawah" />
+<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
 <div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
 <div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
@@ -1554,10 +1529,9 @@ function updateCashCalculation(){
 function openCashModal(){
  if(!cartCount()||paymentBusy)return;
  activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
- document.body.classList.add('cash-modal-open');
- formatCashInput(cartTotal());updateCashCalculation();
+ formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
 }
-function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;document.body.classList.remove('cash-modal-open');}
+function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
 function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
 async function completeCartPayment(method,paid){
  if(paymentBusy||!cartCount())return;
