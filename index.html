@@ -2022,6 +2022,7 @@ async function cancelTx(id){
    // mengurangi item keranjang berdasarkan produk dari transaksi lama.
    save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());
    render();refreshPaymentUI();
+   requestAnimationFrame(()=>{const rows=document.querySelectorAll('.history-row.cancelled');if(rows.length){const row=rows[0];row.classList.remove('cancelled-flash');void row.offsetWidth;row.classList.add('cancelled-flash');setTimeout(()=>row.classList.remove('cancelled-flash'),760);}});
    toast('Transaksi dibatalkan. Pemasukan dan jumlah produk terjual diperbarui; keranjang aktif tidak berubah.');
    void syncPending();
  } catch(error) { console.error('Pembatalan transaksi gagal:',error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
