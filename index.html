@@ -580,6 +580,11 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Sticky checkout: scrolls naturally, then stays at the top of the sales view. */
+#salesView>.payment-checkout-card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:4;isolation:isolate;box-shadow:0 5px 18px #173d2c16;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);scroll-margin-top:8px}
+#salesView>.payment-checkout-card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:rgba(255,255,255,.92)}
+#salesView>.section-head{scroll-margin-top:12px}
+@media(prefers-reduced-transparency:reduce){#salesView>.payment-checkout-card{-webkit-backdrop-filter:none;backdrop-filter:none;background:#fff}}
 /* Fluid micro-interactions for the compact payment card. */
 .payment-checkout-card{transition:box-shadow .28s cubic-bezier(.2,.8,.2,1),border-color .28s ease,transform .28s cubic-bezier(.2,.8,.2,1);transform-origin:center}
 .payment-checkout-card:focus-within{border-color:#9ab9a9;box-shadow:0 7px 22px #173d2c12}
