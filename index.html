@@ -2617,8 +2617,11 @@ function localTimestamp(value){
  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')+' '+[String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0')].join(':');
 }
 function outboxToPayload(item){
- const event=item.eventType==='transaction.canceled'?'cancelTransaction':'newTransaction';
  const source=item.payload||{};
+ // Catatan audit keranjang belum pernah menjadi transaksi penjualan. Kirim sebagai event baru bernilai nol,
+ // bukan cancelTransaction yang mengharuskan transaksi asal sudah ada di server.
+ const auditOnly=!!(source.auditOnly||(source.transaction&&source.transaction.auditOnly));
+ const event=auditOnly?'newTransaction':item.eventType==='transaction.canceled'?'cancelTransaction':'newTransaction';
  const row=source.items?source:(source.transaction||source);
  const items=Array.isArray(row.items)?row.items:[];
  const txId=String(item.entityId||source.transactionId||row.id||'');
@@ -2700,8 +2703,8 @@ async function postToAppsScript(payload){
   });
   const raw=await response.text();
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
-  // Validasi respons dilonggarkan: respons teks/non-JSON diterima bila HTTP sukses.
-  // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
+  // HTTP 200 saja tidak menjamin data benar-benar dicatat. Respons JSON eksplisit gagal ditolak;
+  // untuk audit keranjang, action newTransaction menghindari pembatalan transaksi yang belum ada.
   let result=null;
   try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw)){
@@ -2876,7 +2879,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v161-cart-cancel-audit-sync').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v162-audit-as-zero-value-event').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
