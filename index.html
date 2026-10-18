@@ -1637,18 +1637,18 @@ async function fetchServerHistory(){
  loadAppsScriptSettings();
  if(!navigator.onLine){
   serverHistoryError='Perangkat sedang offline.';
-  renderServerHistory();
+  if(historySource==='cloud')renderServerHistory();
   return false;
  }
  if(!appScriptConfigured()){
   serverHistoryError='URL Apps Script atau token API belum dikonfigurasi pada perangkat ini.';
-  renderServerHistory();
+  if(historySource==='cloud')renderServerHistory();
   return false;
  }
  const requestId=++serverHistoryRequestId;
  serverHistoryLoading=true;serverHistoryError='';
  const button=$('refreshServerHistoryBtn');if(button)button.disabled=true;
- renderServerHistory();
+ if(historySource==='cloud')renderServerHistory();
  try{
   const controller=typeof AbortController!=='undefined'?new AbortController():null;
   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
@@ -2863,7 +2863,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v159-preserve-local-history').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v160-local-history-loading-guard').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
