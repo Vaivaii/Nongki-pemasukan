@@ -557,6 +557,29 @@ body:not(.staff-mode) header>.stats{
 
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
+/* Fluid category expand + owner bottom-tab transitions. */
+.product-group{overflow:hidden}
+.product-group-title{cursor:pointer;transition:color .22s ease,border-color .22s ease,background .22s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.product-group-title:active{background:#edf4ef;border-radius:9px}
+.product-group-title .category-chevron{display:inline-block;transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
+.product-group-title[aria-expanded="true"] .category-chevron{transform:rotate(90deg)}
+.product-group-grid{overflow:hidden;animation:productGroupReveal .34s cubic-bezier(.2,.8,.2,1) both}
+.product-group-grid .product{animation:productCardReveal .32s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(min(var(--product-index,0),8)*24ms)}
+.product-group-grid .product:nth-child(1){--product-index:0}.product-group-grid .product:nth-child(2){--product-index:1}.product-group-grid .product:nth-child(3){--product-index:2}.product-group-grid .product:nth-child(4){--product-index:3}.product-group-grid .product:nth-child(5){--product-index:4}.product-group-grid .product:nth-child(6){--product-index:5}.product-group-grid .product:nth-child(7){--product-index:6}.product-group-grid .product:nth-child(8){--product-index:7}.product-group-grid .product:nth-child(n+9){--product-index:8}
+.tabs{transition:box-shadow .25s ease,background .25s ease;isolation:isolate}
+.tab{position:relative;overflow:hidden;isolation:isolate;transition:color .22s ease,background .28s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tab::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,#ffffff99,#ffffff00);opacity:0;transition:opacity .2s ease;z-index:-1}
+.tab:active{transform:scale(.93)}
+.tab:active::before{opacity:1}
+.tab .ico{transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
+.tab.active .ico{animation:tabIconPop .34s cubic-bezier(.2,.8,.2,1);color:var(--green)}
+.tab.active{box-shadow:inset 0 0 0 1px #d5e6d9}
+.view.active{animation:ownerViewEnter .24s ease-out both}
+@keyframes productGroupReveal{from{opacity:.55;clip-path:inset(0 0 100% 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+@keyframes productCardReveal{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
+@keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
 /* Fluid micro-interactions for the compact payment card. */
 .payment-checkout-card{transition:box-shadow .28s cubic-bezier(.2,.8,.2,1),border-color .28s ease,transform .28s cubic-bezier(.2,.8,.2,1);transform-origin:center}
 .payment-checkout-card:focus-within{border-color:#9ab9a9;box-shadow:0 7px 22px #173d2c12}
