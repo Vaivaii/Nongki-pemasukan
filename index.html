@@ -580,6 +580,10 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Compact sales heading so payment cards sit slightly higher. */
+#salesView>.section-head{margin:0 2px 5px}
+#salesView>.section-head h2{font-size:13px;line-height:1.2}
+#salesView>.section-head .sub{font-size:10px}
 /* Payment selector remains sticky at top; cart summary flows below it. */
 #salesView>.payment-checkout-card{padding:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 7px;overflow:visible}
 #salesView>.payment-checkout-card::before{display:none}
@@ -964,7 +968,7 @@ const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
 let activeProductCategory='';
-const CATEGORY_ICONS={'Coffee':'☕','Non Coffee':'🧋','Snack':'🍟','Others':'🥤','Extra Topping':'🥄','Topping':'🍫'};
+const CATEGORY_ICONS={'Coffee':'☕','Non Coffee':'🧋','Snack':'🍟','Others':'🥤','Extra Topping':'🧀','Topping':'🍫'};
 function selectProductCategory(name){activeProductCategory=name;renderGrid();}
 function renderGrid(){
  let counts={};
