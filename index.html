@@ -909,6 +909,106 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
  #cashPaymentModal .cash-modal{border-radius:20px 20px 0 0!important}
 }
 
+
+
+/* V156: restore the original centered cash-payment modal-card overlay.
+   Presentation-only override; keep all calculator markup and JavaScript unchanged. */
+#cashPaymentModal.cash-modal-backdrop{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  z-index:99999!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  padding:16px!important;
+  margin:0!important;
+  overflow:hidden!important;
+  background:rgba(0,0,0,.5)!important;
+  -webkit-backdrop-filter:blur(2px)!important;
+  backdrop-filter:blur(2px)!important;
+  overscroll-behavior:none!important;
+  touch-action:none!important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden]{display:none!important}
+#cashPaymentModal .cash-modal{
+  box-sizing:border-box!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:420px!important;
+  height:auto!important;
+  max-height:90dvh!important;
+  margin:0!important;
+  padding:20px!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+  background:#fff!important;
+  color:var(--ink)!important;
+  border:0!important;
+  border-radius:24px!important;
+  box-shadow:0 18px 55px rgba(0,0,0,.28)!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#cashPaymentModal .cash-modal h2{
+  font-size:20px!important;
+  line-height:1.2!important;
+  margin:0 42px 4px 0!important;
+  text-align:left!important;
+}
+#cashPaymentModal .cash-modal-subtitle{
+  font-size:12px!important;
+  line-height:1.4!important;
+  margin:0 0 14px!important;
+}
+#cashPaymentModal .cash-modal-close{
+  top:12px!important;
+  right:12px!important;
+  width:36px!important;
+  height:36px!important;
+  border-radius:50%!important;
+  background:#f1f5f9!important;
+}
+#cashPaymentModal .cash-total,
+#cashPaymentModal .cash-change{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#cashPaymentModal .cash-modal label,
+#cashPaymentModal .cash-modal input{width:100%!important;box-sizing:border-box!important}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad{
+  width:100%!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button{
+  min-width:0!important;
+  width:100%!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  font-size:16px!important;
+}
+#cashPaymentModal .cash-change{margin-top:12px!important}
+#cashPaymentModal .cash-confirm{
+  display:block!important;
+  width:100%!important;
+  min-height:48px!important;
+  margin-top:10px!important;
+}
+@media(max-height:700px){
+  #cashPaymentModal .cash-modal{max-height:92dvh!important;padding:16px!important}
+  #cashPaymentModal .cash-total,
+  #cashPaymentModal .cash-change{padding:9px 11px!important;margin:6px 0!important}
+  #cashPaymentModal .cash-shortcuts,
+  #cashPaymentModal .cash-numpad{gap:5px!important;margin:7px 0!important}
+  #cashPaymentModal .cash-shortcuts button,
+  #cashPaymentModal .cash-numpad button{min-height:36px!important}
+}
 </style>
 </head>
 <body>
