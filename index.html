@@ -826,6 +826,89 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
  .cash-shortcuts button,.cash-numpad button{height:29px!important;min-height:29px!important;font-size:14px!important}
  .cash-confirm{height:36px!important;min-height:36px!important;margin-top:3px!important}
 }
+
+/* CASH PAYMENT MODAL — full-width bottom sheet matching the legacy layout.
+   CSS only: calculator/payment JavaScript is intentionally untouched. */
+#cashPaymentModal.cash-modal-backdrop{
+ position:fixed!important;inset:0!important;z-index:9999!important;
+ display:flex!important;align-items:flex-end!important;justify-content:center!important;
+ padding:0!important;margin:0!important;overflow:hidden!important;
+ background:rgba(12,31,23,.78)!important;
+ overscroll-behavior:none!important;touch-action:none!important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden]{display:none!important}
+#cashPaymentModal .cash-modal{
+ box-sizing:border-box!important;position:relative!important;
+ width:100%!important;max-width:480px!important;
+ height:auto!important;max-height:calc(100dvh - env(safe-area-inset-top,0px))!important;
+ margin:0 auto!important;padding:18px 16px calc(12px + env(safe-area-inset-bottom,0px))!important;
+ overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;
+ background:#fffdf8!important;color:var(--ink)!important;
+ border:0!important;border-radius:20px 20px 0 0!important;
+ box-shadow:0 -8px 30px rgba(0,0,0,.16)!important;
+}
+#cashPaymentModal .cash-modal h2{
+ margin:0 42px 4px 0!important;font-size:24px!important;line-height:1.2!important;
+ text-align:left!important;color:var(--green)!important
+}
+#cashPaymentModal .cash-modal-subtitle{
+ margin:0 0 12px!important;font-size:14px!important;line-height:1.3!important;text-align:left!important
+}
+#cashPaymentModal .cash-modal-close{top:14px!important;right:14px!important;width:38px!important;height:38px!important}
+#cashPaymentModal .cash-total{
+ box-sizing:border-box!important;width:100%!important;margin:8px 0!important;padding:12px 14px!important;
+ border-radius:14px!important;display:flex!important;align-items:center!important;justify-content:space-between!important
+}
+#cashPaymentModal .cash-total span{font-size:14px!important}
+#cashPaymentModal .cash-total b{font-size:24px!important}
+#cashPaymentModal .cash-modal label{display:block!important;margin:10px 0 5px!important;font-size:14px!important}
+#cashPaymentModal #cashAmountInput{
+ box-sizing:border-box!important;display:block!important;width:100%!important;min-width:0!important;
+ height:54px!important;min-height:54px!important;margin:0!important;padding:8px 12px!important;
+ border-radius:14px!important;font-size:25px!important;line-height:1.2!important;
+}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad{
+ box-sizing:border-box!important;display:grid!important;width:100%!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin:9px 0!important
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button{
+ box-sizing:border-box!important;width:100%!important;min-width:0!important;
+ height:47px!important;min-height:47px!important;padding:4px!important;
+ border-radius:12px!important;font-size:18px!important;line-height:1.1!important
+}
+#cashPaymentModal .cash-change{
+ box-sizing:border-box!important;width:100%!important;margin:9px 0!important;padding:10px 14px!important;
+ border-radius:14px!important;display:flex!important;flex-wrap:wrap!important;gap:5px 10px!important
+}
+#cashPaymentModal .cash-change span{font-size:14px!important}
+#cashPaymentModal .cash-change b{font-size:24px!important}
+#cashPaymentModal .cash-change small{width:100%!important;font-size:12px!important;line-height:1.2!important}
+#cashPaymentModal .cash-confirm{
+ display:block!important;box-sizing:border-box!important;width:100%!important;
+ height:56px!important;min-height:56px!important;margin:9px 0 0!important;
+ border-radius:12px!important;font-size:18px!important
+}
+@media(max-height:780px){
+ #cashPaymentModal .cash-modal{padding:10px 12px calc(8px + env(safe-area-inset-bottom,0px))!important}
+ #cashPaymentModal .cash-modal h2{font-size:20px!important}
+ #cashPaymentModal .cash-modal-subtitle{font-size:12px!important;margin-bottom:6px!important}
+ #cashPaymentModal .cash-total{padding:7px 10px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-total b{font-size:20px!important}
+ #cashPaymentModal .cash-modal label{margin:6px 0 3px!important;font-size:12px!important}
+ #cashPaymentModal #cashAmountInput{height:40px!important;min-height:40px!important;font-size:21px!important}
+ #cashPaymentModal .cash-shortcuts,#cashPaymentModal .cash-numpad{gap:4px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-shortcuts button,#cashPaymentModal .cash-numpad button{height:34px!important;min-height:34px!important;font-size:15px!important;border-radius:9px!important}
+ #cashPaymentModal .cash-change{padding:6px 10px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-change b{font-size:20px!important}
+ #cashPaymentModal .cash-change small{font-size:10px!important}
+ #cashPaymentModal .cash-confirm{height:42px!important;min-height:42px!important;margin-top:5px!important;font-size:15px!important}
+}
+@media(min-width:481px){
+ #cashPaymentModal .cash-modal{border-radius:20px 20px 0 0!important}
+}
+
 </style>
 </head>
 <body>
