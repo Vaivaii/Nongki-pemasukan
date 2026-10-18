@@ -1064,7 +1064,15 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
   #cashPaymentModal .cash-confirm{min-height:42px!important;height:42px!important;margin-top:6px!important}
 }
 
-/* V158: requested cash-payment modal overlay/card compact sizing — CSS only. */
+/* V159: lower sticky app headers while cash modal is active; CSS-only fix. */
+body:has(#cashPaymentModal:not([hidden])) header,
+body:has(#cashPaymentModal:not([hidden])) .header,
+body:has(#cashPaymentModal:not([hidden])) [class*="header"],
+body:has(#cashPaymentModal:not([hidden])) .top-bar {
+  z-index: 1 !important;
+}
+
+/* Full-screen cash-payment modal overlay */
 #cashPaymentModal.cash-modal-backdrop {
   position: fixed !important;
   top: 0 !important;
@@ -1085,24 +1093,23 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
   box-sizing: border-box !important;
   margin: 0 !important;
   overflow: hidden !important;
-  overscroll-behavior: none !important;
-  touch-action: none !important;
 }
 #cashPaymentModal.cash-modal-backdrop[hidden] {
   display: none !important;
 }
+
+/* Compact card; allow internal scrolling on short phone screens */
 #cashPaymentModal .cash-modal {
   position: relative !important;
   box-sizing: border-box !important;
   background: #ffffff !important;
-  color: var(--ink) !important;
   width: 100% !important;
   max-width: 400px !important;
   height: auto !important;
-  max-height: 92vh !important;
-  max-height: 92dvh !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
   border-radius: 20px !important;
-  padding: 14px 16px !important;
+  padding: 12px 14px !important;
   margin: 0 !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -1113,17 +1120,16 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
 }
 #cashPaymentModal .cash-shortcuts,
 #cashPaymentModal .cash-numpad {
-  box-sizing: border-box !important;
-  width: 100% !important;
-  gap: 5px !important;
-  margin-top: 5px !important;
-  margin-bottom: 5px !important;
+  gap: 4px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
 }
 #cashPaymentModal .cash-shortcuts button,
 #cashPaymentModal .cash-numpad button {
   box-sizing: border-box !important;
   min-width: 0 !important;
-  padding: 6px 4px !important;
+  padding: 6px 2px !important;
+  font-size: 14px !important;
 }
 
 </style>
