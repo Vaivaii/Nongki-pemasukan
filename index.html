@@ -1132,6 +1132,66 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
   font-size: 14px !important;
 }
 
+
+/* V160: place modal at body root and force it above sticky/fixed UI. */
+#cashPaymentModal.cash-modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  background: rgba(0, 0, 0, 0.65) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 9999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden] {
+  display: none !important;
+}
+#cashPaymentModal .cash-modal {
+  box-sizing: border-box !important;
+  position: relative !important;
+  background: #ffffff !important;
+  width: 100% !important;
+  max-width: 400px !important;
+  height: auto !important;
+  max-height: 92vh !important;
+  max-height: 92dvh !important;
+  border-radius: 20px !important;
+  padding: 12px 16px !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4) !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad {
+  gap: 5px !important;
+  margin: 4px 0 !important;
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  padding: 6px 2px !important;
+  font-size: 14px !important;
+}
+
 </style>
 </head>
 <body>
@@ -1164,17 +1224,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 </section>
 </section>
 
-<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
-<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
-<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
-<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
-<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
-<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
-<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
-<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
-<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
-<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
-</section></div><div class="products" id="productGrid"></div>
+<div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
@@ -2653,5 +2703,19 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   });
 }
 </script>
+
+
+<!-- Cash payment modal moved outside app containers to avoid sticky stacking contexts. -->
+<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
+<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
+<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
+<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
+<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
+<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
+<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
+<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
+<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
+<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
+</section></div>
 </body>
 </html>
