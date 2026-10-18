@@ -745,6 +745,11 @@ body:not(.staff-mode) header>.stats{
 
 /* Hide cart summary presentation only; keep its DOM elsewhere unavailable? */
 #paymentCartSummary{display:none!important}
+
+/* Tighten the gap between the header and payment selector without changing payment behavior. */
+main{padding-top:3px!important}
+#salesView>.section-head{margin-top:0!important;margin-bottom:2px!important;padding-top:0!important}
+#salesView>.payment-checkout-card{margin-top:0!important;padding-top:2px!important}
 </style>
 </head>
 <body>
