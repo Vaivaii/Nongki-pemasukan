@@ -1981,33 +1981,21 @@ async function cancelTx(id){
      const canceled=await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
      if(!canceled)throw new Error('Transaksi lokal tidak ditemukan di IndexedDB.');
    }else if(!saved){
-     console.warn('Transaksi tidak ditemukan di IndexedDB; pembatalan tetap diterapkan pada catatan lokal.',id);
+     console.warn('Transaksi tidak ditemukan di IndexedDB; pembatalan diterapkan pada catatan lokal.',id);
    }
    const canceledAt=new Date().toISOString();
    t.status='cancelled';t.cancelledAt=canceledAt;t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
-   const cloud=cloudTransactions.find(x=>String(x.id)===String(id));if(cloud){cloud.status='cancelled';cloud.cancelledAt=canceledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-
-   // Sinkronkan keranjang kalkulator dengan pembatalan: kurangi item yang sama
-   // agar subtotal, jumlah item, dan badge tidak tetap menghitung penjualan yang dibatalkan.
-   const canceledItems=Array.isArray(t.items)&&t.items.length
-     ?t.items.map(item=>({productId:String(item.productId||item.id||''),quantity:Number(item.quantity??item.qty)||0}))
-     :[{productId:String(t.productId||''),quantity:Number(t.qty)||1}];
-   for(const item of canceledItems){
-     if(!item.productId||item.quantity<=0)continue;
-     const current=paymentCart.get(item.productId);
-     if(!current)continue;
-     const remaining=(Number(current.quantity)||0)-item.quantity;
-     if(remaining>0)paymentCart.set(item.productId,{...current,quantity:remaining});
-     else paymentCart.delete(item.productId);
-   }
-   if(typeof refreshPaymentUI==='function')refreshPaymentUI();
+   const cloud=cloudTransactions.find(x=>String(x.id)===String(id));
+   if(cloud){cloud.status='cancelled';cloud.cancelledAt=canceledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
+   // Pembatalan transaksi tersimpan hanya memengaruhi penjualan/riwayat.
+   // Keranjang kalkulator adalah pesanan baru yang belum dibayar; jangan
+   // mengurangi item keranjang berdasarkan produk dari transaksi lama.
    save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());
    render();refreshPaymentUI();
-   toast('Transaksi dibatalkan · omzet, produk terjual, badge, dan kalkulator diperbarui.');
+   toast('Transaksi dibatalkan. Pemasukan dan jumlah produk terjual diperbarui; keranjang aktif tidak berubah.');
    void syncPending();
- } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
+ } catch(error) { console.error('Pembatalan transaksi gagal:',error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
-
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){renderReports();void fetchReport();}}
