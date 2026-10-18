@@ -1434,7 +1434,7 @@ let sheetsSyncTimer = null;
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
-function syncLabel(t){if(t.status==='draft')return 'DALAM KERANJANG';if(t.auditOnly||t.syncStatus==='local-only')return 'CATATAN LOKAL';if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
+function syncLabel(t){if(t.status==='draft')return 'DI KERANJANG';if(t.auditOnly){if(t.syncStatus==='synced')return 'TERSINKRON (AUDIT)';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'CATATAN LOKAL';}if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 const cartDraftIds=new Map();
 function makeLocalCartDraft(item){
  if(!item||!Number.isFinite(Number(item.unitPrice)))return null;
@@ -1446,9 +1446,21 @@ function makeLocalCartDraft(item){
 function cancelLocalCartDraft(productId,reason='Produk dibatalkan sebelum pembayaran'){
  const ids=cartDraftIds.get(String(productId))||[];const id=ids.pop();if(!id)return null;
  const row=data.transactions.find(t=>String(t.id)===String(id));
- if(row){row.status='cancelled';row.auditOnly=true;row.syncStatus='local-only';row.auditReason=reason;row.cancelledAt=new Date().toISOString();row.cancelledBy=currentUser?.id||'STAFF001';save();}
+ if(row){row.status='cancelled';row.auditOnly=true;row.syncStatus='pending';row.auditReason=reason;row.cancelledAt=new Date().toISOString();row.cancelledBy=currentUser?.id||'STAFF001';save();void enqueueCanceledCartAudit(row).then(()=>queueDailySync(row.date)).catch(error=>{console.error('Gagal mengantrekan audit pembatalan keranjang:',error);row.syncStatus='failed';save();renderRecent();renderHistory();});}
  if(!ids.length)cartDraftIds.delete(String(productId));else cartDraftIds.set(String(productId),ids);
  return row||null;
+}
+async function enqueueCanceledCartAudit(row){
+ if(!row||!row.id||!row.auditOnly)return false;
+ const eventId='cart-audit-cancel-'+String(row.id);
+ const existing=await getAllRecords('outbox');
+ if(existing.some(item=>String(item.id)===eventId||String(item.entityId)===String(row.id)&&item.eventType==='transaction.canceled'))return true;
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction('outbox','readwrite'),done=txDone(tx);
+  tx.objectStore('outbox').add({id:eventId,entityId:String(row.id),eventType:'transaction.canceled',createdAt:row.cancelledAt||new Date().toISOString(),payload:{transactionId:String(row.id),status:'canceled',canceledAt:row.cancelledAt||new Date().toISOString(),canceledBy:row.cancelledBy||currentUser?.id||'STAFF001',cancelReason:String(row.auditReason||'Dibatalkan sebelum pembayaran'),auditOnly:true,total:0,name:String(row.name||'Produk')+' × '+(Number(row.qty)||1),qty:Number(row.qty)||1,date:row.date||today(),time:row.time||'',userId:row.userId||currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||'Perangkat ini'},attempts:0,lastError:null});
+  await done;return true;
+ }finally{db.close();}
 }
 function cancelAllLocalCartDrafts(reason='Keranjang dikosongkan sebelum pembayaran'){
  for(const productId of [...cartDraftIds.keys()])while((cartDraftIds.get(productId)||[]).length)cancelLocalCartDraft(productId,reason);
@@ -2624,7 +2636,8 @@ function outboxToPayload(item){
  const metodeRaw=String(row.metode_pembayaran||row.metodePembayaran||row.metode||'Tunai').trim().toUpperCase();
  const metodePembayaran=metodeRaw==='QRIS'?'QRIS':'Tunai';
  const isCanceled=event==='cancelTransaction';
- const statusEvent=isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
+ const auditOnly=!!(source.auditOnly||row.auditOnly);
+ const statusEvent=auditOnly?'Dibatalkan sebelum pembayaran':isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
  const uangRaw=row.uangDiterima??row.uang_diterima;
  const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(uangRaw===undefined||uangRaw===null||uangRaw===''?amount:(Number(uangRaw)||0)));
  const kembalian=isCanceled||metodePembayaran==='QRIS'?0:(Number(row.kembalian??row.kembalian_rp)||0);
@@ -2632,14 +2645,14 @@ function outboxToPayload(item){
   id_event:eventId,
   id_transaksi:txId,
   waktu:localTimestamp(stamp),
-  jenis_event:isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
+  jenis_event:auditOnly?'Pembatalan Keranjang':isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
   ringkasan_produk:summary,
   jumlah_item:quantity,
-  nominal:amount,
+  nominal:auditOnly?0:amount,
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
-  status:isCanceled?'Dibatalkan':'Sukses',
+  status:auditOnly?'Dibatalkan sebelum pembayaran':isCanceled?'Dibatalkan':'Sukses',
   statusEvent:statusEvent,
   metode_pembayaran:metodePembayaran,
   metodePembayaran:metodePembayaran,
@@ -2647,7 +2660,7 @@ function outboxToPayload(item){
   kembalian:kembalian,
   tanggal:date,
   // Backend Apps Script mengharapkan items[] dengan nama_produk/kategori/qty/harga_satuan/subtotal.
-  items:items.map(i=>{
+  items:auditOnly?[]:items.map(i=>{
    const productId=String(i.productId||i.id||'');
    const catalogProduct=(Array.isArray(data.products)?data.products:[]).find(p=>String(p.id)===productId||String(p.name||p.nama_produk||'')===String(i.productName||i.name||''));
    return {
@@ -2664,7 +2677,7 @@ function outboxToPayload(item){
   jenisEvent:transaction.jenis_event,jenis_event:transaction.jenis_event,
   ringkasan:transaction.ringkasan_produk,ringkasan_produk:transaction.ringkasan_produk,
   namaProduk:transaction.ringkasan_produk,jumlah:transaction.jumlah_item,qty:transaction.jumlah_item,
-  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,
+  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,auditOnly:auditOnly,auditReason:String(source.cancelReason||source.auditReason||''),
   status:transaction.status,statusEvent:transaction.statusEvent,
   uangDiterima:transaction.uangDiterima,uang_diterima:transaction.uangDiterima,
   kembalian:transaction.kembalian,kembalian_rp:transaction.kembalian,
@@ -2863,7 +2876,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v160-local-history-loading-guard').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v161-cart-cancel-audit-sync').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
