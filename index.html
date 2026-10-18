@@ -798,6 +798,34 @@ body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:10
  .cash-shortcuts button,.cash-numpad button{height:31px!important;min-height:31px!important;border-radius:10px!important}
  .cash-confirm{height:40px!important;min-height:40px!important;margin-top:5px!important}
 }
+
+/* Corrective mobile sizing: keep the entire cash calculator visible inside the viewport. */
+.cash-modal-backdrop{padding:8px!important;overflow:hidden!important;align-items:center!important;justify-content:center!important}
+.cash-modal{width:min(92vw,640px)!important;max-height:calc(100dvh - 16px)!important;overflow:hidden!important;padding:12px!important;border-radius:22px!important}
+.cash-modal-close{width:32px!important;height:32px!important;right:10px!important;top:10px!important}
+@media(max-height:900px){
+ .cash-modal{padding:10px!important;border-radius:18px!important}
+ .cash-modal h2{font-size:20px!important;line-height:1.1!important;margin:0 38px 3px 0!important}
+ .cash-modal-subtitle{font-size:11px!important;line-height:1.2!important;margin:0 0 6px!important}
+ .cash-total,.cash-change{padding:7px 10px!important;margin:4px 0!important;gap:6px!important}
+ .cash-total span,.cash-change span{font-size:12px!important}
+ .cash-total b,.cash-change b{font-size:19px!important}
+ .cash-modal label{font-size:12px!important;margin:5px 0 3px!important}
+ #cashAmountInput{height:42px!important;min-height:42px!important;font-size:20px!important;margin-bottom:5px!important;padding:6px 10px!important}
+ .cash-shortcuts,.cash-numpad{gap:4px!important;margin-bottom:5px!important}
+ .cash-shortcuts button,.cash-numpad button{height:34px!important;min-height:34px!important;padding:2px 4px!important;font-size:15px!important;border-radius:10px!important}
+ .cash-change small{font-size:10px!important;line-height:1.2!important}
+ .cash-confirm{height:42px!important;min-height:42px!important;margin-top:4px!important;font-size:15px!important;padding:5px!important}
+}
+@media(max-height:740px){
+ .cash-modal{padding:8px!important}
+ .cash-modal-subtitle{margin-bottom:4px!important}
+ .cash-total,.cash-change{padding:5px 8px!important;margin:3px 0!important}
+ #cashAmountInput{height:36px!important;min-height:36px!important;margin-bottom:4px!important}
+ .cash-shortcuts,.cash-numpad{gap:3px!important;margin-bottom:4px!important}
+ .cash-shortcuts button,.cash-numpad button{height:29px!important;min-height:29px!important;font-size:14px!important}
+ .cash-confirm{height:36px!important;min-height:36px!important;margin-top:3px!important}
+}
 </style>
 </head>
 <body>
