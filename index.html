@@ -580,6 +580,20 @@ body:not(.staff-mode) header>.stats{
 @keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
 @keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product.product-tap-pop,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Micro-interactions: tactile buttons, modal/profile transitions, and cancellation feedback. */
+button:not(:disabled){transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease,box-shadow .14s ease;-webkit-tap-highlight-color:transparent}
+button:not(:disabled):active{transform:scale(.965);filter:brightness(.96)}
+button:focus-visible{outline:2px solid #2c8b58;outline-offset:2px}
+.cash-modal-backdrop:not([hidden]){animation:cashBackdropIn .18s ease-out both}
+.cash-modal-backdrop:not([hidden]) .cash-modal{animation:cashPanelIn .24s cubic-bezier(.2,.85,.25,1.12) both}
+#profileDropdown:not([hidden]){transform-origin:top right;animation:profileMenuIn .2s cubic-bezier(.2,.8,.2,1.08) both}
+#profileDropdown[hidden]{display:none!important}
+.history-row.cancelled-flash,.history-row.cancelled{animation:cancelRowPulse .42s ease-out both}
+@keyframes cashBackdropIn{from{opacity:0}to{opacity:1}}\n@keyframes cashBackdropOut{from{opacity:1}to{opacity:0}}\n@keyframes cashPanelOut{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes cashPanelIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes profileMenuIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cancelRowPulse{0%{background:#ffe9df;transform:scale(1.01)}100%{background:transparent;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){button:not(:disabled),.cash-modal-backdrop:not([hidden]),.cash-modal-backdrop:not([hidden]) .cash-modal,#profileDropdown:not([hidden]),.history-row.cancelled-flash,.history-row.cancelled{animation:none!important;transition:none!important}}
 /* Hide the visible cart summary while preserving its elements and payment logic. */
 #salesView>#paymentCartSummary{display:none!important}
 /* Compact sales heading so payment cards sit slightly higher. */
@@ -1963,7 +1977,7 @@ function openCashModal(){
  activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
  formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.blur();
 }
-function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
+function closeCashModal(){const modal=$('cashPaymentModal');if(!modal||modal.hidden)return;const panel=modal.querySelector('.cash-modal');if(panel){panel.style.animation='cashPanelOut .16s ease-in both';modal.style.animation='cashBackdropOut .16s ease-in both';setTimeout(()=>{modal.hidden=true;panel.style.animation='';modal.style.animation='';},160)}else modal.hidden=true;}
 function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
 async function completeCartPayment(method,paid){
  if(paymentBusy||!cartCount())return;
