@@ -1,5 +1,5 @@
-// Nongki PWA v158-local-history-first: keep local history as default view.
-const CACHE_NAME = 'nongki-v158-local-history-first'
+// Nongki PWA v159-preserve-local-history: server fetch must not overwrite local history.
+const CACHE_NAME = 'nongki-v159-preserve-local-history'
 
 const CORE_FILES = [
   './',
