@@ -1,5 +1,5 @@
-// Nongki PWA v162-audit-as-zero-value-event: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v162-audit-as-zero-value-event'
+// Nongki PWA v163-login-script-fix: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v163-login-script-fix'
 
 const CORE_FILES = [
   './',
