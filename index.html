@@ -557,6 +557,25 @@ body:not(.staff-mode) header>.stats{
 
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
+/* Fluid micro-interactions for the compact payment card. */
+.payment-checkout-card{transition:box-shadow .28s cubic-bezier(.2,.8,.2,1),border-color .28s ease,transform .28s cubic-bezier(.2,.8,.2,1);transform-origin:center}
+.payment-checkout-card:focus-within{border-color:#9ab9a9;box-shadow:0 7px 22px #173d2c12}
+.payment-method-card{overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,filter .24s ease,opacity .2s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.payment-method-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 20%,#ffffff22 48%,transparent 72%);transform:translateX(-130%);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.payment-method-card:not([aria-disabled="true"]):active{transform:scale(.975);box-shadow:inset 0 2px 5px #10271d20}
+.payment-method-card:not([aria-disabled="true"]):active::after{transform:translateX(130%)}
+.payment-method-card:focus-visible{outline:2px solid #d6b45c;outline-offset:3px}
+.payment-cart-count{transition:transform .24s cubic-bezier(.2,.8,.2,1),background .2s ease}
+.payment-cart-count.count-bump{animation:paymentCountBump .32s cubic-bezier(.2,.8,.2,1)}
+.cart-summary>b{transition:color .2s ease;transform-origin:right center}
+.cart-summary>b.total-bump{animation:paymentTotalBump .3s cubic-bezier(.2,.8,.2,1)}
+.cart-summary>small{transition:opacity .2s ease}
+#clearPaymentCart{transition:transform .2s ease,background .2s ease,opacity .2s ease}
+#clearPaymentCart:not(:disabled):active{transform:scale(.96)}
+@keyframes paymentCountBump{0%{transform:scale(1)}45%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes paymentTotalBump{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+@media(hover:hover){.payment-method-card:not([aria-disabled="true"]):hover{transform:translateY(-2px);box-shadow:0 5px 13px #173d2c20}.payment-method-card:not([aria-disabled="true"]):hover::after{transform:translateX(130%)}#clearPaymentCart:not(:disabled):hover{background:#edf4ef}}
+@media(prefers-reduced-motion:reduce){.payment-checkout-card,.payment-method-card,.payment-method-card::after,.payment-cart-count,.cart-summary>b,#clearPaymentCart{transition:none!important;animation:none!important}}
 /* Compact combined payment + cart card; existing transaction logic and IDs are retained. */
 .payment-checkout-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;margin:4px 0 16px;box-shadow:0 3px 12px #173d2c08}
 .payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
@@ -1302,7 +1321,8 @@ function refreshPaymentUI(){
  const count=cartCount(),total=cartTotal(),enabled=count>0;
  ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
  ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
- if($('paymentCartTotal'))$('paymentCartTotal').textContent=rupiah(total);
+ if($('paymentCartTotal')){const totalEl=$('paymentCartTotal'),nextTotal=rupiah(total);if(totalEl.textContent!==nextTotal){totalEl.textContent=nextTotal;totalEl.classList.remove('total-bump');void totalEl.offsetWidth;totalEl.classList.add('total-bump');}}
+ ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el){el.classList.remove('count-bump');void el.offsetWidth;el.classList.add('count-bump');}});
  if($('paymentCartItems'))$('paymentCartItems').textContent=count?cartLines().map(x=>x.productName+' × '+x.quantity).join(' · '):'Belum ada item — ketuk produk untuk menambahkan';
  if($('clearPaymentCart'))$('clearPaymentCart').disabled=!enabled||paymentBusy;
  if($('cashTotalBelanja'))$('cashTotalBelanja').textContent=rupiah(total);
