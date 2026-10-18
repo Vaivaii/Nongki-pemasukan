@@ -563,7 +563,7 @@ body:not(.staff-mode) header>.stats{
 .product-group-title:active{background:#edf4ef;border-radius:9px}
 .product-group-title .category-chevron{display:inline-block;transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
 .product-group-title[aria-expanded="true"] .category-chevron{transform:rotate(90deg)}
-.product-group-grid{overflow:hidden;animation:productGroupReveal .34s cubic-bezier(.2,.8,.2,1) both}
+.product-group-grid{overflow:hidden}
 .product-group-grid .product.product-tap-pop{animation:productCardTapPop .34s cubic-bezier(.2,.8,.2,1.15) both;transform-origin:center}
 .product-group-grid .product:nth-child(1){--product-index:0}.product-group-grid .product:nth-child(2){--product-index:1}.product-group-grid .product:nth-child(3){--product-index:2}.product-group-grid .product:nth-child(4){--product-index:3}.product-group-grid .product:nth-child(5){--product-index:4}.product-group-grid .product:nth-child(6){--product-index:5}.product-group-grid .product:nth-child(7){--product-index:6}.product-group-grid .product:nth-child(8){--product-index:7}.product-group-grid .product:nth-child(n+9){--product-index:8}
 .tabs{transition:box-shadow .25s ease,background .25s ease;isolation:isolate}
@@ -724,7 +724,7 @@ body:not(.staff-mode) header>.stats{
  #salesView .product-category-tab.icon-pop .product-category-icon{animation:productCategoryIconPop .42s cubic-bezier(.2,.8,.25,1.25) both}
  @keyframes productCategoryIconPop{0%{transform:translateY(0) scale(1) rotate(0)}32%{transform:translateY(-5px) scale(1.18) rotate(-8deg)}62%{transform:translateY(0) scale(.94) rotate(5deg)}82%{transform:translateY(-2px) scale(1.04) rotate(-2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
 #salesView .product-category-name{font-size:10px;line-height:1.15;font-weight:750;white-space:nowrap}
-#salesView .product-group-selected{margin:0 0 10px;animation:productGroupReveal .22s ease-out both}
+#salesView .product-group-selected{margin:0 0 10px}
 #salesView .product-group-selected .product-group-grid{display:grid}
 @media(max-width:380px){#salesView .product-category-tabs{gap:5px}#salesView .product-category-tab{min-width:58px;padding:7px 8px}#salesView .product-category-icon{font-size:18px}#salesView .product-category-name{font-size:9px}}
 @media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-category-tab.icon-pop .product-category-icon,#salesView .product-group-selected{transition:none!important;animation:none!important}}
