@@ -72,7 +72,7 @@ main{width:100%;padding-left:12px;padding-right:12px;padding-bottom:calc(104px +
 html, body { height:100%; height:100dvh; overflow:hidden; }
 body { display:flex; flex-direction:column; }
 header { position:relative; z-index:2; flex:0 0 auto; }
-main { flex:1 1 auto; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
+main { flex:1 1 auto; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:auto; -webkit-overflow-scrolling:auto; padding-bottom:20px; }
 .tabs { position:relative; inset:auto; flex:0 0 auto; z-index:5; background:var(--cream); border-top:1px solid var(--line); backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; padding:7px 10px calc(7px + env(safe-area-inset-bottom)); }
 .product { transition:none; box-shadow:none; }
 .product:active { transform:none; }
@@ -557,20 +557,667 @@ body:not(.staff-mode) header>.stats{
 
 .global-sales-stat[role="button"]{cursor:pointer;transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}.global-sales-stat[role="button"]:active{transform:scale(.985);filter:brightness(.94)}.global-sales-stat[role="button"]:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
-/* Payment UI isolated to dev-ui; existing theme and screens are retained. */
-.payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 12px}
-.payment-method-card{display:flex;align-items:center;gap:9px;position:relative;min-width:0;padding:13px 10px;border:1px solid transparent;border-radius:15px;color:#fff;cursor:pointer;box-shadow:0 3px 9px #173d2c0d;user-select:none}
+/* Fluid category expand + owner bottom-tab transitions. */
+.product-group{overflow:hidden}
+.product-group-title{cursor:pointer;transition:color .22s ease,border-color .22s ease,background .22s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.product-group-title:active{background:#edf4ef;border-radius:9px}
+.product-group-title .category-chevron{display:inline-block;transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
+.product-group-title[aria-expanded="true"] .category-chevron{transform:rotate(90deg)}
+.product-group-grid{overflow:hidden}
+.product-group-grid .product.product-tap-pop{animation:productCardTapPop .34s cubic-bezier(.2,.8,.2,1.15) both;transform-origin:center}
+.product-group-grid .product:nth-child(1){--product-index:0}.product-group-grid .product:nth-child(2){--product-index:1}.product-group-grid .product:nth-child(3){--product-index:2}.product-group-grid .product:nth-child(4){--product-index:3}.product-group-grid .product:nth-child(5){--product-index:4}.product-group-grid .product:nth-child(6){--product-index:5}.product-group-grid .product:nth-child(7){--product-index:6}.product-group-grid .product:nth-child(8){--product-index:7}.product-group-grid .product:nth-child(n+9){--product-index:8}
+.tabs{transition:box-shadow .25s ease,background .25s ease;isolation:isolate}
+.tab{position:relative;overflow:hidden;isolation:isolate;transition:color .22s ease,background .28s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tab::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,#ffffff99,#ffffff00);opacity:0;transition:opacity .2s ease;z-index:-1}
+.tab:active{transform:scale(.93)}
+.tab:active::before{opacity:1}
+.tab .ico{transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .22s ease}
+.tab.active .ico{animation:tabIconPop .34s cubic-bezier(.2,.8,.2,1);color:var(--green)}
+.tab.active{box-shadow:inset 0 0 0 1px #d5e6d9}
+.view.active{animation:ownerViewEnter .24s ease-out both}
+@keyframes productGroupReveal{from{opacity:.55;clip-path:inset(0 0 100% 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+@keyframes productCardTapPop{0%{transform:scale(1)}38%{transform:scale(1.035)}72%{transform:scale(.99)}100%{transform:scale(1)}}
+@keyframes tabIconPop{0%{transform:scale(.82) translateY(2px)}55%{transform:scale(1.13) translateY(-1px)}100%{transform:scale(1) translateY(0)}}
+@keyframes ownerViewEnter{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.product-group-title,.product-group-title .category-chevron,.product-group-grid,.product-group-grid .product.product-tap-pop,.tabs,.tab,.tab::before,.tab .ico,.view.active{animation:none!important;transition:none!important;transform:none!important;clip-path:none!important}}
+/* Micro-interactions: tactile buttons, modal/profile transitions, and cancellation feedback. */
+button:not(:disabled){transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease,box-shadow .14s ease;-webkit-tap-highlight-color:transparent}
+button:not(:disabled):active{transform:scale(.965);filter:brightness(.96)}
+button:focus-visible{outline:2px solid #2c8b58;outline-offset:2px}
+.cash-modal-backdrop:not([hidden]){animation:cashBackdropIn .18s ease-out both}
+.cash-modal-backdrop:not([hidden]) .cash-modal{animation:cashPanelIn .24s cubic-bezier(.2,.85,.25,1.12) both}
+#profileDropdown:not([hidden]){transform-origin:top right;animation:profileMenuIn .2s cubic-bezier(.2,.8,.2,1.08) both}
+#profileDropdown[hidden]{display:none!important}
+.history-row.cancelled-flash{animation:cancelRowPulse .42s ease-out both}
+@keyframes cashBackdropIn{from{opacity:0}to{opacity:1}}\n@keyframes cashBackdropOut{from{opacity:1}to{opacity:0}}\n@keyframes cashPanelOut{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes cashPanelIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes profileMenuIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cancelRowPulse{0%{background:#ffe9df;transform:scale(1.01)}100%{background:transparent;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){button:not(:disabled),.cash-modal-backdrop:not([hidden]),.cash-modal-backdrop:not([hidden]) .cash-modal,#profileDropdown:not([hidden]),.history-row.cancelled-flash,.history-row.cancelled{animation:none!important;transition:none!important}}
+/* Hide the visible cart summary while preserving its elements and payment logic. */
+#salesView>#paymentCartSummary{display:none!important}
+/* Compact sales heading so payment cards sit slightly higher. */
+#salesView>.section-head{margin:0 2px 5px}
+#salesView>.section-head h2{font-size:13px;line-height:1.2}
+#salesView>.section-head .sub{font-size:10px}
+/* Payment selector remains sticky at top; cart summary flows below it. */
+#salesView>.payment-checkout-card{padding:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;margin:0 0 7px;overflow:visible}
+#salesView>.payment-checkout-card::before{display:none}
+#salesView>.payment-checkout-card .payment-methods{padding:0}
+#salesView>#paymentCartSummary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;margin:0 0 12px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 7px #173d2c08}
+#salesView>#paymentCartSummary>span{font-size:11px;line-height:1.2;color:var(--muted)}
+#salesView>#paymentCartSummary>b{grid-column:2;grid-row:1/3;font-size:18px;line-height:1.15;color:var(--green);white-space:nowrap}
+#salesView>#paymentCartSummary>small{font-size:10px;line-height:1.25;color:var(--muted);padding-right:4px}
+#salesView>#paymentCartSummary button{grid-column:1/-1;justify-self:start;padding:4px 8px;margin-top:3px;font-size:10px;border-radius:20px}
+@media(max-width:380px){#salesView>#paymentCartSummary{padding:7px 9px}#salesView>#paymentCartSummary>b{font-size:16px}}
+/* Minimal one-line payment selector + collapsible-height cart summary. */
+#salesView>.payment-checkout-card{padding:8px 9px;margin:0 0 8px;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px #173d2c12}
+#salesView .payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#salesView .payment-method-card{min-height:42px;padding:8px 11px;border-radius:12px;gap:8px;justify-content:flex-start}
+#salesView .payment-icon{font-size:18px}
+#salesView .payment-method-card b{font-size:12px;letter-spacing:.3px}
+#salesView .payment-method-card small{display:none}
+#salesView .payment-cart-count{margin-left:auto;align-self:center;font-size:10px;padding:4px 7px;background:#ffffff2b}
+#salesView .cart-summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;padding:8px 2px 0;margin:7px 0 0;border-top:1px solid #e8ece7;border-radius:0;background:transparent}
+#salesView .cart-summary>span{font-size:11px;line-height:1.2;color:var(--muted)}
+#salesView .cart-summary>b{grid-column:2;grid-row:1/3;font-size:19px;line-height:1.15;color:var(--green);white-space:nowrap}
+#salesView .cart-summary>small{font-size:10px;line-height:1.25;color:var(--muted);padding-right:4px}
+#salesView .cart-summary button{grid-column:1/-1;justify-self:start;padding:4px 8px;margin-top:3px;font-size:10px;border-radius:20px}
+#salesView .cart-summary:has(#paymentCartTotal:empty){display:none}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:7px}#salesView .payment-method-card{padding:7px 8px;gap:6px}#salesView .payment-cart-count{font-size:9px;padding:3px 5px}#salesView .cart-summary>b{font-size:17px}}
+/* Extra-compact checkout and category spacing; preserve existing IDs and logic. */
+#salesView>.payment-checkout-card{padding:5px;margin:0 0 6px;border-radius:14px;box-shadow:0 2px 8px #173d2c10}
+#salesView .payment-methods{gap:5px}
+#salesView .payment-method-card{min-height:34px;padding:6px 7px;border-radius:9px;gap:5px}
+#salesView .payment-icon{font-size:16px}
+#salesView .payment-method-card b{font-size:11px;letter-spacing:.2px}
+#salesView .payment-cart-count{font-size:8px;padding:2px 5px}
+#salesView .cart-summary{gap:1px 6px;padding:5px 1px 0;margin-top:4px}
+#salesView .cart-summary>span{font-size:9px}
+#salesView .cart-summary>b{font-size:15px}
+#salesView .cart-summary>small{font-size:9px;line-height:1.15}
+#salesView .cart-summary button{padding:3px 7px;font-size:9px;margin-top:0}
+#salesView .product-group{margin-bottom:8px}
+#salesView .product-group-title{padding:9px 10px;margin-bottom:6px;border-radius:11px}
+#salesView .product-group-grid{gap:7px}
+#salesView .product{padding:9px 9px;min-height:88px;border-radius:14px}
+#salesView .product .emoji{font-size:17px}
+#salesView .product .name{font-size:12px}
+#salesView .product .price{font-size:14px}
+.product-group-title .category-chevron{transform:none!important}
+.product-group-title[aria-expanded="true"] .category-chevron{transform:none!important}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:4px}#salesView .payment-method-card{min-height:32px;padding:5px 5px}#salesView .cart-summary>b{font-size:14px}}
+/* Denser mobile POS layout: reduce whitespace without changing behavior. */
+#salesView>.payment-checkout-card{padding:8px;margin:0 0 10px;border-radius:16px;box-shadow:0 3px 12px #173d2c12}
+#salesView .payment-methods{gap:7px}
+#salesView .payment-method-card{min-height:40px;padding:8px 9px;border-radius:11px;gap:6px}
+#salesView .payment-icon{font-size:18px}
+#salesView .payment-method-card b{font-size:12px}
+#salesView .payment-cart-count{font-size:9px;padding:3px 6px}
+#salesView .cart-summary{gap:2px 8px;padding:7px 2px 0;margin-top:6px}
+#salesView .cart-summary>span{font-size:10px}
+#salesView .cart-summary>b{font-size:17px}
+#salesView .cart-summary>small{font-size:10px;line-height:1.25}
+#salesView .cart-summary button{padding:4px 8px;margin-top:1px}
+#salesView>.section-head{margin:0 2px 8px}
+#salesView .product-group{margin-bottom:13px}
+#salesView .product-group-title{padding-bottom:6px;margin-bottom:7px}
+#salesView .product-group-grid{gap:8px}
+#salesView .product{padding:11px 11px;min-height:96px}
+@media(max-width:380px){#salesView>.payment-checkout-card{padding:7px}#salesView .payment-method-card{padding:7px 6px;gap:4px}#salesView .payment-cart-count{font-size:8px;padding:3px 4px}#salesView .cart-summary>b{font-size:16px}}
+/* Sticky checkout: scrolls naturally, then stays at the top of the sales view. */
+#salesView>.payment-checkout-card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:4;isolation:isolate;box-shadow:0 5px 18px #173d2c16;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);scroll-margin-top:8px}
+#salesView>.payment-checkout-card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:rgba(255,255,255,.92)}
+#salesView>.section-head{scroll-margin-top:12px}
+@media(prefers-reduced-transparency:reduce){#salesView>.payment-checkout-card{-webkit-backdrop-filter:none;backdrop-filter:none;background:#fff}}
+/* Fluid micro-interactions for the compact payment card. */
+.payment-checkout-card{transition:box-shadow .28s cubic-bezier(.2,.8,.2,1),border-color .28s ease,transform .28s cubic-bezier(.2,.8,.2,1);transform-origin:center}
+.payment-checkout-card:focus-within{border-color:#9ab9a9;box-shadow:0 7px 22px #173d2c12}
+.payment-method-card{overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,filter .24s ease,opacity .2s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.payment-method-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 20%,#ffffff22 48%,transparent 72%);transform:translateX(-130%);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.payment-method-card:not([aria-disabled="true"]):active{transform:scale(.975);box-shadow:inset 0 2px 5px #10271d20}
+.payment-method-card:not([aria-disabled="true"]):active::after{transform:translateX(130%)}
+.payment-method-card:focus-visible{outline:2px solid #d6b45c;outline-offset:3px}
+.payment-cart-count{transition:transform .24s cubic-bezier(.2,.8,.2,1),background .2s ease}
+.payment-cart-count.count-bump{animation:paymentCountBump .32s cubic-bezier(.2,.8,.2,1)}
+.cart-summary>b{transition:color .2s ease;transform-origin:right center}
+.cart-summary>b.total-bump{animation:paymentTotalBump .3s cubic-bezier(.2,.8,.2,1)}
+.cart-summary>small{transition:opacity .2s ease}
+#clearPaymentCart{transition:transform .2s ease,background .2s ease,opacity .2s ease}
+#clearPaymentCart:not(:disabled):active{transform:scale(.96)}
+@keyframes paymentCountBump{0%{transform:scale(1)}45%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes paymentTotalBump{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+@media(hover:hover){.payment-method-card:not([aria-disabled="true"]):hover{transform:translateY(-2px);box-shadow:0 5px 13px #173d2c20}.payment-method-card:not([aria-disabled="true"]):hover::after{transform:translateX(130%)}#clearPaymentCart:not(:disabled):hover{background:#edf4ef}}
+@media(prefers-reduced-motion:reduce){.payment-checkout-card,.payment-method-card,.payment-method-card::after,.payment-cart-count,.cart-summary>b,#clearPaymentCart{transition:none!important;animation:none!important}}
+/* Compact combined payment + cart card; existing transaction logic and IDs are retained. */
+.payment-checkout-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;margin:4px 0 16px;box-shadow:0 3px 12px #173d2c08}
+.payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.payment-method-card{display:flex;align-items:center;gap:7px;position:relative;min-width:0;padding:10px 9px;border:1px solid transparent;border-radius:12px;color:#fff;cursor:pointer;box-shadow:none;user-select:none;min-height:46px}
 .payment-method-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed;filter:saturate(.6)}
-.payment-cash{background:linear-gradient(135deg,#059669,#047857)}.payment-qris{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
-.payment-icon{font-size:25px;line-height:1;flex-shrink:0}.payment-method-card b{display:block;font-size:13px;letter-spacing:.5px}.payment-method-card small{display:block;font-size:9px;opacity:.9;margin-top:3px}.payment-cart-count{margin-left:auto;align-self:flex-start;font-size:9px;white-space:nowrap;background:#ffffff24;border-radius:20px;padding:4px 6px}
-.cart-summary{display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:0 0 16px}.cart-summary>span{font-size:11px;color:var(--muted)}.cart-summary>b{font-size:16px;color:var(--green);text-align:right}.cart-summary>small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.cart-summary button{grid-column:1/-1;justify-self:start;padding:6px 9px;font-size:10px}.cart-summary button:disabled{opacity:.45}
+.payment-cash{background:linear-gradient(135deg,#287b5b,#1d6247)}.payment-qris{background:linear-gradient(135deg,#6079b5,#4d659e)}
+.payment-icon{font-size:19px;line-height:1;flex-shrink:0}.payment-method-card b{display:block;font-size:12px;letter-spacing:.4px}.payment-method-card small{display:none}.payment-cart-count{margin-left:auto;align-self:center;font-size:9px;white-space:nowrap;background:#ffffff26;border-radius:20px;padding:4px 6px}
+.cart-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 8px;background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:9px 2px 1px;margin:8px 0 0}
+.cart-summary>span{font-size:11px;color:var(--muted)}.cart-summary>b{font-size:18px;color:var(--green);text-align:right;grid-column:2;grid-row:1/3}
+.cart-summary>small{font-size:10px;color:var(--muted);overflow-wrap:anywhere;line-height:1.35;padding-right:4px}
+.cart-summary button{grid-column:1/-1;justify-self:start;padding:5px 8px;font-size:10px;margin-top:2px}.cart-summary button:disabled{opacity:.35}
+@media(max-width:380px){.payment-checkout-card{padding:8px}.payment-method-card{padding:9px 7px;gap:5px}.payment-icon{font-size:17px}.payment-method-card b{font-size:11px}.payment-cart-count{font-size:8px;padding:3px 5px}.cart-summary>small{font-size:9px}}
 .cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
 
+/* FINAL OVERRIDE: separate sticky payment controls from normal-flow cart card. */
+#salesView>.payment-checkout-card{
+ position:sticky!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;z-index:8!important;
+ display:block!important;padding:6px!important;margin:0 0 8px!important;
+ background:transparent!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+ overflow:visible!important;isolation:auto!important
+}
+#salesView>.payment-checkout-card::before{display:none!important}
+#salesView>.payment-checkout-card .payment-methods{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;padding:0!important;margin:0!important}
+#salesView>.payment-checkout-card .payment-method-card{min-height:42px!important;padding:8px 10px!important;border-radius:11px!important}
+#salesView>#paymentCartSummary{
+ position:relative!important;top:auto!important;z-index:1!important;
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;
+ gap:3px 8px!important;margin:0 0 10px!important;padding:8px 10px!important;
+ background:#fff!important;border:1px solid var(--line)!important;border-radius:12px!important;
+ box-shadow:0 2px 7px #173d2c08!important
+}
+#salesView>#paymentCartSummary>span{font-size:11px!important;line-height:1.2!important}
+#salesView>#paymentCartSummary>b{grid-column:2!important;grid-row:1/3!important;font-size:18px!important;white-space:nowrap!important}
+#salesView>#paymentCartSummary>small{font-size:10px!important;line-height:1.25!important}
+#salesView>#paymentCartSummary button{grid-column:1/-1!important;justify-self:start!important;padding:4px 8px!important;margin-top:3px!important;font-size:10px!important}
+
+/* Icon category tabs: keep product categories reachable without scrolling to headers. */
+#salesView .product-category-tabs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 57px);z-index:5;display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:5px 1px 8px;margin:0 0 8px;background:rgba(246,246,240,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);scroll-padding-inline:8px}
+#salesView .product-category-tabs::-webkit-scrollbar{display:none}
+#salesView .product-category-tab{flex:0 0 auto;min-width:64px;max-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font:inherit;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#salesView .product-category-tab:active{transform:scale(.96)}
+#salesView .product-category-tab.active{background:#dcece2;border-color:#c4ddce;color:var(--green);box-shadow:inset 0 0 0 1px #c4ddce}
+#salesView .product-category-icon{display:inline-block;font-size:20px;line-height:1.1;transform-origin:50% 75%}
+ #salesView .product-category-tab.icon-pop .product-category-icon{animation:productCategoryIconPop .42s cubic-bezier(.2,.8,.25,1.25) both}
+ @keyframes productCategoryIconPop{0%{transform:translateY(0) scale(1) rotate(0)}32%{transform:translateY(-5px) scale(1.18) rotate(-8deg)}62%{transform:translateY(0) scale(.94) rotate(5deg)}82%{transform:translateY(-2px) scale(1.04) rotate(-2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
+#salesView .product-category-name{font-size:10px;line-height:1.15;font-weight:750;white-space:nowrap}
+#salesView .product-group-selected{margin:0 0 10px}
+#salesView .product-group-selected .product-group-grid{display:grid}
+@media(max-width:380px){#salesView .product-category-tabs{gap:5px}#salesView .product-category-tab{min-width:58px;padding:7px 8px}#salesView .product-category-icon{font-size:18px}#salesView .product-category-name{font-size:9px}}
+@media(prefers-reduced-motion:reduce){#salesView .product-category-tab,#salesView .product-category-tab.icon-pop .product-category-icon,#salesView .product-group-selected{transition:none!important;animation:none!important}}
+
+/* Final override: hide only the cart summary card; retain its DOM and all transaction logic. */
+#salesView>#paymentCartSummary{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+
+/* Compact transaction accumulator in the income header; keep original cart IDs and logic. */
+#ownerHeader #paymentCartSummary,#paymentCartSummary{
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;
+ gap:1px 8px!important;margin:5px 0 8px!important;padding:0!important;
+ height:auto!important;min-height:0!important;overflow:visible!important;
+ background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+ visibility:visible!important;
+}
+#paymentCartSummary>span{grid-column:1!important;grid-row:1!important;font-size:11px!important;line-height:1.2!important;color:inherit!important;opacity:.8}
+#paymentCartSummary>b{grid-column:2!important;grid-row:1/3!important;font-size:13px!important;line-height:1.1!important;white-space:nowrap!important;color:inherit!important}
+#paymentCartSummary>small{grid-column:1!important;grid-row:2!important;font-size:10px!important;line-height:1.2!important;color:inherit!important;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#paymentCartSummary>button{display:none!important}
+
+/* Hide cart summary presentation only; keep its DOM elsewhere unavailable? */
+#paymentCartSummary{display:none!important}
+
+/* Tighten the gap between the header and payment selector without changing payment behavior. */
+main{padding-top:3px!important}
+#salesView>.section-head{margin-top:0!important;margin-bottom:2px!important;padding-top:0!important}
+#salesView>.payment-checkout-card{margin-top:0!important;padding-top:2px!important}
+
+/* Align payment cards with the header stats cards' horizontal edges. */
+#salesView>.payment-checkout-card{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding-left:0!important;padding-right:0!important}
+#salesView>.payment-checkout-card .payment-methods{width:100%!important;box-sizing:border-box!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}
+#salesView>.payment-checkout-card .payment-method-card{min-width:0!important;box-sizing:border-box!important}
+
+/* Cash calculator: centered fixed overlay, no page/modal scrolling or system keyboard. */
+body.cash-modal-open{overflow:hidden!important;position:fixed!important;width:100%!important;touch-action:none!important}
+.cash-modal-backdrop{position:fixed!important;inset:0!important;overflow:hidden!important;padding:10px!important;align-items:center!important;justify-content:center!important;overscroll-behavior:none!important;touch-action:none!important}
+.cash-modal{width:min(100%,390px)!important;max-height:calc(100dvh - 20px)!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:pan-x!important;padding:clamp(12px,2.5vh,20px)!important;border-radius:22px!important}
+.cash-modal input{caret-color:transparent!important;user-select:none!important;-webkit-user-select:none!important}
+@media(max-height:850px){
+ .cash-modal{padding:12px!important;border-radius:18px!important}
+ .cash-modal h2{font-size:19px!important}
+ .cash-modal-subtitle{margin-bottom:8px!important}
+ .cash-total,.cash-change{padding:8px 10px!important;margin:5px 0!important}
+ .cash-shortcuts,.cash-numpad{gap:6px!important}
+ .cash-shortcuts button,.cash-numpad button{min-height:40px!important;padding:7px!important}
+ .cash-modal label{margin:7px 0 4px!important}
+ .cash-modal input{min-height:42px!important}
+ .cash-confirm{min-height:48px!important;margin-top:8px!important}
+}
+
+
+/* Restore the older cash calculator presentation: broad, centered, and non-scrollable. */
+.cash-modal-backdrop{position:fixed!important;inset:0!important;z-index:1000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
+.cash-modal-backdrop[hidden]{display:none!important}
+.cash-modal{box-sizing:border-box!important;position:relative!important;width:min(92vw,640px)!important;max-width:640px!important;max-height:calc(100dvh - 24px)!important;height:auto!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;padding:clamp(14px,2vh,24px)!important;border-radius:28px!important}
+.cash-modal h2{font-size:clamp(20px,3vh,30px)!important;line-height:1.15!important;margin:0 42px 4px 0!important}
+.cash-modal-subtitle{font-size:clamp(11px,1.8vh,16px)!important;margin:0 0 clamp(8px,1.5vh,16px)!important}
+.cash-total,.cash-change{padding:clamp(9px,1.7vh,18px)!important;margin:clamp(6px,1vh,10px) 0!important}
+.cash-total span,.cash-change span{font-size:clamp(12px,1.9vh,17px)!important}
+.cash-total b,.cash-change b{font-size:clamp(18px,3vh,28px)!important}
+.cash-modal label{display:block!important;margin:clamp(6px,1vh,10px) 0 5px!important;font-size:clamp(12px,1.8vh,17px)!important}
+#cashAmountInput{box-sizing:border-box!important;width:100%!important;height:clamp(46px,6.3vh,64px)!important;min-height:clamp(46px,6.3vh,64px)!important;margin:0 0 clamp(7px,1.2vh,12px)!important;padding:8px 12px!important;font-size:clamp(20px,3.2vh,28px)!important;border:1px solid #dfe4dc!important;border-radius:16px!important;box-shadow:none!important;caret-color:transparent!important;user-select:none!important;-webkit-user-select:none!important}
+.cash-shortcuts,.cash-numpad{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(5px,.9vh,10px)!important;margin:0 0 clamp(7px,1.2vh,12px)!important}
+.cash-shortcuts button,.cash-numpad button{box-sizing:border-box!important;min-width:0!important;height:clamp(36px,5.1vh,54px)!important;min-height:clamp(36px,5.1vh,54px)!important;padding:4px 6px!important;font-size:clamp(14px,2.2vh,21px)!important;border-radius:15px!important}
+.cash-change small{font-size:clamp(10px,1.6vh,14px)!important}
+.cash-confirm{height:clamp(48px,6.3vh,66px)!important;min-height:clamp(48px,6.3vh,66px)!important;margin-top:clamp(5px,1vh,10px)!important;font-size:clamp(14px,2.2vh,21px)!important}
+@media(max-height:780px){
+ .cash-modal{padding:10px!important;border-radius:20px!important}
+ .cash-modal-subtitle{margin-bottom:5px!important}
+ .cash-total,.cash-change{padding:7px 10px!important;margin:5px 0!important}
+ #cashAmountInput{height:38px!important;min-height:38px!important;margin-bottom:5px!important}
+ .cash-shortcuts,.cash-numpad{gap:4px!important;margin-bottom:5px!important}
+ .cash-shortcuts button,.cash-numpad button{height:31px!important;min-height:31px!important;border-radius:10px!important}
+ .cash-confirm{height:40px!important;min-height:40px!important;margin-top:5px!important}
+}
+
+/* Corrective mobile sizing: keep the entire cash calculator visible inside the viewport. */
+.cash-modal-backdrop{padding:8px!important;overflow:hidden!important;align-items:center!important;justify-content:center!important}
+.cash-modal{width:min(92vw,640px)!important;max-height:calc(100dvh - 16px)!important;overflow:hidden!important;padding:12px!important;border-radius:22px!important}
+.cash-modal-close{width:32px!important;height:32px!important;right:10px!important;top:10px!important}
+@media(max-height:900px){
+ .cash-modal{padding:10px!important;border-radius:18px!important}
+ .cash-modal h2{font-size:20px!important;line-height:1.1!important;margin:0 38px 3px 0!important}
+ .cash-modal-subtitle{font-size:11px!important;line-height:1.2!important;margin:0 0 6px!important}
+ .cash-total,.cash-change{padding:7px 10px!important;margin:4px 0!important;gap:6px!important}
+ .cash-total span,.cash-change span{font-size:12px!important}
+ .cash-total b,.cash-change b{font-size:19px!important}
+ .cash-modal label{font-size:12px!important;margin:5px 0 3px!important}
+ #cashAmountInput{height:42px!important;min-height:42px!important;font-size:20px!important;margin-bottom:5px!important;padding:6px 10px!important}
+ .cash-shortcuts,.cash-numpad{gap:4px!important;margin-bottom:5px!important}
+ .cash-shortcuts button,.cash-numpad button{height:34px!important;min-height:34px!important;padding:2px 4px!important;font-size:15px!important;border-radius:10px!important}
+ .cash-change small{font-size:10px!important;line-height:1.2!important}
+ .cash-confirm{height:42px!important;min-height:42px!important;margin-top:4px!important;font-size:15px!important;padding:5px!important}
+}
+@media(max-height:740px){
+ .cash-modal{padding:8px!important}
+ .cash-modal-subtitle{margin-bottom:4px!important}
+ .cash-total,.cash-change{padding:5px 8px!important;margin:3px 0!important}
+ #cashAmountInput{height:36px!important;min-height:36px!important;margin-bottom:4px!important}
+ .cash-shortcuts,.cash-numpad{gap:3px!important;margin-bottom:4px!important}
+ .cash-shortcuts button,.cash-numpad button{height:29px!important;min-height:29px!important;font-size:14px!important}
+ .cash-confirm{height:36px!important;min-height:36px!important;margin-top:3px!important}
+}
+
+/* CASH PAYMENT MODAL — full-width bottom sheet matching the legacy layout.
+   CSS only: calculator/payment JavaScript is intentionally untouched. */
+#cashPaymentModal.cash-modal-backdrop{
+ position:fixed!important;inset:0!important;z-index:9999!important;
+ display:flex!important;align-items:flex-end!important;justify-content:center!important;
+ padding:0!important;margin:0!important;overflow:hidden!important;
+ background:rgba(12,31,23,.78)!important;
+ overscroll-behavior:none!important;touch-action:none!important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden]{display:none!important}
+#cashPaymentModal .cash-modal{
+ box-sizing:border-box!important;position:relative!important;
+ width:100%!important;max-width:480px!important;
+ height:auto!important;max-height:calc(100dvh - env(safe-area-inset-top,0px))!important;
+ margin:0 auto!important;padding:18px 16px calc(12px + env(safe-area-inset-bottom,0px))!important;
+ overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;
+ background:#fffdf8!important;color:var(--ink)!important;
+ border:0!important;border-radius:20px 20px 0 0!important;
+ box-shadow:0 -8px 30px rgba(0,0,0,.16)!important;
+}
+#cashPaymentModal .cash-modal h2{
+ margin:0 42px 4px 0!important;font-size:24px!important;line-height:1.2!important;
+ text-align:left!important;color:var(--green)!important
+}
+#cashPaymentModal .cash-modal-subtitle{
+ margin:0 0 12px!important;font-size:14px!important;line-height:1.3!important;text-align:left!important
+}
+#cashPaymentModal .cash-modal-close{top:14px!important;right:14px!important;width:38px!important;height:38px!important}
+#cashPaymentModal .cash-total{
+ box-sizing:border-box!important;width:100%!important;margin:8px 0!important;padding:12px 14px!important;
+ border-radius:14px!important;display:flex!important;align-items:center!important;justify-content:space-between!important
+}
+#cashPaymentModal .cash-total span{font-size:14px!important}
+#cashPaymentModal .cash-total b{font-size:24px!important}
+#cashPaymentModal .cash-modal label{display:block!important;margin:10px 0 5px!important;font-size:14px!important}
+#cashPaymentModal #cashAmountInput{
+ box-sizing:border-box!important;display:block!important;width:100%!important;min-width:0!important;
+ height:54px!important;min-height:54px!important;margin:0!important;padding:8px 12px!important;
+ border-radius:14px!important;font-size:25px!important;line-height:1.2!important;
+}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad{
+ box-sizing:border-box!important;display:grid!important;width:100%!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin:9px 0!important
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button{
+ box-sizing:border-box!important;width:100%!important;min-width:0!important;
+ height:47px!important;min-height:47px!important;padding:4px!important;
+ border-radius:12px!important;font-size:18px!important;line-height:1.1!important
+}
+#cashPaymentModal .cash-change{
+ box-sizing:border-box!important;width:100%!important;margin:9px 0!important;padding:10px 14px!important;
+ border-radius:14px!important;display:flex!important;flex-wrap:wrap!important;gap:5px 10px!important
+}
+#cashPaymentModal .cash-change span{font-size:14px!important}
+#cashPaymentModal .cash-change b{font-size:24px!important}
+#cashPaymentModal .cash-change small{width:100%!important;font-size:12px!important;line-height:1.2!important}
+#cashPaymentModal .cash-confirm{
+ display:block!important;box-sizing:border-box!important;width:100%!important;
+ height:56px!important;min-height:56px!important;margin:9px 0 0!important;
+ border-radius:12px!important;font-size:18px!important
+}
+@media(max-height:780px){
+ #cashPaymentModal .cash-modal{padding:10px 12px calc(8px + env(safe-area-inset-bottom,0px))!important}
+ #cashPaymentModal .cash-modal h2{font-size:20px!important}
+ #cashPaymentModal .cash-modal-subtitle{font-size:12px!important;margin-bottom:6px!important}
+ #cashPaymentModal .cash-total{padding:7px 10px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-total b{font-size:20px!important}
+ #cashPaymentModal .cash-modal label{margin:6px 0 3px!important;font-size:12px!important}
+ #cashPaymentModal #cashAmountInput{height:40px!important;min-height:40px!important;font-size:21px!important}
+ #cashPaymentModal .cash-shortcuts,#cashPaymentModal .cash-numpad{gap:4px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-shortcuts button,#cashPaymentModal .cash-numpad button{height:34px!important;min-height:34px!important;font-size:15px!important;border-radius:9px!important}
+ #cashPaymentModal .cash-change{padding:6px 10px!important;margin:5px 0!important}
+ #cashPaymentModal .cash-change b{font-size:20px!important}
+ #cashPaymentModal .cash-change small{font-size:10px!important}
+ #cashPaymentModal .cash-confirm{height:42px!important;min-height:42px!important;margin-top:5px!important;font-size:15px!important}
+}
+@media(min-width:481px){
+ #cashPaymentModal .cash-modal{border-radius:20px 20px 0 0!important}
+}
+
+
+
+/* V156: restore the original centered cash-payment modal-card overlay.
+   Presentation-only override; keep all calculator markup and JavaScript unchanged. */
+#cashPaymentModal.cash-modal-backdrop{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  z-index:99999!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  padding:16px!important;
+  margin:0!important;
+  overflow:hidden!important;
+  background:rgba(0,0,0,.5)!important;
+  -webkit-backdrop-filter:blur(2px)!important;
+  backdrop-filter:blur(2px)!important;
+  overscroll-behavior:none!important;
+  touch-action:none!important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden]{display:none!important}
+#cashPaymentModal .cash-modal{
+  box-sizing:border-box!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:420px!important;
+  height:auto!important;
+  max-height:90dvh!important;
+  margin:0!important;
+  padding:20px!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+  background:#fff!important;
+  color:var(--ink)!important;
+  border:0!important;
+  border-radius:24px!important;
+  box-shadow:0 18px 55px rgba(0,0,0,.28)!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#cashPaymentModal .cash-modal h2{
+  font-size:20px!important;
+  line-height:1.2!important;
+  margin:0 42px 4px 0!important;
+  text-align:left!important;
+}
+#cashPaymentModal .cash-modal-subtitle{
+  font-size:12px!important;
+  line-height:1.4!important;
+  margin:0 0 14px!important;
+}
+#cashPaymentModal .cash-modal-close{
+  top:12px!important;
+  right:12px!important;
+  width:36px!important;
+  height:36px!important;
+  border-radius:50%!important;
+  background:#f1f5f9!important;
+}
+#cashPaymentModal .cash-total,
+#cashPaymentModal .cash-change{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#cashPaymentModal .cash-modal label,
+#cashPaymentModal .cash-modal input{width:100%!important;box-sizing:border-box!important}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad{
+  width:100%!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button{
+  min-width:0!important;
+  width:100%!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  font-size:16px!important;
+}
+#cashPaymentModal .cash-change{margin-top:12px!important}
+#cashPaymentModal .cash-confirm{
+  display:block!important;
+  width:100%!important;
+  min-height:48px!important;
+  margin-top:10px!important;
+}
+@media(max-height:700px){
+  #cashPaymentModal .cash-modal{max-height:92dvh!important;padding:16px!important}
+  #cashPaymentModal .cash-total,
+  #cashPaymentModal .cash-change{padding:9px 11px!important;margin:6px 0!important}
+  #cashPaymentModal .cash-shortcuts,
+  #cashPaymentModal .cash-numpad{gap:5px!important;margin:7px 0!important}
+  #cashPaymentModal .cash-shortcuts button,
+  #cashPaymentModal .cash-numpad button{min-height:36px!important}
+}
+
+
+/* V157: fix modal cash overlay so it covers the app header and keeps confirm visible */
+#cashPaymentModal.cash-modal-backdrop{
+  position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;height:100%!important;z-index:2147483000!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;padding:12px!important;margin:0!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  background:rgba(0,0,0,.6)!important;
+  -webkit-backdrop-filter:blur(4px)!important;backdrop-filter:blur(4px)!important;
+  overscroll-behavior:contain!important;touch-action:pan-y!important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden]{display:none!important}
+#cashPaymentModal .cash-modal{
+  box-sizing:border-box!important;position:relative!important;flex:0 1 440px!important;
+  width:100%!important;max-width:440px!important;min-width:0!important;
+  height:auto!important;max-height:calc(100dvh - 24px)!important;
+  margin:auto!important;padding:16px!important;display:flex!important;flex-direction:column!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  background:#fff!important;color:var(--ink)!important;border:0!important;
+  border-radius:20px!important;box-shadow:0 20px 25px -5px rgba(0,0,0,.3)!important;
+  overscroll-behavior:contain!important;touch-action:pan-y!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#cashPaymentModal .cash-modal h2{margin:0 42px 4px 0!important;text-align:left!important}
+#cashPaymentModal .cash-modal-subtitle{margin:0 0 12px!important}
+#cashPaymentModal .cash-modal-close{
+  background:#f1f5f9!important;border:0!important;width:32px!important;height:32px!important;
+  border-radius:50%!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;font-size:18px!important;color:#475569!important;
+}
+#cashPaymentModal .cash-total,#cashPaymentModal .cash-change{
+  width:100%!important;box-sizing:border-box!important;flex:0 0 auto!important;
+}
+#cashPaymentModal .cash-shortcuts,#cashPaymentModal .cash-numpad{
+  width:100%!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;flex:0 0 auto!important;
+}
+#cashPaymentModal .cash-shortcuts button,#cashPaymentModal .cash-numpad button{
+  width:100%!important;min-width:0!important;box-sizing:border-box!important;
+}
+#cashPaymentModal .cash-confirm{
+  display:block!important;width:100%!important;flex:0 0 auto!important;margin-top:10px!important;
+}
+@media(max-height:760px){
+  #cashPaymentModal .cash-modal{padding:12px!important;gap:0!important}
+  #cashPaymentModal .cash-modal h2{font-size:19px!important;line-height:1.15!important}
+  #cashPaymentModal .cash-modal-subtitle{font-size:11px!important;margin-bottom:7px!important}
+  #cashPaymentModal .cash-total,#cashPaymentModal .cash-change{padding:7px 9px!important;margin:4px 0!important}
+  #cashPaymentModal .cash-shortcuts,#cashPaymentModal .cash-numpad{gap:5px!important;margin:5px 0!important}
+  #cashPaymentModal .cash-shortcuts button,#cashPaymentModal .cash-numpad button{min-height:34px!important;height:34px!important}
+  #cashPaymentModal .cash-confirm{min-height:42px!important;height:42px!important;margin-top:6px!important}
+}
+
+/* V159: lower sticky app headers while cash modal is active; CSS-only fix. */
+body:has(#cashPaymentModal:not([hidden])) header,
+body:has(#cashPaymentModal:not([hidden])) .header,
+body:has(#cashPaymentModal:not([hidden])) [class*="header"],
+body:has(#cashPaymentModal:not([hidden])) .top-bar {
+  z-index: 1 !important;
+}
+
+/* Full-screen cash-payment modal overlay */
+#cashPaymentModal.cash-modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 999999 !important;
+  background: rgba(0, 0, 0, 0.65) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden] {
+  display: none !important;
+}
+
+/* Compact card; allow internal scrolling on short phone screens */
+#cashPaymentModal .cash-modal {
+  position: relative !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  width: 100% !important;
+  max-width: 400px !important;
+  height: auto !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  border-radius: 20px !important;
+  padding: 12px 14px !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad {
+  gap: 4px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  padding: 6px 2px !important;
+  font-size: 14px !important;
+}
+
+
+/* V160: place modal at body root and force it above sticky/fixed UI. */
+#cashPaymentModal.cash-modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  background: rgba(0, 0, 0, 0.65) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 9999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+#cashPaymentModal.cash-modal-backdrop[hidden] {
+  display: none !important;
+}
+#cashPaymentModal .cash-modal {
+  box-sizing: border-box !important;
+  position: relative !important;
+  background: #ffffff !important;
+  width: 100% !important;
+  max-width: 400px !important;
+  height: auto !important;
+  max-height: 92vh !important;
+  max-height: 92dvh !important;
+  border-radius: 20px !important;
+  padding: 12px 16px !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4) !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#cashPaymentModal .cash-shortcuts,
+#cashPaymentModal .cash-numpad {
+  gap: 5px !important;
+  margin: 4px 0 !important;
+}
+#cashPaymentModal .cash-shortcuts button,
+#cashPaymentModal .cash-numpad button {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  padding: 6px 2px !important;
+  font-size: 14px !important;
+}
+
+
+/* V161: prevent Android virtual keyboard; amount is entered with the custom keypad. */
+#cashPaymentModal #cashAmountInput {
+  inputmode: none !important;
+  caret-color: transparent !important;
+}
+
 </style>
 <style id="report-tab-animation-and-refresh">#refreshReportBtn{background-color:#fdfbf7!important;background-image:none!important;border:1px solid #e0dcd3!important;border-radius:12px!important;padding:10px 16px!important;font-size:14px!important;font-weight:600!important;color:#5c4d3c!important;box-shadow:0 1px 3px rgba(0,0,0,.05)!important}#refreshReportBtn:hover,#refreshReportBtn:focus-visible{background-color:#f5f1e9!important;border-color:#d4cec2!important}#refreshReportBtn:active{background-color:#eee8de!important;transform:translateY(1px) scale(.985)}#reportsView.report-tab-entering .chart-box{animation:reportChartRise .55s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-chart-index,0)*85ms)}#reportsView.report-tab-entering .report-card{animation:reportCardRise .42s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-card-index,0)*65ms)}#reportsView.report-tab-entering .chart-box:nth-of-type(1){--report-chart-index:0}#reportsView.report-tab-entering .chart-box:nth-of-type(2){--report-chart-index:1}#reportsView.report-tab-entering .chart-box:nth-of-type(3){--report-chart-index:2}#reportsView.report-tab-entering .chart-box:nth-of-type(4){--report-chart-index:3}#reportsView.report-tab-entering .report-card:nth-child(1){--report-card-index:0}#reportsView.report-tab-entering .report-card:nth-child(2){--report-card-index:1}#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart{animation:reportDataReveal .65s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}#reportsView.report-data-updating #productChart .bar-fill,#reportsView.report-data-updating #weeklyChart .bar-fill{animation:reportBarGrow .72s cubic-bezier(.16,1,.3,1) both;transform-origin:left center}#reportsView.report-data-updating #dailyChart .month-bar,#reportsView.report-data-updating #monthlyChart .month-bar{animation:reportBarGrowVertical .72s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}@keyframes reportChartRise{0%{opacity:.25;transform:translateY(18px) scale(.985)}70%{opacity:1;transform:translateY(-2px) scale(1.003)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes reportCardRise{0%{opacity:.35;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}@keyframes reportDataReveal{0%{opacity:.45}100%{opacity:1}}@keyframes reportBarGrow{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}@keyframes reportBarGrowVertical{0%{transform:scaleY(0);opacity:.35}100%{transform:scaleY(1);opacity:1}}@media(prefers-reduced-motion:reduce){#reportsView.report-tab-entering .chart-box,#reportsView.report-tab-entering .report-card,#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart,#reportsView.report-data-updating .bar-fill,#reportsView.report-data-updating .month-bar{animation:none!important}}</style>
-</head>
+<style id="nongki-interaction-polish">#profileDropdown.menu-opening{animation:profilePopIn .25s cubic-bezier(.16,1,.3,1) both!important;transform-origin:bottom right!important}#profileDropdown.menu-closing{animation:profilePopOut .15s ease-in both!important;pointer-events:none}#cashPaymentModal.modal-closing .cash-modal{animation:cashPanelOut .19s ease-in both!important}#cashPaymentModal.modal-closing{animation:cashBackdropOut .19s ease-in both!important}.history-row.cancelled-flash{animation:cancelCardImpact .72s ease-out both!important}.history-row.cancelled-flash .history-icon{animation:cancelIconPop .42s ease-out both}.product.cancelled-product-flash{animation:cancelProductCard .62s cubic-bezier(.2,.8,.2,1) both!important;position:relative;z-index:1}.product.cancelled-product-flash .emoji{animation:none!important}#salesView .product-group-selected.product-grid-entering .product{animation:productGridSpringIn .34s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--product-index,0)*22ms);will-change:transform,opacity}#salesView .product-group-selected .product.product-tap-pop{animation:productCardTapPop .34s cubic-bezier(.2,.8,.2,1.15) both!important;animation-delay:0ms!important;will-change:transform}#salesView .product-group-selected .product:nth-child(1){--product-index:0}#salesView .product-group-selected .product:nth-child(2){--product-index:1}#salesView .product-group-selected .product:nth-child(3){--product-index:2}#salesView .product-group-selected .product:nth-child(4){--product-index:3}#salesView .product-group-selected .product:nth-child(5){--product-index:4}#salesView .product-group-selected .product:nth-child(6){--product-index:5}#salesView .product-group-selected .product:nth-child(7){--product-index:6}#salesView .product-group-selected .product:nth-child(8){--product-index:7}#salesView .product-group-selected .product:nth-child(9){--product-index:8}#salesView .product-group-selected .product:nth-child(10){--product-index:9}#salesView .product-category-tab.icon-pop{animation:categoryTabSpring .3s cubic-bezier(.16,1,.3,1)}@keyframes productGridSpringIn{0%{opacity:0;transform:translateY(14px) scale(.96)}68%{opacity:1;transform:translateY(-2px) scale(1.012)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes categoryTabSpring{0%{transform:scale(.94)}65%{transform:scale(1.045)}100%{transform:scale(1)}}@keyframes profilePopIn{0%{opacity:0;translate:0 14px;scale:.88}65%{opacity:1;translate:0 -2px;scale:1.015}100%{opacity:1;translate:0 0;scale:1}}@keyframes profilePopOut{to{opacity:0;translate:0 8px;scale:.94}}@keyframes cashPanelOut{to{opacity:0;transform:translateY(38px) scale(.96)}}@keyframes cashBackdropOut{to{opacity:0}}@keyframes cancelProductCard{0%{background:#fff0e8;box-shadow:0 0 0 0 rgba(220,75,55,0)}20%{background:#ffd9ca;box-shadow:0 0 0 3px rgba(220,75,55,.22);transform:scale(1.035)}55%{background:#fff4ef;transform:scale(.99)}100%{background:transparent;box-shadow:0 0 0 0 rgba(220,75,55,0);transform:scale(1)}}@keyframes cancelCardImpact{0%{background:#fff0e8}20%{background:#ffd9ca;transform:scale(1.018)}55%{background:#fff4ef;transform:scale(.995)}100%{background:transparent;transform:scale(1)}}@keyframes cancelIconPop{35%{transform:scale(1.22) rotate(-7deg)}65%{transform:scale(.92) rotate(4deg)}100%{transform:scale(1)}}@media(prefers-reduced-motion:reduce){#profileDropdown.menu-opening,#profileDropdown.menu-closing,#cashPaymentModal.modal-closing,.history-row.cancelled-flash,.product.cancelled-product-flash{animation:none!important}}</style></head>
 <body>
 <div class="login-overlay" id="loginOverlay">
 <div class="login-card">
@@ -594,22 +1241,14 @@ body:not(.staff-mode) header>.stats{
 <main>
 <section class="view active" id="salesView">
 <div class="section-head"><h2>Ketuk untuk mencatat</h2><span class="sub">1 ketukan = 1 transaksi</span></div>
-<section class="payment-methods" aria-label="Metode pembayaran">
+<section class="payment-checkout-card" aria-label="Metode pembayaran">
+<section class="payment-methods" aria-label="Pilih metode pembayaran">
 <div class="payment-method-card payment-cash" id="paymentCashCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">💵</span><span><b>TUNAI</b><small>Bayar dengan uang tunai</small></span><span class="payment-cart-count" id="paymentCartCount">0 item</span></div>
 <div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
 </section>
-<div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
-<div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
-<section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
-<button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
-<h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
-<div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
-<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
-<div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
-<div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
-<div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
-<button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
-</section></div><div class="products" id="productGrid"></div>
+</section>
+
+<div class="products" id="productGrid"></div>
 <div class="toolbar action-buttons-container"><button class="btn" id="undoBtn">↶ Batalkan transaksi terakhir</button><div class="profile-menu-wrap"><button aria-label="Switch Profile" aria-expanded="false" aria-haspopup="menu" class="btn btn-switch-profile" id="profileAvatarBtn" type="button">Switch Profile</button>
 <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
 <button class="profile-option" data-profile-choice="owner" role="menuitem" type="button"><span class="profile-emoji">👑</span><span><b>Owner (Suami)</b><small>Kelola seluruh aplikasi</small></span></button>
@@ -810,25 +1449,42 @@ function productGroup(p){
 const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
 function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
+let activeProductCategory='';
+const CATEGORY_ICONS={'Coffee':'☕','Non Coffee':'🧋','Snack':'🍟','Others':'🥤','Extra Topping':'🧀','Topping':'🍫'};
+let animateProductGridOnNextRender=true;
+function selectProductCategory(name){
+ activeProductCategory=name;
+ animateProductGridOnNextRender=true;
+ renderGrid();
+ const selected=[...document.querySelectorAll('#salesView .product-category-tab')].find(tab=>tab.dataset.productCategory===name);
+ if(selected){
+  selected.classList.remove('icon-pop');
+  const icon=selected.querySelector('.product-category-icon');
+  if(icon){void icon.offsetWidth;selected.classList.add('icon-pop');}
+ }
+}
 function renderGrid(){
  let counts={};
  dayTx().forEach(t=>{
   if(Array.isArray(t.items)&&t.items.length){
    t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
-  }else if(t.productId){
-   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
-  }
+  }else if(t.productId){counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);}
  });
  if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
- let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
+ let active=data.products.filter(p=>p.active!==false),order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
- let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
-  const collapsed=collapsedCategory(g);
-  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
- }).join('');
- $('productGrid').innerHTML=html||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';
+ let categories=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length);
+ if(!categories.length){$('productGrid').innerHTML='<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';return;}
+ if(!categories.includes(activeProductCategory))activeProductCategory=categories[0];
+ const tabs='<nav class="product-category-tabs" aria-label="Kategori produk">'+categories.map(g=>'<button type="button" class="product-category-tab'+(g===activeProductCategory?' active':'')+'" data-product-category="'+esc(g)+'" aria-pressed="'+(g===activeProductCategory)+'"><span class="product-category-icon" aria-hidden="true">'+(CATEGORY_ICONS[g]||'🥤')+'</span><span class="product-category-name">'+esc(g)+'</span></button>').join('')+'</nav>';
+ const items=groups[activeProductCategory].map(p=>{let sold=counts[p.id]||0;return '<button class="product" data-sell="'+esc(String(p.id))+'"><span class="sold-badge'+(sold===0?' zero':'')+'" aria-label="Terjual hari ini">'+sold+'</span><div><div class="emoji">'+esc(p.icon||'🥤')+'</div><div class="name">'+esc(p.name)+'</div></div><div><div class="price">'+rupiah(p.price)+'</div><div class="hint">Ketuk untuk catat</div></div></button>';}).join('');
+ const enterClass=animateProductGridOnNextRender?' product-grid-entering':'';
+ $('productGrid').innerHTML=tabs+'<section class="product-group product-group-selected'+enterClass+'" aria-label="'+esc(activeProductCategory)+'"><div class="product-group-grid">'+items+'</div></section>';
+ animateProductGridOnNextRender=false;
+ const enteringGrid=$('productGrid').querySelector('.product-grid-entering');
+ if(enteringGrid)setTimeout(()=>enteringGrid.classList.remove('product-grid-entering'),650);
 }
-function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
+function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
 let serverHistoryTransactions=[];
@@ -1289,7 +1945,12 @@ function renderReports(){
 function render(){renderHeader();renderGrid();renderRecent();renderHistory();renderProducts();renderReports();refreshStaffSyncBadge()}
 function setGlobalSyncStatus(state,label){const dot=$('globalSyncDot'),text=$('globalSyncText');const staffDot=$('staffSyncDot'),staffText=$('staffSyncText');const normalized=state==='connected'?'connected':state==='syncing'?'syncing':state==='error'?'error':state==='waiting'?'waiting':state==='offline'?'offline':'waiting';const statusText=normalized==='connected'?'Status: Tersinkron':normalized==='syncing'?'Status: Menyinkronkan…':normalized==='error'?'Status: Gagal sinkron':normalized==='offline'?'Status: Offline · antrean disimpan':'Status: Menunggu sinkronisasi';[dot,staffDot].forEach(el=>{if(el){el.classList.remove('status-connected','status-syncing','status-offline','status-error','status-waiting');el.classList.add('status-'+normalized);el.setAttribute('aria-label',statusText)}});if(text)text.textContent=statusText;if(staffText)staffText.textContent=statusText}
 async function refreshGlobalCardStatus(){try{const outbox=await getAllRecords('outbox');if(appScriptSyncPromise){setGlobalSyncStatus('syncing');return}if(outbox.length){setGlobalSyncStatus(outbox.some(item=>item.lastError||Number(item.attempts)>0)?'error':'waiting');return}setGlobalSyncStatus(globalServerConfirmed?'connected':'waiting')}catch(error){console.warn('Status Penjualan Global belum dapat diperiksa:',error);setGlobalSyncStatus('error')}}
-async function refreshStaffSyncBadge(){const button=$('staffSyncFab'),badge=$('staffSyncCount');if(!button||!badge)return;const staff=!!(currentUser&&currentUser.role==='staff');button.hidden=!staff;if(!staff){badge.hidden=true;return}try{const count=(await getAllRecords('outbox')).length;badge.textContent=count>99?'99+':String(count);badge.hidden=count<1;button.title=count?count+' transaksi menunggu sinkronisasi':'Sinkronkan antrean'}catch{badge.textContent='!';badge.hidden=false}}
+function refreshStaffSyncBadge(){
+ // Tombol sinkronisasi melayang dinonaktifkan untuk SEMUA profil.
+ const button=$('staffSyncFab'),badge=$('staffSyncCount');
+ if(button)button.hidden=true;
+ if(badge)badge.hidden=true;
+}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const paymentCart=new Map();let paymentBusy=false;let activePaymentMethod='Tunai';
 function cartLines(){return Array.from(paymentCart.values()).map(x=>({...x}));}
@@ -1299,17 +1960,31 @@ function refreshPaymentUI(){
  const count=cartCount(),total=cartTotal(),enabled=count>0;
  ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
  ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
- if($('paymentCartTotal'))$('paymentCartTotal').textContent=rupiah(total);
+ if($('paymentCartTotal')){const totalEl=$('paymentCartTotal'),nextTotal=rupiah(total);if(totalEl.textContent!==nextTotal){totalEl.textContent=nextTotal;totalEl.classList.remove('total-bump');void totalEl.offsetWidth;totalEl.classList.add('total-bump');}}
+ ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el){el.classList.remove('count-bump');void el.offsetWidth;el.classList.add('count-bump');}});
  if($('paymentCartItems'))$('paymentCartItems').textContent=count?cartLines().map(x=>x.productName+' × '+x.quantity).join(' · '):'Belum ada item — ketuk produk untuk menambahkan';
  if($('clearPaymentCart'))$('clearPaymentCart').disabled=!enabled||paymentBusy;
  if($('cashTotalBelanja'))$('cashTotalBelanja').textContent=rupiah(total);
  updateCashCalculation();
 }
+function updateProductBadges(){
+ const counts={};
+ dayTx().forEach(t=>{
+  if(Array.isArray(t.items)&&t.items.length){
+   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
+  }else if(t.productId){counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);}
+ });
+ paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
+ document.querySelectorAll('#salesView .product[data-sell]').forEach(card=>{
+  const badge=card.querySelector('.sold-badge');if(!badge)return;
+  const sold=counts[String(card.dataset.sell)]||0;badge.textContent=String(sold);badge.classList.toggle('zero',sold===0);
+ });
+}
 function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderHeader();renderGrid();toast(p.name+' ditambahkan ke keranjang.');
+ refreshPaymentUI();renderHeader();updateProductBadges();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
@@ -1321,10 +1996,10 @@ function updateCashCalculation(){
 }
 function openCashModal(){
  if(!cartCount()||paymentBusy)return;
- activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
- formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
+ const modal=$('cashPaymentModal');if(modal){modal.classList.remove('modal-closing');modal.hidden=false;void modal.offsetWidth;}
+ activePaymentMethod='Tunai';formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.blur();
 }
-function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
+function closeCashModal(){const modal=$('cashPaymentModal');if(!modal||modal.hidden||modal.classList.contains('modal-closing'))return;const panel=modal.querySelector('.cash-modal');if(panel){modal.classList.add('modal-closing');setTimeout(()=>{modal.hidden=true;modal.classList.remove('modal-closing');},190)}else modal.hidden=true;}
 function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
 async function completeCartPayment(method,paid){
  if(paymentBusy||!cartCount())return;
@@ -1347,19 +2022,58 @@ async function completeCartPayment(method,paid){
 function record(id){addCartProduct(id);}
 
 
+
+
 async function cancelTx(id){
- let t=data.transactions.find(x=>x.id===id);if(!t||t.status==='cancelled')return;
+ const t=data.transactions.find(x=>String(x.id)===String(id));
+ if(!t||['cancelled','canceled'].includes(String(t.status||'').toLowerCase()))return;
  if(!confirm('Batalkan transaksi '+t.name+' sebesar '+rupiah(t.total)+'? Pemasukan akan dikurangi dan riwayat tetap tersimpan.'))return;
  try {
    const indexed=await getAllRecords('transactions');
-   const saved=indexed.find(x=>x.id===id||String(x.legacyId||'')===String(id));
-   if(saved && saved.status!=='canceled') await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
-   t.status='cancelled';t.cancelledAt=new Date().toISOString();t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
-   const cloud=cloudTransactions.find(x=>x.id===id);if(cloud){cloud.status='cancelled';cloud.cancelledAt=t.cancelledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
-   save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());render();toast('Transaksi dibatalkan · riwayat tetap tersimpan · menunggu sinkronisasi');
- } catch(error) { console.error(error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
+   const saved=indexed.find(x=>String(x.id)===String(id)||String(x.legacyId||'')===String(id));
+   if(saved && !['canceled','cancelled'].includes(String(saved.status||'').toLowerCase())){
+     const canceled=await cancelTransaction(saved.id,{userId:currentUser?.id||'STAFF001',reason:'Dibatalkan dari riwayat Nongki'});
+     if(!canceled)throw new Error('Transaksi lokal tidak ditemukan di IndexedDB.');
+   }else if(!saved){
+     console.warn('Transaksi tidak ditemukan di IndexedDB; pembatalan diterapkan pada catatan lokal.',id);
+   }
+   const canceledAt=new Date().toISOString();
+   t.status='cancelled';t.cancelledAt=canceledAt;t.cancelledBy=currentUser?.id||'STAFF001';t.syncStatus='pending';
+   const cloud=cloudTransactions.find(x=>String(x.id)===String(id));
+   if(cloud){cloud.status='cancelled';cloud.cancelledAt=canceledAt;cloud.cancelledBy=t.cancelledBy;cloud.syncStatus='pending'}
+   // Pembatalan transaksi tersimpan hanya memengaruhi penjualan/riwayat.
+   // Keranjang kalkulator adalah pesanan baru yang belum dibayar; jangan
+   // mengurangi item keranjang berdasarkan produk dari transaksi lama.
+   save();saveCloudPreview();setGlobalSyncStatus('waiting');refreshGlobalCardStatus();queueDailySync(t.date||today());
+   render();refreshPaymentUI();
+   requestAnimationFrame(()=>{
+     // Animate only the cancelled local/server-history row matching this transaction.
+     document.querySelectorAll('.history-row[data-transaction-id]').forEach(row=>{
+       if(String(row.dataset.transactionId)===String(id)){
+         row.classList.remove('cancelled-flash');void row.offsetWidth;row.classList.add('cancelled-flash');
+         setTimeout(()=>row.classList.remove('cancelled-flash'),450);
+       }
+     });
+     // New IndexedDB transactions store products in t.items; legacy rows use productId/name.
+     const productIds=new Set();
+     (Array.isArray(t.items)?t.items:[]).forEach(item=>{
+       const pid=item?.productId??item?.product_id??item?.idProduk??item?.id_produk;
+       if(pid!=null)productIds.add(String(pid));
+     });
+     const legacyId=t.productId??t.product_id??t.idProduk??t.id_produk;
+     if(legacyId!=null)productIds.add(String(legacyId));
+     const productNames=new Set([t.name,...(Array.isArray(t.items)?t.items.map(item=>item?.name):[])].filter(Boolean).map(name=>String(name).trim().toLowerCase()));
+     document.querySelectorAll('#salesView .product[data-sell]').forEach(card=>{
+       const name=card.querySelector('.name')?.textContent?.trim().toLowerCase()||'';
+       if(!productIds.has(String(card.dataset.sell))&&!productNames.has(name))return;
+       card.classList.remove('cancelled-product-flash');void card.offsetWidth;card.classList.add('cancelled-product-flash');
+       setTimeout(()=>card.classList.remove('cancelled-product-flash'),650);
+     });
+   });
+   toast('Transaksi dibatalkan. Pemasukan dan jumlah produk terjual diperbarui; keranjang aktif tidak berubah.');
+   void syncPending();
+ } catch(error) { console.error('Pembatalan transaksi gagal:',error);toast('Pembatalan belum tersimpan. Coba lagi.'); }
 }
-
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
@@ -1367,15 +2081,19 @@ $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
 $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
-$('closeCashModal')?.addEventListener('click',closeCashModal);
-$('cashPaymentModal')?.addEventListener('click',e=>{if(e.target===$('cashPaymentModal'))closeCashModal();});
-$('cashAmountInput')?.addEventListener('input',updateCashCalculation);
 $('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
-document.querySelectorAll('[data-cash-shortcut]').forEach(button=>button.addEventListener('click',()=>{const v=button.dataset.cashShortcut==='exact'?cartTotal():Number(button.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();}));
-document.querySelectorAll('[data-cash-key]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();}));
-$('confirmCashPayment')?.addEventListener('click',()=>completeCartPayment('Tunai',parseCashAmount()));
 
 document.addEventListener('click',e=>{
+/* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
+const cashClose=e.target.closest('#closeCashModal');
+if(cashClose){closeCashModal();return;}
+if(e.target===$('cashPaymentModal')){closeCashModal();return;}
+const shortcut=e.target.closest('#cashPaymentModal [data-cash-shortcut]');
+if(shortcut){e.preventDefault();const v=shortcut.dataset.cashShortcut==='exact'?cartTotal():Number(shortcut.dataset.cashShortcut)||0;formatCashInput(v);updateCashCalculation();return;}
+const keyButton=e.target.closest('#cashPaymentModal [data-cash-key]');
+if(keyButton){e.preventDefault();const key=keyButton.dataset.cashKey,input=$('cashAmountInput');let value=String(input?.value||'').replace(/[^0-9]/g,'');if(key==='clear')value='';else if(key==='back')value=value.slice(0,-1);else value+=key;formatCashInput(Number(value)||0);updateCashCalculation();return;}
+const confirmCash=e.target.closest('#confirmCashPayment');
+if(confirmCash){e.preventDefault();completeCartPayment('Tunai',parseCashAmount());return;}
 let sell=e.target.closest('[data-sell]');if(sell){record(sell.dataset.sell);return}
 let del=e.target.closest('[data-delete-tx]');if(del){cancelTx(del.dataset.deleteTx);return}
 let edit=e.target.closest('[data-edit-product]');if(edit){editProduct(edit.dataset.editProduct);return}
@@ -1395,7 +2113,39 @@ const globalSalesCard=$('globalSalesCard');
 globalSalesCard?.addEventListener('click',()=>{void syncAllData()});
 globalSalesCard?.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();void syncAllData();}});
  $('reportMonth').value=today().slice(0,7);$('reportMonth').addEventListener('change',renderReports);$('refreshReportBtn')?.addEventListener('click',()=>{void fetchServerReport()});
-$('undoBtn').addEventListener('click',()=>{let tx=dayTx();if(!tx.length){toast('Belum ada transaksi hari ini');return}cancelTx(tx[0].id)});
+$('undoBtn').addEventListener('click',()=>{
+  if(paymentBusy){toast('Pembayaran sedang diproses. Tunggu sampai selesai.');return;}
+  // Prioritas: bila ada item yang belum dibayar, batalkan satu item terakhir
+  // dari kalkulator saja; jangan membuat event pembatalan server.
+  if(cartCount()){
+   const lines=cartLines();
+   const last=lines[lines.length-1];
+   if(!last)return;
+   const current=paymentCart.get(String(last.productId));
+   if(current){
+    if(Number(current.quantity)>1)paymentCart.set(String(last.productId),{...current,quantity:Number(current.quantity)-1});
+    else paymentCart.delete(String(last.productId));
+   }
+   // Beri animasi hanya pada kartu produk yang dibatalkan secara lokal,
+   // sebelum pembayaran dan sinkronisasi server dilakukan.
+   const canceledCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(last.productId));
+   if(canceledCard){
+    // Hapus animasi ketukan produk yang masih aktif/menempel agar tidak menimpa
+    // animasi pembatalan pada seluruh kartu.
+    canceledCard.classList.remove('product-tap-pop','cancelled-product-flash');
+    void canceledCard.offsetWidth;
+    canceledCard.classList.add('cancelled-product-flash');
+    setTimeout(()=>canceledCard.classList.remove('cancelled-product-flash'),700);
+   }
+   refreshPaymentUI();renderHeader();updateProductBadges();
+   toast(last.productName+' dibatalkan dari kalkulator · total diperbarui.');
+   return;
+  }
+  // Jika keranjang kosong, batalkan transaksi tersimpan terakhir.
+  const tx=dayTx().filter(t=>!['cancelled','canceled'].includes(String(t.status||'').toLowerCase())).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.time||'').localeCompare(String(a.time||'')))[0];
+  if(!tx){toast('Tidak ada item kalkulator atau transaksi tersimpan hari ini untuk dibatalkan.');return;}
+  cancelTx(tx.id);
+ });
 $('exportCsv').addEventListener('click',()=>{let date=$('historyDate').value||today(),tx=dayTx(date);let rows=[['Tanggal','Waktu','Produk','Kategori','Harga satuan','Jumlah','Total'],...tx.map(t=>[t.date,t.time,t.name,t.category,t.unitPrice,t.qty,t.total])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'Nongki_Pemasukan_'+date+'.csv','text/csv;charset=utf-8;');});
 $('backupBtn').addEventListener('click',()=>download(JSON.stringify(data,null,2),'Nongki_Backup_'+today()+'.json','application/json'));
 $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());
@@ -1607,16 +2357,16 @@ function openLogoutPin(){
 function cancelLogoutPin(){try{$('logoutPinOverlay')?.classList.add('hidden');}catch(error){console.warn(error);}}
 async function verifyAndLogout(){openLogoutPin();}
 $('logoutBtn')?.addEventListener('click',openLogoutPin);
-$('profileAvatarBtn')?.addEventListener('click',()=>{try{const menu=$('profileDropdown'),btn=$('profileAvatarBtn'),open=!!menu?.hidden;if(menu)menu.hidden=!open;btn?.setAttribute('aria-expanded',String(open));void fetchSharedMenu({quiet:true});}catch(error){console.warn('Menu profil tidak dapat dibuka:',error);}});
+function setProfileMenuOpen(open){const menu=$('profileDropdown'),btn=$('profileAvatarBtn');if(!menu)return;if(open){menu.classList.remove('menu-closing');menu.hidden=false;void menu.offsetWidth;menu.classList.remove('menu-opening');void menu.offsetWidth;menu.classList.add('menu-opening');btn?.setAttribute('aria-expanded','true');}else{btn?.setAttribute('aria-expanded','false');if(menu.hidden)return;menu.classList.remove('menu-opening');menu.classList.add('menu-closing');setTimeout(()=>{menu.hidden=true;menu.classList.remove('menu-closing');},150);}}
+$('profileAvatarBtn')?.addEventListener('click',()=>{try{const menu=$('profileDropdown'),open=!!menu?.hidden;setProfileMenuOpen(open);void fetchSharedMenu({quiet:true});}catch(error){console.warn('Menu profil tidak dapat dibuka:',error);}});
 document.addEventListener('click',e=>{
  try{
-  if(!e.target?.closest?.('.profile-menu-wrap')){const menu=$('profileDropdown');if(menu)menu.hidden=true;$('profileAvatarBtn')?.setAttribute('aria-expanded','false');}
+  if(!e.target?.closest?.('.profile-menu-wrap'))setProfileMenuOpen(false);
   const option=e.target?.closest?.('[data-profile-choice]');
   if(!option)return;
   const id=option.dataset.profileChoice;
   if(!PROFILE_LIST.some(p=>p.id===id))return;
-  const menu=$('profileDropdown');if(menu)menu.hidden=true;
-  $('profileAvatarBtn')?.setAttribute('aria-expanded','false');
+  setProfileMenuOpen(false);
   // Mulai perpindahan dengan membersihkan sesi sebelumnya; kegagalan DOM tidak boleh menghentikan handler.
   currentUser=null;saveProfileSession(null);
   const pin=$('loginPin');if(pin){pin.value='';pin.disabled=id==='staff';pin.placeholder=id==='staff'?'Pegawai tidak memerlukan PIN':'Masukkan PIN profil';}
@@ -1636,7 +2386,7 @@ if($('loginPin')){$('loginPin').disabled=false;$('loginPin').hidden=false;}
 const loginPinLabel=document.querySelector('label[for="loginPin"]');if(loginPinLabel)loginPinLabel.hidden=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
 document.addEventListener('click',e=>{
- const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
+ const productCategory=e.target.closest('[data-product-category]');if(productCategory){selectProductCategory(productCategory.dataset.productCategory);return;}const category=e.target.closest('[data-category-toggle]');if(category){toggleCategory(category.dataset.categoryToggle);return;}
  const b=e.target.closest('[data-user-toggle]');
  if(b){toast('Manajemen akun dinonaktifkan pada mode 3 profil lokal.');}
 });
