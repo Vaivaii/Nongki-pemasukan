@@ -1432,18 +1432,33 @@ async function persistProducts(){for(const p of data.products){if(!p?.id||!p?.na
 let sheetsSyncRunning = false;
 let sheetsSyncTimer = null;
 
-function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
+function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
-function syncLabel(t){if(t.auditOnly||t.syncStatus==='local-only')return 'CATATAN LOKAL';if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
-function recordLocalCartCancellation(item,quantity=1,reason='Dibatalkan sebelum pembayaran'){
+function syncLabel(t){if(t.status==='draft')return 'DALAM KERANJANG';if(t.auditOnly||t.syncStatus==='local-only')return 'CATATAN LOKAL';if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
+const cartDraftIds=new Map();
+function makeLocalCartDraft(item){
  if(!item||!Number.isFinite(Number(item.unitPrice)))return null;
- const qty=Math.max(1,Math.floor(Number(quantity)||1));
- const now=new Date();
- const date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+ const now=new Date(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
  const time=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
- const row={id:'local-cancel-'+(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)),productId:String(item.productId||''),items:[{productId:String(item.productId||''),productName:String(item.productName||'Produk'),quantity:qty,unitPrice:Number(item.unitPrice)||0,lineTotal:(Number(item.unitPrice)||0)*qty}],name:'Input dibatalkan: '+String(item.productName||'Produk'),icon:item.icon||'🧾',category:item.category||'Produk',unitPrice:Number(item.unitPrice)||0,qty,total:(Number(item.unitPrice)||0)*qty,date,time,createdAt:now.toISOString(),userId:currentUser?.id||'STAFF001',status:'cancelled',syncStatus:'local-only',auditOnly:true,auditReason:reason,cancelledAt:now.toISOString(),cancelledBy:currentUser?.id||'STAFF001'};
- data.transactions.push(row);save();return row;
+ const row={id:'cart-draft-'+(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)),productId:String(item.productId||''),items:[{productId:String(item.productId||''),productName:String(item.productName||'Produk'),quantity:1,unitPrice:Number(item.unitPrice)||0,lineTotal:Number(item.unitPrice)||0}],name:String(item.productName||'Produk'),icon:item.icon||'🧾',category:item.category||'Produk',unitPrice:Number(item.unitPrice)||0,qty:1,total:Number(item.unitPrice)||0,date,time,createdAt:now.toISOString(),userId:currentUser?.id||'STAFF001',status:'draft',syncStatus:'local-only',auditOnly:false};
+ data.transactions.push(row);const ids=cartDraftIds.get(String(item.productId))||[];ids.push(row.id);cartDraftIds.set(String(item.productId),ids);save();return row;
 }
+function cancelLocalCartDraft(productId,reason='Produk dibatalkan sebelum pembayaran'){
+ const ids=cartDraftIds.get(String(productId))||[];const id=ids.pop();if(!id)return null;
+ const row=data.transactions.find(t=>String(t.id)===String(id));
+ if(row){row.status='cancelled';row.auditOnly=true;row.syncStatus='local-only';row.auditReason=reason;row.cancelledAt=new Date().toISOString();row.cancelledBy=currentUser?.id||'STAFF001';save();}
+ if(!ids.length)cartDraftIds.delete(String(productId));else cartDraftIds.set(String(productId),ids);
+ return row||null;
+}
+function cancelAllLocalCartDrafts(reason='Keranjang dikosongkan sebelum pembayaran'){
+ for(const productId of [...cartDraftIds.keys()])while((cartDraftIds.get(productId)||[]).length)cancelLocalCartDraft(productId,reason);
+}
+function clearLocalCartDraftsAfterPayment(){
+ const ids=new Set([...cartDraftIds.values()].flat());
+ if(ids.size)data.transactions=data.transactions.filter(t=>!ids.has(t.id));
+ cartDraftIds.clear();save();
+}
+function cleanupAbandonedCartDrafts(){let changed=false;data.transactions=data.transactions.filter(t=>{if(t.status==='draft'){changed=true;return false;}return true;});if(changed)save();}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
 function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx)+(typeof cartTotal==='function'?cartTotal():0));$('todayItems').textContent=itemCount(tx)+(typeof cartCount==='function'?cartCount():0)}
@@ -1493,7 +1508,7 @@ function renderGrid(){
  const enteringGrid=$('productGrid').querySelector('.product-grid-entering');
  if(enteringGrid)setTimeout(()=>enteringGrid.classList.remove('product-grid-entering'),650);
 }
-function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small>${t.auditOnly?`<small>${esc(t.auditReason||'Dibatalkan sebelum pembayaran')} · tidak dihitung sebagai penjualan</small>`:`<small>${rupiah(t.unitPrice)} per item</small>`}<span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
+function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled',draft=t.status==='draft';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small>${t.auditOnly?`<small>${esc(t.auditReason||'Dibatalkan sebelum pembayaran')} · tidak dihitung sebagai penjualan</small>`:`<small>${rupiah(t.unitPrice)} per item</small>`}<span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':draft?'DI KERANJANG':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
 let serverHistoryTransactions=[];
@@ -1993,7 +2008,8 @@ function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderHeader();updateProductBadges();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
+ makeLocalCartDraft({productId:String(p.id),productName:p.name,category:p.category||'Lainnya',unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
+ refreshPaymentUI();renderHeader();updateProductBadges();renderRecent();if(typeof renderHistory==='function')renderHistory();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
@@ -2018,6 +2034,7 @@ async function completeCartPayment(method,paid){
  const confirm=$('confirmCashPayment');if(confirm)confirm.textContent='Memproses pembayaran…';
  try{
   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items,metodePembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  clearLocalCartDraftsAfterPayment();
   const d=new Date(),stamp=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
   const summary=items.map(x=>x.productName+' × '+x.quantity).join(', ');
   data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',items:items.map(x=>({productId:String(x.productId),productName:x.productName,quantity:Number(x.quantity)||0,unitPrice:Number(x.unitPrice)||0,lineTotal:(Number(x.quantity)||0)*(Number(x.unitPrice)||0)})),name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
@@ -2090,7 +2107,7 @@ $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
 $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
-$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;const items=cartLines();items.forEach(item=>recordLocalCartCancellation(item,Number(item.quantity)||1,'Keranjang dikosongkan sebelum pembayaran'));paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderRecent();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;cancelAllLocalCartDrafts('Keranjang dikosongkan sebelum pembayaran');paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderRecent();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
 
 document.addEventListener('click',e=>{
 /* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
@@ -2132,7 +2149,7 @@ $('undoBtn').addEventListener('click',()=>{
    if(!last)return;
    const current=paymentCart.get(String(last.productId));
    if(current){
-    recordLocalCartCancellation({...last,quantity:1},1,'Produk dibatalkan dari kalkulator sebelum pembayaran');
+    cancelLocalCartDraft(String(last.productId),'Produk dibatalkan dari kalkulator sebelum pembayaran');
     if(Number(current.quantity)>1)paymentCart.set(String(last.productId),{...current,quantity:Number(current.quantity)-1});
     else paymentCart.delete(String(last.productId));
    }
