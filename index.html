@@ -1958,11 +1958,24 @@ function refreshPaymentUI(){
  if($('cashTotalBelanja'))$('cashTotalBelanja').textContent=rupiah(total);
  updateCashCalculation();
 }
+function updateProductBadges(){
+ const counts={};
+ dayTx().forEach(t=>{
+  if(Array.isArray(t.items)&&t.items.length){
+   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
+  }else if(t.productId){counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);}
+ });
+ paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
+ document.querySelectorAll('#salesView .product[data-sell]').forEach(card=>{
+  const badge=card.querySelector('.sold-badge');if(!badge)return;
+  const sold=counts[String(card.dataset.sell)]||0;badge.textContent=String(sold);badge.classList.toggle('zero',sold===0);
+ });
+}
 function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderHeader();renderGrid();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
+ refreshPaymentUI();renderHeader();updateProductBadges();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
