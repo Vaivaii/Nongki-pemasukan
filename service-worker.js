@@ -1,5 +1,5 @@
 // Nongki PWA v145-report-array-compat: payment status, received cash and change fields.
-const CACHE_NAME = 'nongki-v152-cash-ui-revert'
+const CACHE_NAME = 'nongki-v153-cash-modal-width'
 
 const CORE_FILES = [
   './',
