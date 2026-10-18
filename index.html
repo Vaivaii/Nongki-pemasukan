@@ -2845,7 +2845,7 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
  try{await syncPending();await fetchGlobalTotal();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
-load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
+load();cleanupAbandonedCartDrafts();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
 // Status sinkron dipertahankan antar sesi; server menolak duplikat berdasarkan id_transaksi.
 
