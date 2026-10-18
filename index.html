@@ -1569,7 +1569,8 @@ function normalizeServerHistory(result){
   const rawAmount=serverHistoryField(row,['nominal','total','jumlah','subtotal','amount','transactionTotal','nilai']);
   const rawPayment=serverHistoryField(row,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment']);
   const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
-  const rawStatus=serverHistoryField(row,['status','jenis_event','event']);
+  // Utamakan statusEvent (status bisnis) daripada kolom status generik yang bisa berisi 'Sukses'.
+  const rawStatus=serverHistoryField(row,['statusEvent','status_event','jenis_event','event','status']);
   let time=String(rawTime||'').trim();
   let date=String(rawDate||'').trim();
   if(rawTime instanceof Date&&!Number.isNaN(rawTime.getTime())){
@@ -1603,7 +1604,7 @@ function normalizeServerHistory(result){
    date,time,name,amount,
    payment:String(rawPayment||'Tidak tercatat').trim(),
    profile,
-   status:String(rawStatus||'').trim(),
+   status:(/audit|keranjang/i.test(String(serverHistoryField(row,['jenis_event','jenisEvent','event_type'])||''))||row.auditOnly===true||String(row.auditOnly||'').toLowerCase()==='true')?'Dibatalkan (Audit)':String(rawStatus||'').trim(),
    raw:row
   };
  }).sort((a,b)=>(String(b.date)+' '+String(b.time)).localeCompare(String(a.date)+' '+String(a.time))).slice(0,20);
@@ -2879,7 +2880,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v163-login-script-fix').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v164-audit-history-status').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
