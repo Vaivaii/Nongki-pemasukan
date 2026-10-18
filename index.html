@@ -2833,13 +2833,12 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v147-today-unit-card').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v149-cash-modal-fix').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
 
 <!-- Cash payment modal berada di luar app containers agar overlay tidak terpotong stacking context. -->
- Modal berada tepat sebelum <!-- Cash payment modal moved outside app containers to avoid sticky stacking contexts. -->
 <div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
