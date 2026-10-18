@@ -1,5 +1,5 @@
 // Nongki PWA v145-report-array-compat: payment status, received cash and change fields.
-const CACHE_NAME = 'nongki-v148-remove-cart-summary';
+const CACHE_NAME = 'nongki-v149-tight-payment-gap';
 
 const CORE_FILES = [
   './',
