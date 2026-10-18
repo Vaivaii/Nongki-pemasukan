@@ -1192,6 +1192,13 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
   font-size: 14px !important;
 }
 
+
+/* V161: prevent Android virtual keyboard; amount is entered with the custom keypad. */
+#cashPaymentModal #cashAmountInput {
+  inputmode: none !important;
+  caret-color: transparent !important;
+}
+
 </style>
 </head>
 <body>
@@ -1938,7 +1945,7 @@ function updateCashCalculation(){
 function openCashModal(){
  if(!cartCount()||paymentBusy)return;
  activePaymentMethod='Tunai';if($('cashPaymentModal'))$('cashPaymentModal').hidden=false;
- formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.focus();
+ formatCashInput(cartTotal());updateCashCalculation();$('cashAmountInput')?.blur();
 }
 function closeCashModal(){if($('cashPaymentModal'))$('cashPaymentModal').hidden=true;}
 function lockPaymentUI(locked){paymentBusy=locked;['confirmCashPayment','paymentCashCard','paymentQrisCard','clearPaymentCart'].forEach(id=>{const el=$(id);if(el)el.disabled=locked&&el.tagName==='BUTTON';});refreshPaymentUI();if($('confirmCashPayment'))$('confirmCashPayment').disabled=locked||!cartTotal()||parseCashAmount()<cartTotal();}
@@ -2711,7 +2718,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
 <h2 id="cashModalTitle">Pembayaran Tunai</h2><p class="cash-modal-subtitle">Periksa total belanja dan uang yang diterima.</p>
 <div class="cash-total"><span>Total Belanja</span><b id="cashTotalBelanja">Rp0</b></div>
-<label for="cashAmountInput">Uang Diterima</label><input id="cashAmountInput" inputmode="numeric" autocomplete="off" placeholder="Masukkan nominal" />
+<label for="cashAmountInput">Uang Diterima</label><input type="text" id="cashAmountInput" inputmode="none" readonly autocomplete="off" placeholder="Masukkan nominal" />
 <div class="cash-shortcuts"><button type="button" data-cash-shortcut="5000">5rb</button><button type="button" data-cash-shortcut="10000">10rb</button><button type="button" data-cash-shortcut="20000">20rb</button><button type="button" data-cash-shortcut="50000">50rb</button><button type="button" data-cash-shortcut="100000">100rb</button><button type="button" data-cash-shortcut="exact">Uang Pas</button></div>
 <div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
