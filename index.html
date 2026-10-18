@@ -567,6 +567,18 @@ body:not(.staff-mode) header>.stats{
 .cash-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#10271dc9;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}.cash-modal-backdrop[hidden]{display:none!important}.cash-modal{position:relative;width:min(100%,390px);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fffdf8;border-radius:22px;padding:20px;color:var(--ink);box-shadow:0 18px 55px #0004}.cash-modal h2{font-size:20px;margin:0 34px 4px 0;color:var(--green)}.cash-modal-subtitle{font-size:11px;color:var(--muted);margin:0 0 14px}.cash-modal-close{position:absolute;right:14px;top:12px;border:0;background:#edf1eb;border-radius:50%;width:32px;height:32px;font-size:22px;color:var(--green);cursor:pointer}.cash-total,.cash-change{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px;background:#edf5ee;padding:12px;margin:8px 0}.cash-total span,.cash-change span{font-size:12px;color:#456451}.cash-total b,.cash-change b{font-size:18px;color:var(--green);white-space:nowrap}.cash-modal label{margin:12px 0 5px}.cash-modal input{font-size:20px;font-weight:750;min-height:48px}.cash-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.cash-shortcuts button,.cash-numpad button{border:1px solid #dfe6dc;background:#fff;border-radius:10px;min-height:39px;font-weight:750;color:var(--green);cursor:pointer}.cash-shortcuts button:last-child{background:#e4f3e8;border-color:#a7d7b6}.cash-numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cash-numpad button{min-height:42px;font-size:16px}.cash-change{background:#f6f1e4;margin-top:12px;flex-wrap:wrap}.cash-change small{width:100%;font-size:10px;color:var(--muted)}.cash-confirm{width:100%;margin-top:10px;border:0;border-radius:12px;min-height:48px;background:#047857;color:white;font-weight:800;font-size:14px;cursor:pointer}.cash-confirm:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:360px){.payment-method-card{padding:11px 7px;gap:6px}.payment-icon{font-size:21px}.payment-method-card small{font-size:8px}.payment-cart-count{font-size:8px;padding:3px 4px}.cash-modal{padding:16px}}
 
+
+/* Compact category icon tabs below cart: switch products without page scrolling */
+.product-category-tabs{display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 1px 10px;margin:0 0 12px;position:relative;z-index:2;-webkit-overflow-scrolling:touch}
+.product-category-tabs::-webkit-scrollbar{display:none}
+.product-category-tab{flex:0 0 auto;min-width:66px;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 7px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);font-size:10px;font-weight:750;line-height:1.15;cursor:pointer}
+.product-category-tab .tab-icon{font-size:20px;line-height:1.1}
+.product-category-tab[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 3px 9px #173d2c20}
+#productGrid .product-group{margin-bottom:12px}
+#productGrid .product-group-title{display:none}
+#productGrid .product-group-grid{gap:8px}
+#productGrid .product{min-height:94px;padding:11px 10px}
+@media(max-width:420px){.product-category-tabs{gap:6px;margin-bottom:9px}.product-category-tab{min-width:60px;padding:7px 6px;font-size:9px}#productGrid .product-group-grid{gap:7px}#productGrid .product{min-height:88px;padding:10px 9px}}
 </style>
 </head>
 <body>
@@ -597,6 +609,7 @@ body:not(.staff-mode) header>.stats{
 <div class="payment-method-card payment-qris" id="paymentQrisCard" role="button" tabindex="0" aria-disabled="true"><span class="payment-icon">▦</span><span><b>QRIS</b><small>Bayar dengan QRIS</small></span><span class="payment-cart-count" id="paymentCartCountQris">0 item</span></div>
 </section>
 <div class="cart-summary" id="paymentCartSummary" aria-live="polite"><span>Keranjang</span><b id="paymentCartTotal">Rp0</b><small id="paymentCartItems">Belum ada item — ketuk produk untuk menambahkan</small><button type="button" id="clearPaymentCart" class="btn" disabled>Kosongkan</button></div>
+<nav id="productCategoryTabs" class="product-category-tabs" aria-label="Kategori produk"></nav>
 <div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
@@ -806,26 +819,28 @@ function productGroup(p){
  return p.category||'Others';
 }
 const CATEGORY_COLLAPSE_KEY='nongki_category_collapse_v1';
+let selectedProductCategory='';
+const PRODUCT_CATEGORY_META={Coffee:['☕','Coffee'],'Non Coffee':['🥤','Non Coffee'],'Snack':['🍌','Snack'],'Others':['🍢','Lainnya'],'Extra Topping':['✨','Extra Topping'],'Topping':['🧀','Topping'],'Minuman':['🧋','Minuman'],'Makanan':['🍽️','Makanan']};
 function collapsedCategory(name){try{return !!JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}')[name]}catch{return false}}
-function toggleCategory(name){try{const state=JSON.parse(localStorage.getItem(CATEGORY_COLLAPSE_KEY)||'{}');state[name]=!state[name];localStorage.setItem(CATEGORY_COLLAPSE_KEY,JSON.stringify(state))}catch{}renderGrid()}
+function toggleCategory(name){selectedProductCategory=name;renderGrid()}
 function renderGrid(){
  let counts={};
  dayTx().forEach(t=>{
-  if(Array.isArray(t.items)&&t.items.length){
-   t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});
-  }else if(t.productId){
-   counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
-  }
+  if(Array.isArray(t.items)&&t.items.length){t.items.forEach(item=>{const id=String(item.productId||'');const qty=Number(item.quantity??item.qty)||0;if(id&&qty>0)counts[id]=(counts[id]||0)+qty;});}
+  else if(t.productId)counts[String(t.productId)]=(counts[String(t.productId)]||0)+(Number(t.qty)||1);
  });
  if(typeof paymentCart!=='undefined')paymentCart.forEach(item=>{const id=String(item.productId);counts[id]=(counts[id]||0)+(Number(item.quantity)||0);});
  let active=data.products.filter(p=>p.active!==false), order=['Coffee','Non Coffee','Snack','Others','Extra Topping','Topping'];
  let groups={};active.forEach(p=>{let g=productGroup(p);(groups[g]||(groups[g]=[])).push(p)});
- let html=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length).map(g=>{
-  const collapsed=collapsedCategory(g);
-  return `<section class="product-group"><button aria-expanded="${!collapsed}" class="product-group-title" data-category-toggle="${esc(g)}" type="button"><span class="category-label">${esc(g)}</span><span aria-hidden="true" class="category-chevron">${collapsed?'►':'▼'}</span></button><div class="product-group-grid${collapsed?' is-collapsed':''}" data-category-panel="${esc(g)}">${groups[g].map(p=>{let sold=counts[p.id]||0;return `<button class="product" data-sell="${p.id}"><span class="sold-badge${sold===0?' zero':''}" aria-label="Terjual hari ini">${sold}</span><div><div class="emoji">${esc(p.icon||'🥤')}</div><div class="name">${esc(p.name)}</div></div><div><div class="price">${rupiah(p.price)}</div><div class="hint">Ketuk untuk catat</div></div></button>`}).join('')}</div></section>`
- }).join('');
+ const categories=order.concat(Object.keys(groups).filter(g=>!order.includes(g))).filter((g,i,a)=>a.indexOf(g)===i&&groups[g]&&groups[g].length);
+ if(!categories.includes(selectedProductCategory))selectedProductCategory=categories[0]||'';
+ const tabs=$('productCategoryTabs');
+ if(tabs)tabs.innerHTML=categories.map(g=>{const meta=PRODUCT_CATEGORY_META[g]||['🛍️',g];return '<button type="button" class="product-category-tab" data-product-tab="'+esc(g)+'" aria-selected="'+(g===selectedProductCategory)+'"><span class="tab-icon" aria-hidden="true">'+meta[0]+'</span><span>'+esc(meta[1])+'</span></button>'}).join('');
+ const g=selectedProductCategory;
+ const html=g&&groups[g]?'<section class="product-group"><div class="product-group-grid">'+groups[g].map(p=>{let sold=counts[p.id]||0;return '<button class="product" data-sell="'+p.id+'"><span class="sold-badge'+(sold===0?' zero':'')+'" aria-label="Terjual hari ini">'+sold+'</span><div><div class="emoji">'+esc(p.icon||'🥤')+'</div><div class="name">'+esc(p.name)+'</div></div><div><div class="price">'+rupiah(p.price)+'</div><div class="hint">Ketuk untuk catat</div></div></button>'}).join('')+'</div></section>':'';
  $('productGrid').innerHTML=html||'<div class="empty">Belum ada produk. Tambahkan di tab Produk.</div>';
 }
+if(!window.__nongkiProductTabsBound){window.__nongkiProductTabsBound=true;document.addEventListener('click',function(event){const tab=event.target.closest('[data-product-tab]');if(!tab)return;selectedProductCategory=tab.getAttribute('data-product-tab')||'';renderGrid();});}
 function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
