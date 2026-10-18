@@ -1997,7 +1997,9 @@ async function completeCartPayment(method,paid){
  }catch(error){console.error('Pembayaran gagal disimpan:',error);toast('Pembayaran gagal disimpan. Keranjang tetap tersedia.');}
  finally{lockPaymentUI(false);if(confirm)confirm.textContent='Konfirmasi Pembayaran';refreshPaymentUI();}
 }
-function record(id){addCartProduct(id);}\n(()=>{const el=document.querySelector('main');if(!el)return;let timer=0,last='';el.addEventListener('scroll',()=>{const max=el.scrollHeight-el.clientHeight;if(max<8)return;let edge='';if(el.scrollTop<=1)edge='top';else if(max-el.scrollTop<=2)edge='bottom';else{last='';return;}if(edge===last)return;last=edge;el.classList.remove('edge-hit-top','edge-hit-bottom');void el.offsetWidth;el.classList.add(edge==='top'?'edge-hit-top':'edge-hit-bottom');clearTimeout(timer);timer=setTimeout(()=>el.classList.remove('edge-hit-top','edge-hit-bottom'),360);},{passive:true});})();\n
+function record(id){addCartProduct(id);}
+(()=>{const el=document.querySelector('main');if(!el)return;let timer=0,last='';el.addEventListener('scroll',()=>{const max=el.scrollHeight-el.clientHeight;if(max<8)return;let edge='';if(el.scrollTop<=1)edge='top';else if(max-el.scrollTop<=2)edge='bottom';else{last='';return;}if(edge===last)return;last=edge;el.classList.remove('edge-hit-top','edge-hit-bottom');void el.offsetWidth;el.classList.add(edge==='top'?'edge-hit-top':'edge-hit-bottom');clearTimeout(timer);timer=setTimeout(()=>el.classList.remove('edge-hit-top','edge-hit-bottom'),360);},{passive:true});})();
+
 
 
 async function cancelTx(id){
