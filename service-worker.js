@@ -1,5 +1,5 @@
-// Nongki PWA v157-draft-sync-guard: never sync unpaid cart drafts as sales.
-const CACHE_NAME = 'nongki-v157-draft-sync-guard'
+// Nongki PWA v158-local-history-first: keep local history as default view.
+const CACHE_NAME = 'nongki-v158-local-history-first'
 
 const CORE_FILES = [
   './',
