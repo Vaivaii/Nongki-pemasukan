@@ -1691,7 +1691,28 @@ async function fetchServerHistory(){
   const normalized=normalizeServerHistory(result);
   if(requestId!==serverHistoryRequestId)return false;
   if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
-  serverHistoryTransactions=normalized.slice(0,100);
+  // Cache is a fallback, not the source of truth. Merge cached/previous rows with the fresh
+  // server response so a partial server window cannot make already-visible history disappear.
+  const cacheRows=(()=>{
+   try{
+    const raw=localStorage.getItem(CLOUD_PREVIEW_KEY);
+    const parsed=raw?JSON.parse(raw):[];
+    return Array.isArray(parsed)?parsed:[];
+   }catch(e){return [];}
+  })();
+  const keyOf=t=>[
+   String(t.date||''),String(t.time||''),String(t.name||'').trim().toLowerCase(),
+   String(Number(t.amount)||0),String(t.profile||'').trim().toLowerCase(),
+   String(t.status||'').trim().toLowerCase()
+  ].join('|');
+  const merged=new Map();
+  // Add cache first; fresh server records overwrite matching cache entries.
+  [...cacheRows,...serverHistoryTransactions,...normalized].forEach(t=>{
+   if(t&&typeof t==='object')merged.set(keyOf(t),t);
+  });
+  serverHistoryTransactions=[...merged.values()]
+   .sort((a,b)=>(String(b.date||'')+' '+String(b.time||'')).localeCompare(String(a.date||'')+' '+String(a.time||'')))
+   .slice(0,200);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
