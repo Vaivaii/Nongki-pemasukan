@@ -1,5 +1,5 @@
-// Nongki PWA v166-preserve-server-history-refresh: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v166-preserve-server-history-refresh'
+// Nongki PWA v167-audit-sync-ack-refresh: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v167-audit-sync-ack-refresh'
 
 const CORE_FILES = [
   './',
