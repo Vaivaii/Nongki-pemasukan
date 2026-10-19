@@ -1674,7 +1674,7 @@ async function fetchServerHistory(){
    const url=new URL(APPS_SCRIPT_URL);
    url.searchParams.set('action','getRecentTransactions');
    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
-   url.searchParams.set('limit','20');
+   url.searchParams.set('limit','100');
    response=await fetch(url.toString(),{
     method:'GET',
     signal:controller?controller.signal:undefined,
