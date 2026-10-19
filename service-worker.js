@@ -1,5 +1,5 @@
-// Nongki PWA v169-audit-server-confirm: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v169-audit-server-confirm'
+// Nongki PWA v170-newest-server-history: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v170-newest-server-history'
 
 const CORE_FILES = [
   './',
