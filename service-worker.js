@@ -1,5 +1,5 @@
-// Nongki PWA v171-server-history-limit: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v171-server-history-limit'
+// Nongki PWA v172-revert-history-experiment: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v172-revert-history-experiment'
 
 const CORE_FILES = [
   './',
