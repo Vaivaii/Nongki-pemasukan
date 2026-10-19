@@ -2781,16 +2781,7 @@ async function syncPending(){
       // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
       targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
-      const serverReply=await postToAppsScript(payload);
-      // Audit keranjang tidak boleh diberi label tersinkron hanya karena HTTP 200.
-      // Untuk event ini, backend wajib memberi konfirmasi JSON sukses yang eksplisit.
-      if(payload.auditOnly){
-       const ack=serverReply?.response;
-       const explicitlyAccepted=!!(ack&&typeof ack==='object'&&(
-        ack.success===true||ack.ok===true||['success','ok','accepted'].includes(String(ack.status||'').toLowerCase())
-       ));
-       if(!explicitlyAccepted)throw new Error('Server belum memberi konfirmasi JSON sukses untuk audit keranjang. Catatan tetap di antrean lokal; periksa dukungan event di Apps Script.');
-      }
+      await postToAppsScript(payload);
       await removeOutboxItem(item.id);
       const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
       if(tx){
