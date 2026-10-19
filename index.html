@@ -2781,7 +2781,16 @@ async function syncPending(){
       // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
       targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
-      await postToAppsScript(payload);
+      const serverReply=await postToAppsScript(payload);
+      // Jangan hapus antrean audit jika respons bukan konfirmasi sukses eksplisit.
+      if(payload.auditOnly){
+       const ack=serverReply?.response;
+       const accepted=!!(ack&&typeof ack==='object'&&(
+        ack.success===true||ack.ok===true||
+        ['success','ok','accepted'].includes(String(ack.status||'').toLowerCase())
+       ));
+       if(!accepted)throw new Error('Apps Script tidak mengonfirmasi penyimpanan audit. Antrean tetap lokal; respons server: '+String(serverReply?.raw||'(kosong)').slice(0,180));
+      }
       await removeOutboxItem(item.id);
       const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
       if(tx){
