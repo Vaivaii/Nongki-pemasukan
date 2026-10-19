@@ -1634,7 +1634,7 @@ function renderServerHistory(){
  const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
  const rows=dated.slice(0,50);
  const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
- summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 20 transaksi · data dari Apps Script</div>';
+ summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 50 catatan terbaru · data dari Apps Script</div>';
  list.innerHTML=rows.map(t=>'<div class="history-row"><div class="history-icon">☁️</div><div class="history-info"><b>'+esc(t.name)+'</b><small>Jam: '+esc(t.time)+'</small><small>Profil pencatat: '+esc(t.profile)+'</small><span class="cloud-status '+(/batal|cancel/i.test(t.status)?'cancelled':'active')+'">'+esc(t.status||'Tidak tercatat')+'</span></div><div class="history-price">'+rupiah(t.amount)+'</div></div>').join('')||'<div class="empty">'+(serverHistoryLoaded?'Tidak ada transaksi server untuk tanggal '+esc(date)+'.':'Belum terhubung ke server.')+'</div>';
 }
 function renderHistory(){
@@ -1691,7 +1691,7 @@ async function fetchServerHistory(){
   const normalized=normalizeServerHistory(result);
   if(requestId!==serverHistoryRequestId)return false;
   if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
-  serverHistoryTransactions=normalized.slice(0,20);
+  serverHistoryTransactions=normalized.slice(0,100);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
