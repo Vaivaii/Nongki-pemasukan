@@ -1434,7 +1434,7 @@ let sheetsSyncTimer = null;
 
 function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
-function syncLabel(t){if(t.status==='draft')return 'DI KERANJANG';if(t.auditOnly){if(t.syncStatus==='synced')return 'TERSINKRON (AUDIT)';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'CATATAN LOKAL';}if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
+function syncLabel(t){if(t.status==='draft')return 'DI KERANJANG';if(t.auditOnly){if(t.syncStatus==='synced')return 'TERSINKRON (KERANJANG)';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSIMPAN LOKAL (KERANJANG)';}if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
 const cartDraftIds=new Map();
 function makeLocalCartDraft(item){
  if(!item||!Number.isFinite(Number(item.unitPrice)))return null;
