@@ -1691,7 +1691,20 @@ async function fetchServerHistory(){
   const normalized=normalizeServerHistory(result);
   if(requestId!==serverHistoryRequestId)return false;
   if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
-  serverHistoryTransactions=normalized.slice(0,20);
+  // Apps Script may return rows oldest-first; keep the newest records for the selected day.
+  const sortableStamp=t=>{
+   const d=String(t?.date||'');
+   const tm=String(t?.time||'');
+   const datePart=/^\d{4}-\d{2}-\d{2}$/.test(d)?d:'0000-00-00';
+   const timeMatch=tm.match(/\d{1,2}:\d{2}(?::\d{2})?/);
+   const timePart=timeMatch?timeMatch[0].split(':').map(v=>v.padStart(2,'0')).join(':'):'00:00:00';
+   return datePart+'T'+(timePart.length===5?timePart+':00':timePart);
+  };
+  serverHistoryTransactions=normalized
+   .map((item,index)=>({...item,_serverOrder:index,_serverStamp:sortableStamp(item)}))
+   .sort((a,b)=>b._serverStamp.localeCompare(a._serverStamp)||b._serverOrder-a._serverOrder)
+   .slice(0,20)
+   .map(({_serverOrder,_serverStamp,...item})=>item);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
