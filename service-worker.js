@@ -1,5 +1,5 @@
-// Nongki PWA v168-restore-audit-sync: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v168-restore-audit-sync'
+// Nongki PWA v169-audit-server-confirm: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v169-audit-server-confirm'
 
 const CORE_FILES = [
   './',
