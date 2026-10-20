@@ -1,8 +1,8 @@
-import { Print } from '@capacitor-community/print';
+import { Printer } from '@gingersnapsoftware/capacitor-plugin-printer';
 import { Share } from '@capacitor/share';
 
 export async function printReceiptHtml(content, name = 'Struk Nongki') {
-  return Print.print({ name, content });
+  return Printer.print({ name, content });
 }
 
 export async function shareReceiptToThermal(text, title = 'Struk Nongki') {
