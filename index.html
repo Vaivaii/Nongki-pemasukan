@@ -1566,9 +1566,9 @@ function normalizeServerHistory(result){
   const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu']);
   const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date']);
   const rawName=serverHistoryField(row,['ringkasan_produk','nama_item','nama_produk','produk','item','name','transactionName','description','deskripsi','rincian']);
-  const rawAmount=serverHistoryField(row,['nominal','total','jumlah','subtotal','amount','transactionTotal','nilai']);
+  const rawAmount=serverHistoryField(row,['nominal','total','totalHarga','total_harga','jumlah','subtotal','amount','transactionTotal','nilai']);
   const rawPayment=serverHistoryField(row,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment']);
-  const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
+  const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','kasir','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
   // Utamakan statusEvent (status bisnis) daripada kolom status generik yang bisa berisi 'Sukses'.
   const rawStatus=serverHistoryField(row,['statusEvent','status_event','jenis_event','event','status']);
   let time=String(rawTime||'').trim();
@@ -2935,7 +2935,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v179-serial-server-refresh').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v180-server-history-fields').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
