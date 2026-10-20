@@ -1573,16 +1573,36 @@ function normalizeServerHistory(result){
   const rawStatus=serverHistoryField(row,['statusEvent','status_event','jenis_event','event','status']);
   let time=String(rawTime||'').trim();
   let date=String(rawDate||'').trim();
+  const isoDate=value=>{
+   if(value instanceof Date&&!Number.isNaN(value.getTime())){
+    return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0')+'-'+String(value.getDate()).padStart(2,'0');
+   }
+   const text=String(value??'').trim();
+   let m=text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+   if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+   m=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+   if(m){
+    const a=Number(m[1]),b=Number(m[2]),year=m[3];
+    // Ambiguous slash dates follow US month/day/year when first component > 12; otherwise use month/day/year for Sheets/Apps Script.
+    const month=a,day=b;
+    if(month>=1&&month<=12&&day>=1&&day<=31)return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+   }
+   const parsed=Date.parse(text);
+   if(Number.isFinite(parsed)&&text.length>=8){
+    const d=new Date(parsed);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+   }
+   return '';
+  };
   if(rawTime instanceof Date&&!Number.isNaN(rawTime.getTime())){
    time=rawTime.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-   if(!date)date=rawTime.getFullYear()+'-'+String(rawTime.getMonth()+1).padStart(2,'0')+'-'+String(rawTime.getDate()).padStart(2,'0');
+   if(!date)date=isoDate(rawTime);
   }
   const timeMatch=time.match(/[ T](\d{2}:\d{2}(?::\d{2})?)/);
   if(timeMatch)time=timeMatch[1];
-  const dateMatch=String(rawTime||'').match(/^(\d{4}-\d{2}-\d{2})/);
-  if(!date&&dateMatch)date=dateMatch[1];
+  if(!date)date=isoDate(rawTime);
+  date=isoDate(date)||String($('historyDate')?.value||today());
   if(!time)time='Jam tidak tersedia';
-  if(!date)date=String($('historyDate')?.value||today());
   const amountText=String(rawAmount??'').replace(/\./g,'').replace(/,/g,'').replace(/[^\d-]/g,'');
   let amount=Number(amountText);
   if(!Number.isFinite(amount))amount=0;
