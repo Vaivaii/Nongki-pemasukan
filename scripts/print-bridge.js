@@ -6,9 +6,5 @@ export async function printReceiptHtml(content, name = 'Struk Nongki') {
 }
 
 export async function shareReceiptToThermal(text, title = 'Struk Nongki') {
-  return Share.share({
-    title,
-    text,
-    dialogTitle: 'Pilih aplikasi printer thermal'
-  });
+  return Share.share({ title, text, dialogTitle: 'Pilih aplikasi printer thermal' });
 }
