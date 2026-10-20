@@ -49,7 +49,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p www
-          cp index.html manifest.json service-worker.js icon-192.png icon-512.png www/\n          cp scripts/print-ui.js www/print-ui.js
+          cp index.html manifest.json service-worker.js icon-192.png icon-512.png www/
+          cp scripts/print-ui.js www/print-ui.js
           test -s www/index.html
           test -s www/service-worker.js
           npm run build:print-bridge
