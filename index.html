@@ -1312,6 +1312,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
   </div>
 </details>
 </section>
+<section class="view" id="printView"><div class="section-head"><h2>Cetak struk</h2><span class="sub">Pilih transaksi</span></div><p class="note">Pilih transaksi yang sudah tercatat, lalu sesuaikan lebar kertas dan catatan struk.</p><div class="panel" id="printHistoryList"><div class="empty">Memuat transaksi…</div></div></section>
 <section class="view" id="productsView">
 <div class="section-head"><h2>Daftar produk</h2><span class="sub">Nama dan harga jual</span></div>
 <div class="panel" id="productAdminForm">
@@ -1344,7 +1345,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 <div class="panel"><div class="section-head"><h2>Hak akses harga</h2><span class="sub">Ringkasan lokal</span></div><div class="role-demo"><div><b style="font-size:12px">Akun aktif</b><small id="activeRoleName">Login sebagai Pemilik</small></div><span class="preview-pill" id="activeRoleBadge" style="margin:0;background:#edf3ec;color:var(--green);border-color:#d9e1d7">PEMILIK</span></div><div class="note" id="rolePreviewText" style="margin:0">Akses mengikuti akun yang login.</div><div class="locked-note">Hak akses lokal hanya berlaku pada perangkat ini. Validasi server membutuhkan backend.</div><button class="btn logout-btn" id="logoutBtn" style="width:100%;margin-top:14px" type="button">Keluar / Log out</button></div>
 </section>
 </main>
-<nav class="tabs"><button class="tab active" data-view="salesView"><span class="ico">＋</span>Catat</button><button class="tab" data-view="historyView"><span class="ico">▤</span>Riwayat</button><button class="tab" data-view="productsView"><span class="ico">☷</span>Produk</button><button class="tab" data-view="reportsView"><span class="ico">▥</span>Laporan</button></nav>
+<nav class="tabs"><button class="tab active" data-view="salesView"><span class="ico">＋</span>Catat</button><button class="tab" data-view="historyView"><span class="ico">▤</span>Riwayat</button><button class="tab" data-view="productsView"><span class="ico">☷</span>Produk</button><button class="tab" data-view="printView"><span class="ico">🖨</span>Print</button><button class="tab" data-view="reportsView"><span class="ico">▥</span>Laporan</button></nav>
 <button aria-label="Sinkronkan antrean offline" class="sync-fab" id="staffSyncFab" type="button" title="Sinkronkan antrean" hidden>↻<span class="sync-count" id="staffSyncCount" hidden>0</span></button><div class="toast" id="toast"></div>
 <div aria-labelledby="logoutPinTitle" aria-modal="true" class="pin-verify-overlay hidden" id="logoutPinOverlay" role="dialog">
 <div class="pin-verify-card">
@@ -2351,7 +2352,7 @@ function applyRole(){
  $('seeHistory').classList.toggle('hidden',staff);
  document.querySelectorAll('.tabs [data-view]').forEach(tab=>{
   const view=tab.dataset.view;
-  const allowed=owner|| (wife&&['salesView','historyView','productsView','reportsView'].includes(view)) || (staff&&view==='salesView');
+  const allowed=owner|| (wife&&['salesView','historyView','productsView','reportsView','printView'].includes(view)) || (staff&&view==='salesView');
   tab.classList.toggle('hidden',!allowed);
  });
  // Pegawai hanya kasir; Istri dapat melihat riwayat/laporan dan mengelola menu tanpa hak Owner.
@@ -2962,6 +2963,12 @@ window.NongkiPrintAPI = {
     const local = Array.isArray(data?.transactions) ? data.transactions.find(t => String(t.id) === String(id)) : null;
     if (local) return local;
     return Array.isArray(serverHistoryTransactions) ? serverHistoryTransactions.find(t => String(t.id) === String(id)) : null;
+  },
+  getTransactions() {
+    const local = Array.isArray(data?.transactions) ? data.transactions.slice() : [];
+    const cloud = Array.isArray(serverHistoryTransactions) ? serverHistoryTransactions : [];
+    const seen = new Set(local.map(t => String(t.id)));
+    return local.concat(cloud.filter(t => !seen.has(String(t.id))));
   }
 };
 })();
