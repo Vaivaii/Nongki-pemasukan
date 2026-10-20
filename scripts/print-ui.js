@@ -6,6 +6,18 @@
   function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID');}
   function escText(v){return String(v??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
   function getTx(id){return window.NongkiPrintAPI?.getTransaction(id)||null;}
+  function renderPrintList(){
+    const root=$p('printHistoryList');if(!root)return;
+    const list=window.NongkiPrintAPI?.getTransactions?.()||[];
+    const eligible=list.filter(tx=>tx&&tx.id&&tx.status!=='draft'&&tx.status!=='cancelled'&&tx.status!=='canceled')
+      .sort((a,b)=>String(b.createdAt||b.date||'').localeCompare(String(a.createdAt||a.date||''))||String(b.time||'').localeCompare(String(a.time||'')));
+    if(!eligible.length){root.innerHTML='<div class="empty">Belum ada transaksi yang bisa dicetak.</div>';return;}
+    root.innerHTML=eligible.map(tx=>{
+      const id=escText(tx.id),name=escText(tx.name||tx.productName||'Transaksi'),total=money(tx.total??tx.amount??0);
+      const detail=escText([tx.date||'',tx.time||''].filter(Boolean).join(' · '));
+      return '<div class="history-row print-history-row" data-transaction-id="'+id+'"><div class="history-icon">🧾</div><div class="history-info"><b>'+name+'</b><small>'+detail+'</small><small>'+total+'</small></div><button type="button" class="btn primary tx-print-btn" data-print-transaction="'+id+'">Cetak</button></div>';
+    }).join('');
+  }
   function decorateRows(root){
     if(!root)return;
     root.querySelectorAll('.history-row[data-transaction-id]').forEach(row=>{
@@ -41,7 +53,8 @@
   });
   $p('printReceiptWidth')?.addEventListener('change',renderPreview);$p('printReceiptFooter')?.addEventListener('input',renderPreview);
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$p('printReceiptModal').hidden)closeModal();});
-  decorateRows($p('recentList'));decorateRows($p('historyList'));
-  const observer = new MutationObserver(() => { decorateRows($p('recentList')); decorateRows($p('historyList')); });
-  ['recentList','historyList'].forEach(id => { const node=$p(id); if(node) observer.observe(node,{childList:true,subtree:true}); });
+  decorateRows($p('recentList'));decorateRows($p('historyList'));renderPrintList();
+  const observer = new MutationObserver(() => { decorateRows($p('recentList')); decorateRows($p('historyList')); renderPrintList(); });
+  ['recentList','historyList','printHistoryList'].forEach(id => { const node=$p(id); if(node) observer.observe(node,{childList:true,subtree:true}); });
+  document.addEventListener('click',e=>{if(e.target.closest('[data-view="printView"]'))renderPrintList();});
 })();
