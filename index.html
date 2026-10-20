@@ -1724,13 +1724,24 @@ async function fetchServerHistory(){
     return Array.isArray(parsed)?parsed:[];
    }catch(e){return [];}
   })();
-  const keyOf=t=>[
-   String(t.date||''),String(t.time||''),String(t.name||'').trim().toLowerCase(),
-   String(Number(t.amount)||0),String(t.profile||'').trim().toLowerCase(),
-   String(t.status||'').trim().toLowerCase()
-  ].join('|');
+  const keyOf=t=>{
+   // Gunakan ID event unik bila tersedia. ID transaksi saja tidak cukup karena
+   // satu transaksi dapat memiliki beberapa event (mis. audit dan pembayaran).
+   const raw=t.raw&&typeof t.raw==='object'?t.raw:{};
+   const eventId=serverHistoryField(raw,['id_event','idEvent','eventId','event_id']);
+   if(eventId!==''&&eventId!==null&&eventId!==undefined)return 'event:'+String(eventId).trim();
+   // Fallback tidak memasukkan status: perubahan status harus memperbarui baris
+   // yang sama, bukan membuat salinan lama dan baru berdampingan.
+   return [
+    String(t.date||''),String(t.time||''),String(t.name||'').trim().toLowerCase(),
+    String(Number(t.amount)||0),String(t.profile||'').trim().toLowerCase(),
+    String(t.payment||'').trim().toLowerCase()
+   ].join('|');
+  };
   const merged=new Map();
-  // Add cache first; fresh server records overwrite matching cache entries.
+  // Cache/riwayat lama dipertahankan agar tidak berkedip atau hilang saat server
+  // hanya mengirim jendela data terbaru. Respons server terbaru selalu menang
+  // atas event yang sama, termasuk saat statusnya berubah.
   [...cacheRows,...serverHistoryTransactions,...normalized].forEach(t=>{
    if(t&&typeof t==='object')merged.set(keyOf(t),t);
   });
