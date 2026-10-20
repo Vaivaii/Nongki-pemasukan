@@ -2594,9 +2594,13 @@ async function syncAllData(){
    ['Riwayat Server',()=>fetchServerHistory()],
    ['Master Menu',()=>fetchMasterMenu()]
   ];
-  const results=await Promise.allSettled(tasks.map(async([name,run])=>({name,ok:await run()})));
+  // Apps Script Web App dapat melambat saat beberapa endpoint berat dipanggil
+  // bersamaan. Jalankan satu per satu agar tidak saling menunggu lock/kuota.
   const failed=[];
-  results.forEach((result,index)=>{if(result.status==='rejected'||result.value?.ok===false)failed.push(tasks[index][0]);});
+  for(const [name,run] of tasks){
+   try{const ok=await run();if(ok===false)failed.push(name);}
+   catch(error){failed.push(name);console.warn('Master Refresh '+name+' gagal:',error);}
+  }
   if(!queueOk)failed.unshift('Antrean transaksi');
   if(failed.length){console.warn('Master Refresh: sebagian data gagal diperbarui:',failed);toast('Refresh selesai sebagian. Gagal: '+failed.join(', '));}
   else toast('Master Refresh selesai · semua data diperbarui.');
