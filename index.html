@@ -2176,31 +2176,7 @@ $('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!c
 
 document.addEventListener('click',e=>{
 /* Modal berada tepat sebelum 
-<!-- thermal-print-ui-v1: isolated UI; no transaction or backend logic modified -->
-<style id="thermalPrintStyles">
-#thermalPrintOverlay{position:fixed;inset:0;z-index:2000;background:#10271dcc;display:none;align-items:flex-end;justify-content:center;padding:12px}
-#thermalPrintOverlay.open{display:flex}#thermalPrintPanel{width:min(100%,520px);max-height:90dvh;overflow:auto;background:#fffdf8;color:#1e2923;border-radius:22px;padding:18px;box-shadow:0 18px 55px #0005}
-#thermalPrintPanel h2{margin:0 40px 5px 0;color:#173d2c;font-size:20px}#thermalPrintPanel .tp-sub{font-size:12px;color:#758078;margin:0 0 14px;line-height:1.45}
-#thermalPrintPanel label{display:block;margin:11px 0 5px;font-size:12px;color:#758078}#thermalPrintPanel select{width:100%;padding:11px;border:1px solid #dfe5dc;border-radius:10px;background:white;color:#1e2923;font:inherit}
-#thermalPrintPanel .tp-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}#thermalPrintPanel .tp-actions{display:flex;gap:8px;margin-top:14px}
-#thermalPrintPanel .tp-btn{flex:1;border:1px solid #dfe5dc;background:white;color:#173d2c;border-radius:11px;padding:12px 9px;font-weight:750;font-size:12px;cursor:pointer}
-#thermalPrintPanel .tp-btn.primary{background:#173d2c;color:white;border-color:#173d2c}#thermalPrintPanel .tp-btn:disabled{opacity:.4}
-#thermalPrintPanel .tp-close{float:right;border:0;border-radius:50%;width:34px;height:34px;background:#edf1eb;color:#173d2c;font-size:22px}
-#thermalPrintStatus{font-size:11px;line-height:1.5;color:#758078;margin-top:10px}#thermalPrintPreview{border:1px dashed #cbd4c9;border-radius:10px;padding:12px;margin-top:12px;background:#fff;font-family:monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:170px;overflow:auto}
-@media(max-width:380px){#thermalPrintPanel{padding:14px}#thermalPrintPanel .tp-actions{flex-wrap:wrap}}
-</style>
-<div id="thermalPrintOverlay" aria-hidden="true"><section id="thermalPrintPanel" role="dialog" aria-modal="true" aria-labelledby="thermalPrintTitle">
-<button type="button" class="tp-close" id="thermalPrintClose" aria-label="Tutup">×</button><h2 id="thermalPrintTitle">Cetak Thermal</h2>
-<p class="tp-sub">Cetak struk transaksi Nongki melalui dialog cetak Android/browser. Fitur ini hanya membaca riwayat lokal dan tidak mengubah atau mengirim data transaksi.</p>
-<label for="thermalPrintTransaction">Pilih transaksi</label><select id="thermalPrintTransaction"><option value="">Memuat riwayat transaksi…</option></select>
-<div class="tp-row"><div><label for="thermalPrintWidth">Lebar kertas</label><select id="thermalPrintWidth"><option value="58">Thermal 58 mm</option><option value="80">Thermal 80 mm</option></select></div>
-<div><label for="thermalPrintCopies">Jumlah salinan</label><select id="thermalPrintCopies"><option value="1">1 salinan</option><option value="2">2 salinan</option></select></div></div>
-<div class="tp-actions"><button type="button" class="tp-btn" id="thermalPrintRefresh">↻ Muat ulang</button><button type="button" class="tp-btn primary" id="thermalPrintNow">▤ Cetak struk</button></div>
-<div id="thermalPrintStatus" role="status">Pilih transaksi untuk melihat pratinjau.</div><pre id="thermalPrintPreview">NONGKI
-Struk transaksi akan tampil di sini.</pre>
-</section></div>
-<script src="./thermal-print.js?v=1"></script>
-<!-- end thermal-print-ui-v1 -->
+
 
 </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
 const cashClose=e.target.closest('#closeCashModal');
@@ -2992,5 +2968,32 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
 <button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
 </section></div>
+
+<!-- thermal-print-ui-v1: isolated UI; no transaction or backend logic modified -->
+<style id="thermalPrintStyles">
+#thermalPrintOverlay{position:fixed;inset:0;z-index:2000;background:#10271dcc;display:none;align-items:flex-end;justify-content:center;padding:12px}
+#thermalPrintOverlay.open{display:flex}#thermalPrintPanel{width:min(100%,520px);max-height:90dvh;overflow:auto;background:#fffdf8;color:#1e2923;border-radius:22px;padding:18px;box-shadow:0 18px 55px #0005}
+#thermalPrintPanel h2{margin:0 40px 5px 0;color:#173d2c;font-size:20px}#thermalPrintPanel .tp-sub{font-size:12px;color:#758078;margin:0 0 14px;line-height:1.45}
+#thermalPrintPanel label{display:block;margin:11px 0 5px;font-size:12px;color:#758078}#thermalPrintPanel select{width:100%;padding:11px;border:1px solid #dfe5dc;border-radius:10px;background:white;color:#1e2923;font:inherit}
+#thermalPrintPanel .tp-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}#thermalPrintPanel .tp-actions{display:flex;gap:8px;margin-top:14px}
+#thermalPrintPanel .tp-btn{flex:1;border:1px solid #dfe5dc;background:white;color:#173d2c;border-radius:11px;padding:12px 9px;font-weight:750;font-size:12px;cursor:pointer}
+#thermalPrintPanel .tp-btn.primary{background:#173d2c;color:white;border-color:#173d2c}#thermalPrintPanel .tp-btn:disabled{opacity:.4}
+#thermalPrintPanel .tp-close{float:right;border:0;border-radius:50%;width:34px;height:34px;background:#edf1eb;color:#173d2c;font-size:22px}
+#thermalPrintStatus{font-size:11px;line-height:1.5;color:#758078;margin-top:10px}#thermalPrintPreview{border:1px dashed #cbd4c9;border-radius:10px;padding:12px;margin-top:12px;background:#fff;font-family:monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:170px;overflow:auto}
+@media(max-width:380px){#thermalPrintPanel{padding:14px}#thermalPrintPanel .tp-actions{flex-wrap:wrap}}
+</style>
+<div id="thermalPrintOverlay" aria-hidden="true"><section id="thermalPrintPanel" role="dialog" aria-modal="true" aria-labelledby="thermalPrintTitle">
+<button type="button" class="tp-close" id="thermalPrintClose" aria-label="Tutup">×</button><h2 id="thermalPrintTitle">Cetak Thermal</h2>
+<p class="tp-sub">Cetak struk transaksi Nongki melalui dialog cetak Android/browser. Fitur ini hanya membaca riwayat lokal dan tidak mengubah atau mengirim data transaksi.</p>
+<label for="thermalPrintTransaction">Pilih transaksi</label><select id="thermalPrintTransaction"><option value="">Memuat riwayat transaksi…</option></select>
+<div class="tp-row"><div><label for="thermalPrintWidth">Lebar kertas</label><select id="thermalPrintWidth"><option value="58">Thermal 58 mm</option><option value="80">Thermal 80 mm</option></select></div>
+<div><label for="thermalPrintCopies">Jumlah salinan</label><select id="thermalPrintCopies"><option value="1">1 salinan</option><option value="2">2 salinan</option></select></div></div>
+<div class="tp-actions"><button type="button" class="tp-btn" id="thermalPrintRefresh">↻ Muat ulang</button><button type="button" class="tp-btn primary" id="thermalPrintNow">▤ Cetak struk</button></div>
+<div id="thermalPrintStatus" role="status">Pilih transaksi untuk melihat pratinjau.</div><pre id="thermalPrintPreview">NONGKI
+Struk transaksi akan tampil di sini.</pre>
+</section></div>
+<script src="./thermal-print.js?v=1"></script>
+<!-- end thermal-print-ui-v1 -->
+
 </body>
 </html>
