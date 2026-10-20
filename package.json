@@ -1,19 +1,23 @@
 {
-  "name": "nongki-android-wrapper",
+  "name": "nongki-android-print-test",
   "version": "1.0.0",
   "private": true,
-  "description": "Build Android APK for Nongki using bundled local web assets.",
+  "description": "Isolated Nongki Android print-test build based on the stable Android wrapper.",
   "scripts": {
     "android:sync": "cap sync android",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "build:print-bridge": "esbuild scripts/print-bridge.js --bundle --format=esm --outfile=www/print-bridge.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",
-    "@capacitor/core": "^6.2.1"
+    "@capacitor/core": "^6.2.1",
+    "@capacitor-community/print": "^6.0.0",
+    "@capacitor/share": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.1",
     "@capacitor/assets": "^3.0.5",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "esbuild": "^0.24.0"
   }
 }
