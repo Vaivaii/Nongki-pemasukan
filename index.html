@@ -1265,7 +1265,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 <button class="history-switch-btn active" data-history-source="local">Riwayat Lokal <span id="localCount">0</span></button>
 <button class="history-switch-btn" data-history-source="cloud">Riwayat Server</button>
 </div>
-<div class="locked-note">Riwayat lokal tetap tersedia saat offline. Event penjualan dan pembatalan akan masuk antrean IndexedDB dan dikirim ke Apps Script saat koneksi tersedia.</div>
+<div class="locked-note">Riwayat lokal tetap tersedia saat offline. Input produk yang dibatalkan sebelum pembayaran dicatat lokal dan tidak menambah penjualan; transaksi selesai dan pembatalan transaksi tersimpan masuk antrean IndexedDB untuk dikirim ke Apps Script saat koneksi tersedia.</div>
 <div class="panel hidden" id="serverHistoryToolbar">
   <div class="toolbar" style="margin:0 0 6px"><button class="btn" id="refreshServerHistoryBtn" type="button">Refresh Server Data</button></div>
   <div class="sub" id="serverHistoryStatus" role="status" aria-live="polite">Riwayat server belum dimuat.</div>
@@ -1432,9 +1432,45 @@ async function persistProducts(){for(const p of data.products){if(!p?.id||!p?.na
 let sheetsSyncRunning = false;
 let sheetsSyncTimer = null;
 
-function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled').sort((a,b)=>b.time.localeCompare(a.time))}
+function dayTx(date=today()){return data.transactions.filter(t=>t.date===date&&t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft').sort((a,b)=>b.time.localeCompare(a.time))}
 function dayLog(date=today()){return data.transactions.filter(t=>t.date===date).sort((a,b)=>b.time.localeCompare(a.time))}
-function syncLabel(t){if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
+function syncLabel(t){if(t.status==='draft')return 'DI KERANJANG';if(t.auditOnly){if(t.syncStatus==='synced')return 'TERSINKRON (KERANJANG)';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSIMPAN LOKAL (KERANJANG)';}if(t.status==='cancelled'&&t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='pending')return 'MENUNGGU SINKRONISASI';if(t.syncStatus==='failed')return 'GAGAL SINKRON';return 'TERSINKRON'}
+const cartDraftIds=new Map();
+function makeLocalCartDraft(item){
+ if(!item||!Number.isFinite(Number(item.unitPrice)))return null;
+ const now=new Date(),date=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+ const time=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+ const row={id:'cart-draft-'+(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)),productId:String(item.productId||''),items:[{productId:String(item.productId||''),productName:String(item.productName||'Produk'),quantity:1,unitPrice:Number(item.unitPrice)||0,lineTotal:Number(item.unitPrice)||0}],name:String(item.productName||'Produk'),icon:item.icon||'🧾',category:item.category||'Produk',unitPrice:Number(item.unitPrice)||0,qty:1,total:Number(item.unitPrice)||0,date,time,createdAt:now.toISOString(),userId:currentUser?.id||'STAFF001',status:'draft',syncStatus:'local-only',auditOnly:false};
+ data.transactions.push(row);const ids=cartDraftIds.get(String(item.productId))||[];ids.push(row.id);cartDraftIds.set(String(item.productId),ids);save();return row;
+}
+function cancelLocalCartDraft(productId,reason='Produk dibatalkan sebelum pembayaran'){
+ const ids=cartDraftIds.get(String(productId))||[];const id=ids.pop();if(!id)return null;
+ const row=data.transactions.find(t=>String(t.id)===String(id));
+ if(row){row.status='cancelled';row.auditOnly=true;row.syncStatus='pending';row.auditReason=reason;row.cancelledAt=new Date().toISOString();row.cancelledBy=currentUser?.id||'STAFF001';save();void enqueueCanceledCartAudit(row).then(()=>queueDailySync(row.date)).catch(error=>{console.error('Gagal mengantrekan audit pembatalan keranjang:',error);row.syncStatus='failed';save();renderRecent();renderHistory();});}
+ if(!ids.length)cartDraftIds.delete(String(productId));else cartDraftIds.set(String(productId),ids);
+ return row||null;
+}
+async function enqueueCanceledCartAudit(row){
+ if(!row||!row.id||!row.auditOnly)return false;
+ const eventId='cart-audit-cancel-'+String(row.id);
+ const existing=await getAllRecords('outbox');
+ if(existing.some(item=>String(item.id)===eventId||String(item.entityId)===String(row.id)&&item.eventType==='transaction.canceled'))return true;
+ const db=await openNongkiDB();
+ try{
+  const tx=db.transaction('outbox','readwrite'),done=txDone(tx);
+  tx.objectStore('outbox').add({id:eventId,entityId:String(row.id),eventType:'transaction.canceled',createdAt:row.cancelledAt||new Date().toISOString(),payload:{transactionId:String(row.id),status:'canceled',canceledAt:row.cancelledAt||new Date().toISOString(),canceledBy:row.cancelledBy||currentUser?.id||'STAFF001',cancelReason:String(row.auditReason||'Dibatalkan sebelum pembayaran'),auditOnly:true,total:0,name:String(row.name||'Produk')+' × '+(Number(row.qty)||1),qty:Number(row.qty)||1,date:row.date||today(),time:row.time||'',userId:row.userId||currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||'Perangkat ini'},attempts:0,lastError:null});
+  await done;return true;
+ }finally{db.close();}
+}
+function cancelAllLocalCartDrafts(reason='Keranjang dikosongkan sebelum pembayaran'){
+ for(const productId of [...cartDraftIds.keys()])while((cartDraftIds.get(productId)||[]).length)cancelLocalCartDraft(productId,reason);
+}
+function clearLocalCartDraftsAfterPayment(){
+ const ids=new Set([...cartDraftIds.values()].flat());
+ if(ids.size)data.transactions=data.transactions.filter(t=>!ids.has(t.id));
+ cartDraftIds.clear();save();
+}
+function cleanupAbandonedCartDrafts(){let changed=false;data.transactions=data.transactions.filter(t=>{if(t.status==='draft'){changed=true;return false;}return true;});if(changed)save();}
 function total(tx){return tx.reduce((s,t)=>s+t.total,0)}
 function itemCount(tx){return tx.reduce((s,t)=>s+t.qty,0)}
 function renderHeader(){let tx=dayTx();$('todayLabel').textContent=dateText(today());$('todayTotal').textContent=rupiah(total(tx)+(typeof cartTotal==='function'?cartTotal():0));$('todayItems').textContent=itemCount(tx)+(typeof cartCount==='function'?cartCount():0)}
@@ -1484,7 +1520,7 @@ function renderGrid(){
  const enteringGrid=$('productGrid').querySelector('.product-grid-entering');
  if(enteringGrid)setTimeout(()=>enteringGrid.classList.remove('product-grid-entering'),650);
 }
-function txHtml(t,showSync=true){const cancelled=t.status==='cancelled';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><small>${esc(t.time)} · ${esc(t.category||'Produk')}</small><small>${rupiah(t.unitPrice)} per item</small><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':'AKTIF'}</span>${showSync?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}</div><div class="history-price">${rupiah(t.total)}</div></div>`}
+function txHtml(t,showSync=true){const cancelled=t.status==='cancelled'||t.status==='canceled',draft=t.status==='draft';return `<div class="history-row ${cancelled?'cancelled':''}" data-transaction-id="${esc(t.id)}"><div class="history-icon">${esc(t.icon||'🥤')}</div><div class="history-info"><b>${esc(t.name)}${t.qty>1?' × '+t.qty:''}</b><span class="cloud-status ${cancelled?'cancelled':'active'}">${cancelled?'DIBATALKAN':draft?'DI KERANJANG':'AKTIF'}</span>${showSync&&!draft?`<span class="cloud-status ${t.syncStatus==='pending'?'cancelled':'active'}">${esc(syncLabel(t))}</span>`:''}<small>${esc(t.time)}</small></div><div class="history-price">${rupiah(t.total)}</div></div>`}
 function renderRecent(){$('recentList').innerHTML=dayLog().slice(0,5).map(t=>txHtml(t,true)).join('')||'<div class="empty">Belum ada pemasukan hari ini.<br>Ketuk salah satu produk untuk mulai mencatat.</div>'}
 let historySource='local';
 let serverHistoryTransactions=[];
@@ -1517,6 +1553,7 @@ function serverHistorySortValue(tx){
  const date=String(tx?.date||'').trim();
  const rawTime=String(tx?.time||'').trim();
  const match=rawTime.match(/(?:^|\\s)(\\d{1,2}):(\\d{1,2})(?::(\\d{1,2}))?/);
+ if(!date)return 0;
  const dateMatch=date.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
  if(!dateMatch)return 0;
  const hour=match?Number(match[1]):0,minute=match?Number(match[2]):0,second=match?Number(match[3]||0):0;
@@ -1539,25 +1576,53 @@ function normalizeServerHistory(result){
   rows=matrix.map(values=>Object.fromEntries(columnNames.map((key,i)=>[String(key),values[i]])));
  }
  const normalizedRows=rows.filter(row=>row&&typeof row==='object').map((row,index)=>{
-  const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu']);
-  const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date']);
-  const rawName=serverHistoryField(row,['ringkasan_produk','nama_item','nama_produk','produk','item','name','transactionName','description','deskripsi','rincian']);
-  const rawAmount=serverHistoryField(row,['nominal','total','jumlah','subtotal','amount','transactionTotal','nilai']);
+  const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu','tanggalWaktu']);
+  const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date','tanggalTransaksi']);
+  const rawName=serverHistoryField(row,['ringkasan_produk','ringkasanProduk','nama_item','nama_produk','namaProduk','produk','item','name','transactionName','description','deskripsi','rincian']);
+  const rawAmount=serverHistoryField(row,['nominal','total','totalHarga','total_harga','jumlah','subtotal','amount','transactionTotal','nilai']);
   const rawPayment=serverHistoryField(row,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment']);
-  const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
-  const rawStatus=serverHistoryField(row,['status','jenis_event','event']);
+  const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','kasir','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
+  // Utamakan statusEvent (status bisnis) daripada kolom status generik yang bisa berisi 'Sukses'.
+  const rawStatus=serverHistoryField(row,['statusEvent','status_event','jenis_event','event','status']);
   let time=String(rawTime||'').trim();
   let date=String(rawDate||'').trim();
+  const isoDate=value=>{
+   if(value instanceof Date&&!Number.isNaN(value.getTime())){
+    return value.getFullYear()+'-'+String(value.getMonth()+1).padStart(2,'0')+'-'+String(value.getDate()).padStart(2,'0');
+   }
+   const text=String(value??'').trim();
+   let m=text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+   if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+   m=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+   if(m){
+    const a=Number(m[1]),b=Number(m[2]),year=m[3];
+    // Dukung tanggal Indonesia dd/MM/yyyy (mis. 20/10/2026) sekaligus format US MM/dd/yyyy.
+    // Jika komponen pertama > 12, formatnya pasti hari/bulan; jika komponen kedua > 12, formatnya bulan/hari.
+    let month,day;
+    if(a>12&&a<=31&&b>=1&&b<=12){day=a;month=b;}
+    else if(b>12&&b<=31&&a>=1&&a<=12){month=a;day=b;}
+    else {month=a;day=b;}
+    if(month>=1&&month<=12&&day>=1&&day<=31)return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+   }
+   const parsed=Date.parse(text);
+   if(Number.isFinite(parsed)&&text.length>=8){
+    const d=new Date(parsed);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+   }
+   return '';
+  };
   if(rawTime instanceof Date&&!Number.isNaN(rawTime.getTime())){
    time=rawTime.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-   if(!date)date=rawTime.getFullYear()+'-'+String(rawTime.getMonth()+1).padStart(2,'0')+'-'+String(rawTime.getDate()).padStart(2,'0');
+   if(!date)date=isoDate(rawTime);
   }
   const timeMatch=time.match(/[ T](\d{2}:\d{2}(?::\d{2})?)/);
   if(timeMatch)time=timeMatch[1];
-  const dateMatch=String(rawTime||'').match(/^(\d{4}-\d{2}-\d{2})/);
-  if(!date&&dateMatch)date=dateMatch[1];
+  // Tanggal riwayat harus berasal dari data server, bukan tanggal filter yang sedang dipilih.
+  // Jika parsing gagal, biarkan kosong agar catatan terbaru tetap terlihat pada daftar server
+  // dan tidak salah ditempelkan ke tanggal hari ini.
+  if(!date)date=isoDate(rawTime);
+  date=isoDate(date);
   if(!time)time='Jam tidak tersedia';
-  if(!date)date=String($('historyDate')?.value||today());
   const amountText=String(rawAmount??'').replace(/\./g,'').replace(/,/g,'').replace(/[^\d-]/g,'');
   let amount=Number(amountText);
   if(!Number.isFinite(amount))amount=0;
@@ -1575,15 +1640,17 @@ function normalizeServerHistory(result){
    else if(/\bpegawai\b|\bstaff\b|\bkasir\b/.test(lower))profile='Pegawai';
   }else profile='Tidak tercatat';
   return {
-   id:String(serverHistoryField(row,['id_transaksi','id','transactionId','transaction_id','id_event'])||'server-'+index),
+   id:String(serverHistoryField(row,['id_transaksi','idTransaksi','id','transactionId','transaction_id','id_event','idEvent'])||'server-'+index),
    date,time,name,amount,
    payment:String(rawPayment||'Tidak tercatat').trim(),
    profile,
-   status:String(rawStatus||'').trim(),
+   // Catatan pra-pembayaran dikirim dengan nominal nol. Beberapa versi backend menyimpan status generik 'Sukses',
+   // jadi gunakan jenis event/flag audit terlebih dahulu, lalu nominal nol + status sukses sebagai fallback.
+   status:(/audit|keranjang|sebelum pembayaran/i.test(String(serverHistoryField(row,['jenis_event','jenisEvent','event_type','auditReason','audit_reason'])||''))||row.auditOnly===true||String(row.auditOnly||'').toLowerCase()==='true'||(amount===0&&/sukses|success|tunai|qris|audit|keranjang|dibatalkan|cancel/i.test(String(rawStatus||''))))?'Dibatalkan (Audit)':String(rawStatus||'').trim(),
    raw:row
   };
  });
- return sortServerHistoryNewestFirst(normalizedRows).slice(0,20);
+ return sortServerHistoryNewestFirst(normalizedRows);
 }
 function renderServerHistory(){
  const date=$('historyDate').value||today();
@@ -1593,7 +1660,9 @@ function renderServerHistory(){
  if(status){
   status.textContent=serverHistoryLoading?'Mengambil riwayat dari server…':serverHistoryError?'Gagal memuat: '+serverHistoryError:serverHistoryLoaded?'Server terhubung · '+serverHistoryTransactions.length+' transaksi diterima.':'Pilih Riwayat Server untuk mengambil data terbaru.';
  }
- if(serverHistoryLoading){
+ // Pertahankan riwayat terakhir yang berhasil dimuat selama refresh berlangsung.
+ // Placeholder loading hanya dipakai saat belum pernah ada data server yang berhasil dimuat.
+ if(serverHistoryLoading&&!serverHistoryLoaded){
   summary.innerHTML='<div class="sub">Menghubungkan ke Apps Script…</div>';
   list.innerHTML='<div class="empty">Sedang mengambil riwayat transaksi.</div>';
   return;
@@ -1604,9 +1673,9 @@ function renderServerHistory(){
   return;
  }
  const dated=serverHistoryTransactions.filter(t=>!t.date||t.date===date);
- const rows=dated.slice(0,20);
+ const rows=dated.slice(0,50);
  const totalAmount=rows.reduce((sum,t)=>sum+(Number(t.amount)||0),0);
- summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 20 transaksi · data dari Apps Script</div>';
+ summary.innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Riwayat Server</span><h2>'+rupiah(totalAmount)+'</h2></div><div style="text-align:right"><span class="sub">Transaksi</span><h2>'+rows.length+'</h2></div></div><div class="sub">Maksimal 50 catatan terbaru · data dari Apps Script</div>';
  list.innerHTML=rows.map(t=>'<div class="history-row"><div class="history-icon">☁️</div><div class="history-info"><b>'+esc(t.name)+'</b><small>Jam: '+esc(t.time)+'</small><small>Profil pencatat: '+esc(t.profile)+'</small><span class="cloud-status '+(/batal|cancel/i.test(t.status)?'cancelled':'active')+'">'+esc(t.status||'Tidak tercatat')+'</span></div><div class="history-price">'+rupiah(t.amount)+'</div></div>').join('')||'<div class="empty">'+(serverHistoryLoaded?'Tidak ada transaksi server untuk tanggal '+esc(date)+'.':'Belum terhubung ke server.')+'</div>';
 }
 function renderHistory(){
@@ -1616,7 +1685,7 @@ function renderHistory(){
  document.querySelectorAll('[data-history-source]').forEach(b=>b.classList.toggle('active',b.dataset.historySource===historySource));
  if(historySource==='local'){
   $('serverHistoryToolbar')?.classList.add('hidden');
-  const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled');
+  const tx=dayLog(date), active=tx.filter(t=>t.status!=='cancelled'&&t.status!=='canceled'&&t.status!=='draft');
   $('historySummary').innerHTML='<div class="section-head"><div><span class="sub">'+esc(dateText(date))+' · Perangkat ini</span><h2>'+rupiah(total(active))+'</h2></div><div style="text-align:right"><span class="sub">Catatan lokal</span><h2>'+tx.length+'</h2></div></div><div class="sub">'+itemCount(active)+' produk aktif · '+tx.filter(t=>t.status==='cancelled').length+' dibatalkan</div>';
   $('historyList').innerHTML=tx.map(t=>txHtml(t,true)).join('')||'<div class="empty">Tidak ada riwayat lokal pada tanggal ini.</div>';
  }else renderServerHistory();
@@ -1626,18 +1695,18 @@ async function fetchServerHistory(){
  loadAppsScriptSettings();
  if(!navigator.onLine){
   serverHistoryError='Perangkat sedang offline.';
-  renderServerHistory();
+  if(historySource==='cloud')renderServerHistory();
   return false;
  }
  if(!appScriptConfigured()){
   serverHistoryError='URL Apps Script atau token API belum dikonfigurasi pada perangkat ini.';
-  renderServerHistory();
+  if(historySource==='cloud')renderServerHistory();
   return false;
  }
  const requestId=++serverHistoryRequestId;
  serverHistoryLoading=true;serverHistoryError='';
  const button=$('refreshServerHistoryBtn');if(button)button.disabled=true;
- renderServerHistory();
+ if(historySource==='cloud')renderServerHistory();
  try{
   const controller=typeof AbortController!=='undefined'?new AbortController():null;
   const timer=controller?setTimeout(()=>controller.abort(),APPS_SCRIPT_TIMEOUT_MS):null;
@@ -1646,7 +1715,7 @@ async function fetchServerHistory(){
    const url=new URL(APPS_SCRIPT_URL);
    url.searchParams.set('action','getRecentTransactions');
    url.searchParams.set('token',APPS_SCRIPT_TOKEN);
-   url.searchParams.set('limit','20');
+   url.searchParams.set('limit','100');
    response=await fetch(url.toString(),{
     method:'GET',
     signal:controller?controller.signal:undefined,
@@ -1663,7 +1732,12 @@ async function fetchServerHistory(){
   const normalized=normalizeServerHistory(result);
   if(requestId!==serverHistoryRequestId)return false;
   if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
-  serverHistoryTransactions=normalized.slice(0,20);
+  // Cache is a fallback, not the source of truth. Merge cached/previous rows with the fresh
+  // server response so a partial server window cannot make already-visible history disappear.
+  // Respons sukses dari server adalah sumber kebenaran. Cache lokal hanya untuk
+  // tampilan sementara/offline; jangan gabungkan cache lama ke respons baru karena
+  // identitas catatan yang berbeda dapat membuat riwayat baru tertutup oleh catatan lama.
+  serverHistoryTransactions=sortServerHistoryNewestFirst(normalized).slice(0,200);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
@@ -1678,7 +1752,9 @@ async function fetchServerHistory(){
   if(requestId===serverHistoryRequestId){
    serverHistoryLoading=false;
    if(button)button.disabled=false;
-   renderServerHistory();
+   // Respons server hanya boleh memperbarui panel ketika pengguna masih memilih Riwayat Server.
+   // Jangan biarkan penyelesaian sinkronisasi menimpa tampilan Riwayat Lokal.
+   if(historySource==='cloud')renderServerHistory();
    if(serverHistoryRefreshPending){serverHistoryRefreshPending=false;setTimeout(()=>void fetchServerHistory(),150);}
   }
  }
@@ -1997,7 +2073,8 @@ function addCartProduct(id){
  const p=data.products.find(x=>String(x.id)===String(id));if(!p||p.active===false)return;
  const old=paymentCart.get(String(p.id));
  paymentCart.set(String(p.id),{productId:String(p.id),productName:p.name,category:p.category||'Lainnya',quantity:(old?.quantity||0)+1,unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
- refreshPaymentUI();renderHeader();updateProductBadges();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
+ makeLocalCartDraft({productId:String(p.id),productName:p.name,category:p.category||'Lainnya',unitPrice:Number(p.price)||0,icon:p.icon||'🥤'});
+ refreshPaymentUI();renderHeader();updateProductBadges();renderRecent();historySource='local';document.querySelectorAll('[data-history-source]').forEach(button=>button.classList.toggle('active',button.dataset.historySource==='local'));if(typeof renderHistory==='function')renderHistory();const selectedCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(id));if(selectedCard){selectedCard.classList.remove('product-tap-pop');void selectedCard.offsetWidth;selectedCard.classList.add('product-tap-pop');}toast(p.name+' ditambahkan ke keranjang.');
 }
 function parseCashAmount(){const raw=String($('cashAmountInput')?.value||'').replace(/[^0-9]/g,'');return raw?Number(raw):0;}
 function formatCashInput(value){if($('cashAmountInput'))$('cashAmountInput').value=value?new Intl.NumberFormat('id-ID').format(value):'';}
@@ -2022,6 +2099,7 @@ async function completeCartPayment(method,paid){
  const confirm=$('confirmCashPayment');if(confirm)confirm.textContent='Memproses pembayaran…';
  try{
   const saved=await recordTransaction({userId:currentUser?.id||'STAFF001',deviceId:localStorage.getItem('nongki_device_id_v1')||null,items,metodePembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
+  clearLocalCartDraftsAfterPayment();
   const d=new Date(),stamp=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
   const summary=items.map(x=>x.productName+' × '+x.quantity).join(', ');
   data.transactions.push({id:saved.id,productId:items.length===1?items[0].productId:'',items:items.map(x=>({productId:String(x.productId),productName:x.productName,quantity:Number(x.quantity)||0,unitPrice:Number(x.unitPrice)||0,lineTotal:(Number(x.quantity)||0)*(Number(x.unitPrice)||0)})),name:summary,icon:items[0]?.icon||'🧾',category:'Penjualan',unitPrice:total,qty:items.reduce((n,x)=>n+x.quantity,0),total,date:saved.businessDate,time:stamp,userId:currentUser?.id||'STAFF001',status:'active',syncStatus:'pending',metode_pembayaran:method,uangDiterima:Number(paid)||0,kembalian:change});
@@ -2089,15 +2167,15 @@ async function cancelTx(id){
 }
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){renderHistory();void fetchServerHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='historyView'){historySource='local';renderHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
 $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
 $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();completeCartPayment('QRIS',cartTotal());}});
-$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();});
+$('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;cancelAllLocalCartDrafts('Keranjang dikosongkan sebelum pembayaran');paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderRecent();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
 
 document.addEventListener('click',e=>{
-/* Modal markup dipindahkan ke luar script. */
+/* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
 const cashClose=e.target.closest('#closeCashModal');
 if(cashClose){closeCashModal();return;}
 if(e.target===$('cashPaymentModal')){closeCashModal();return;}
@@ -2120,7 +2198,7 @@ $('publishSharedMenuBtn')?.addEventListener('click',()=>publishSharedMenu());
 $('refreshSharedMenuBtn')?.addEventListener('click',()=>fetchSharedMenu());
 $('manageBtn').addEventListener('click',()=>showView('productsView'));
 $('seeHistory').addEventListener('click',()=>showView('historyView'));
-$('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud'&&!serverHistoryLoaded)void fetchServerHistory()}));
+$('historyDate').value=today();$('historyDate').addEventListener('change',()=>{renderHistory();if(historySource==='cloud')void fetchServerHistory()});document.querySelectorAll('[data-history-source]').forEach(b=>b.addEventListener('click',()=>{historySource=b.dataset.historySource;renderHistory();if(historySource==='cloud')void fetchServerHistory()}));
 $('refreshServerHistoryBtn')?.addEventListener('click',()=>{void fetchServerHistory()});
 const globalSalesCard=$('globalSalesCard');
 globalSalesCard?.addEventListener('click',()=>{void syncAllData()});
@@ -2136,6 +2214,7 @@ $('undoBtn').addEventListener('click',()=>{
    if(!last)return;
    const current=paymentCart.get(String(last.productId));
    if(current){
+    cancelLocalCartDraft(String(last.productId),'Produk dibatalkan dari kalkulator sebelum pembayaran');
     if(Number(current.quantity)>1)paymentCart.set(String(last.productId),{...current,quantity:Number(current.quantity)-1});
     else paymentCart.delete(String(last.productId));
    }
@@ -2151,7 +2230,8 @@ $('undoBtn').addEventListener('click',()=>{
     setTimeout(()=>canceledCard.classList.remove('cancelled-product-flash'),700);
    }
    refreshPaymentUI();renderHeader();updateProductBadges();
-   toast(last.productName+' dibatalkan dari kalkulator · total diperbarui.');
+   renderRecent();renderHistory();
+   toast(last.productName+' dibatalkan dari kalkulator · tercatat di riwayat lokal dan tidak dihitung sebagai penjualan.');
    return;
   }
   // Jika keranjang kosong, batalkan transaksi tersimpan terakhir.
@@ -2526,9 +2606,13 @@ async function syncAllData(){
    ['Riwayat Server',()=>fetchServerHistory()],
    ['Master Menu',()=>fetchMasterMenu()]
   ];
-  const results=await Promise.allSettled(tasks.map(async([name,run])=>({name,ok:await run()})));
+  // Apps Script Web App dapat melambat saat beberapa endpoint berat dipanggil
+  // bersamaan. Jalankan satu per satu agar tidak saling menunggu lock/kuota.
   const failed=[];
-  results.forEach((result,index)=>{if(result.status==='rejected'||result.value?.ok===false)failed.push(tasks[index][0]);});
+  for(const [name,run] of tasks){
+   try{const ok=await run();if(ok===false)failed.push(name);}
+   catch(error){failed.push(name);console.warn('Master Refresh '+name+' gagal:',error);}
+  }
   if(!queueOk)failed.unshift('Antrean transaksi');
   if(failed.length){console.warn('Master Refresh: sebagian data gagal diperbarui:',failed);toast('Refresh selesai sebagian. Gagal: '+failed.join(', '));}
   else toast('Master Refresh selesai · semua data diperbarui.');
@@ -2539,7 +2623,7 @@ async function syncAllData(){
  });
  return masterSyncPromise;
 }
-async function fetchGlobalTotal(){
+async function fetchCloudData(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
  loadAppsScriptSettings();
  if(!navigator.onLine){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
@@ -2582,14 +2666,19 @@ async function fetchGlobalTotal(){
  })();
  return globalTotalFetchPromise;
 }
+// Wrapper kompatibilitas untuk kontrol UI lama; fungsi ini hanya membaca data GET.
+function fetchGlobalTotal(){return fetchCloudData();}
 function localTimestamp(value){
  const d=value?new Date(value):new Date();
  if(Number.isNaN(d.getTime()))return new Date().toISOString().slice(0,19).replace('T',' ');
  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')+' '+[String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0')].join(':');
 }
 function outboxToPayload(item){
- const event=item.eventType==='transaction.canceled'?'cancelTransaction':'newTransaction';
  const source=item.payload||{};
+ // Catatan audit keranjang belum pernah menjadi transaksi penjualan. Kirim sebagai event baru bernilai nol,
+ // bukan cancelTransaction yang mengharuskan transaksi asal sudah ada di server.
+ const auditOnly=!!(source.auditOnly||(source.transaction&&source.transaction.auditOnly));
+ const event=auditOnly?'newTransaction':item.eventType==='transaction.canceled'?'cancelTransaction':'newTransaction';
  const row=source.items?source:(source.transaction||source);
  const items=Array.isArray(row.items)?row.items:[];
  const txId=String(item.entityId||source.transactionId||row.id||'');
@@ -2607,7 +2696,8 @@ function outboxToPayload(item){
  const metodeRaw=String(row.metode_pembayaran||row.metodePembayaran||row.metode||'Tunai').trim().toUpperCase();
  const metodePembayaran=metodeRaw==='QRIS'?'QRIS':'Tunai';
  const isCanceled=event==='cancelTransaction';
- const statusEvent=isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
+ const isAuditOnly=!!(source.auditOnly||row.auditOnly);
+ const statusEvent=isAuditOnly?'Dibatalkan sebelum pembayaran':isCanceled?'Dibatalkan':'Sukses ('+metodePembayaran+')';
  const uangRaw=row.uangDiterima??row.uang_diterima;
  const uangDiterima=isCanceled?0:(metodePembayaran==='QRIS'?amount:(uangRaw===undefined||uangRaw===null||uangRaw===''?amount:(Number(uangRaw)||0)));
  const kembalian=isCanceled||metodePembayaran==='QRIS'?0:(Number(row.kembalian??row.kembalian_rp)||0);
@@ -2615,14 +2705,14 @@ function outboxToPayload(item){
   id_event:eventId,
   id_transaksi:txId,
   waktu:localTimestamp(stamp),
-  jenis_event:isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
+  jenis_event:isAuditOnly?'Pembatalan Keranjang':isCanceled?'Pembatalan Transaksi':'Penjualan Baru',
   ringkasan_produk:summary,
   jumlah_item:quantity,
-  nominal:amount,
+  nominal:isAuditOnly?0:amount,
   pengguna:user,
   nama_pengguna:user,
   perangkat:device,
-  status:isCanceled?'Dibatalkan':'Sukses',
+  status:isAuditOnly?'Dibatalkan sebelum pembayaran':isCanceled?'Dibatalkan':'Sukses',
   statusEvent:statusEvent,
   metode_pembayaran:metodePembayaran,
   metodePembayaran:metodePembayaran,
@@ -2630,7 +2720,7 @@ function outboxToPayload(item){
   kembalian:kembalian,
   tanggal:date,
   // Backend Apps Script mengharapkan items[] dengan nama_produk/kategori/qty/harga_satuan/subtotal.
-  items:items.map(i=>{
+  items:isAuditOnly?[]:items.map(i=>{
    const productId=String(i.productId||i.id||'');
    const catalogProduct=(Array.isArray(data.products)?data.products:[]).find(p=>String(p.id)===productId||String(p.name||p.nama_produk||'')===String(i.productName||i.name||''));
    return {
@@ -2647,7 +2737,7 @@ function outboxToPayload(item){
   jenisEvent:transaction.jenis_event,jenis_event:transaction.jenis_event,
   ringkasan:transaction.ringkasan_produk,ringkasan_produk:transaction.ringkasan_produk,
   namaProduk:transaction.ringkasan_produk,jumlah:transaction.jumlah_item,qty:transaction.jumlah_item,
-  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,
+  totalHarga:transaction.nominal,nominal:transaction.nominal,kasir:transaction.pengguna,auditOnly:isAuditOnly,auditReason:String(source.cancelReason||source.auditReason||''),
   status:transaction.status,statusEvent:transaction.statusEvent,
   uangDiterima:transaction.uangDiterima,uang_diterima:transaction.uangDiterima,
   kembalian:transaction.kembalian,kembalian_rp:transaction.kembalian,
@@ -2670,8 +2760,8 @@ async function postToAppsScript(payload){
   });
   const raw=await response.text();
   if(!response.ok)throw new Error('Apps Script merespons HTTP '+response.status+'.');
-  // Validasi respons dilonggarkan: respons teks/non-JSON diterima bila HTTP sukses.
-  // JSON yang secara eksplisit menyatakan gagal tetap dipertahankan di antrean.
+  // HTTP 200 saja tidak menjamin data benar-benar dicatat. Respons JSON eksplisit gagal ditolak;
+  // untuk audit keranjang, action newTransaction menghindari pembatalan transaksi yang belum ada.
   let result=null;
   try{result=JSON.parse(raw);}catch{/* doPost lama mungkin mengembalikan teks biasa */}
   if(/^\s*<!doctype\s+html|^\s*<html\b/i.test(raw)){
@@ -2702,7 +2792,7 @@ async function updateOutboxError(item,error){
 }
 async function enqueueLegacyPendingTransactions(outbox){
  const queuedEntities=new Set(outbox.map(x=>String(x.entityId||'')));
- const legacy=data.transactions.filter(t=>t&&t.id&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
+ const legacy=data.transactions.filter(t=>t&&t.id&&t.status!=='draft'&&!t.auditOnly&&t.syncStatus!=='local-only'&&t.syncStatus!=='synced'&&!queuedEntities.has(String(t.id)));
  if(!legacy.length)return;
  const db=await openNongkiDB();
  try{
@@ -2743,7 +2833,16 @@ async function syncPending(){
       // Tetapkan tanggal transaksi sebelum digunakan agar targetDateKey selalu terdefinisi.
       targetDateKey=String(payload.transaction?.tanggal||item.payload?.businessDate||item.payload?.date||today()).slice(0,10);
       if(payload.transaction)payload.transaction.tanggal=targetDateKey;
-      await postToAppsScript(payload);
+      const serverReply=await postToAppsScript(payload);
+      // Jangan hapus antrean audit jika respons bukan konfirmasi sukses eksplisit.
+      if(payload.auditOnly){
+       const ack=serverReply?.response;
+       const accepted=!!(ack&&typeof ack==='object'&&(
+        ack.success===true||ack.ok===true||
+        ['success','ok','accepted'].includes(String(ack.status||'').toLowerCase())
+       ));
+       if(!accepted)throw new Error('Apps Script tidak mengonfirmasi penyimpanan audit. Antrean tetap lokal; respons server: '+String(serverReply?.raw||'(kosong)').slice(0,180));
+      }
       await removeOutboxItem(item.id);
       const tx=data.transactions.find(t=>String(t.id)===String(item.entityId));
       if(tx){
@@ -2773,8 +2872,10 @@ async function syncPending(){
    if(sent)render();
    // Refresh cloud total only after the server confirms queued events.
    // This reads Income Log; it does not create or resend a transaction.
-   if(sent>0&&failed===0)await fetchGlobalTotal();
-   if(sent>0){void fetchReport();void fetchServerHistory();}
+   // Saat Master Refresh sedang berjalan, biarkan orchestrator itu sendiri yang
+   // mengambil total/laporan/riwayat. Hindari GET duplikat yang bersaing dengan refresh.
+   if(sent>0&&!masterSyncPromise)await fetchCloudData();
+   if(sent>0&&!masterSyncPromise){void fetchReport();void fetchServerHistory();}
    await refreshGlobalCardStatus();
    await refreshStaffSyncBadge();
    return failed===0;
@@ -2830,7 +2931,7 @@ $('syncGoogleSheetsBtn')?.addEventListener('click',async()=>{
  try{await syncPending();await fetchGlobalTotal();}
  catch(error){console.error(error);toast(error.message||'Sinkronisasi gagal.');}
 });
-load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
+load();cleanupAbandonedCartDrafts();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('Pemilih profil tidak tersedia saat startup:',error);}if($('historyDate'))$('historyDate').value=today();currentUser=readProfileSession();if(currentUser){if($('loginUserId'))$('loginUserId').value=currentUser.id;if($('loginPin'))$('loginPin').disabled=currentUser.role==='staff';}else{if($('loginOverlay'))$('loginOverlay').classList.remove('hidden');if($('loginPin'))$('loginPin').disabled=false;}
 // Status lama tidak dianggap tersinkron karena tidak ada konfirmasi backend yang dapat diverifikasi.
 // Status sinkron dipertahankan antar sesi; server menolak duplikat berdasarkan id_transaksi.
 
@@ -2838,7 +2939,7 @@ load();loadCloudPreview();try{ensureProfilePicker();}catch(error){console.warn('
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();refreshPaymentUI();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
-const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
+const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();void (async()=>{try{await syncPending();}finally{if(!globalServerConfirmed)await fetchCloudData();}})();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
 fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
@@ -2846,12 +2947,13 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v149-server-history-sort').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v182-server-history-chronological-sort').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
 
-<!-- Cash payment modal berada di luar app containers agar overlay tidak terpotong stacking context. -->
+
+<!-- Cash payment modal moved outside app containers to avoid sticky stacking contexts. -->
 <div class="cash-modal-backdrop" id="cashPaymentModal" hidden>
 <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle">
 <button type="button" class="cash-modal-close" id="closeCashModal" aria-label="Tutup">×</button>
@@ -2862,8 +2964,6 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="cash-numpad"><button type="button" data-cash-key="1">1</button><button type="button" data-cash-key="2">2</button><button type="button" data-cash-key="3">3</button><button type="button" data-cash-key="4">4</button><button type="button" data-cash-key="5">5</button><button type="button" data-cash-key="6">6</button><button type="button" data-cash-key="7">7</button><button type="button" data-cash-key="8">8</button><button type="button" data-cash-key="9">9</button><button type="button" data-cash-key="clear">C</button><button type="button" data-cash-key="0">0</button><button type="button" data-cash-key="back">⌫</button></div>
 <div class="cash-change"><span>Kembalian</span><b id="cashChangeAmount">Rp0</b><small id="cashPaymentHint">Masukkan uang yang diterima.</small></div>
 <button type="button" class="cash-confirm" id="confirmCashPayment" disabled>Konfirmasi Pembayaran</button>
-</section>
-</div>
-
+</section></div>
 </body>
 </html>
