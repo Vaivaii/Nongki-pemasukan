@@ -1,5 +1,5 @@
-// Nongki PWA v184-thermal-print-center-logo-mm: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v184-thermal-print-center-logo-mm'
+// Nongki PWA v185-thermal-preview-logo-match: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v185-thermal-preview-logo-match'
 
 const CORE_FILES = [
   './',
