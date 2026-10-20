@@ -9,9 +9,9 @@
   function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID');}
   function escText(v){return String(v??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
   function getTx(id){
-    const local=Array.isArray(window.data?.transactions)?window.data.transactions.find(t=>String(t.id)===String(id)):null;
+    const local=typeof data!=='undefined'&&Array.isArray(data.transactions)?data.transactions.find(t=>String(t.id)===String(id)):null;
     if(local)return local;
-    return Array.isArray(window.serverHistoryTransactions)?window.serverHistoryTransactions.find(t=>String(t.id)===String(id)):null;
+    return typeof serverHistoryTransactions!=='undefined'&&Array.isArray(serverHistoryTransactions)?serverHistoryTransactions.find(t=>String(t.id)===String(id)):null;
   }
   function decorateRows(root){
     if(!root)return;
