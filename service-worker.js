@@ -1,5 +1,5 @@
-// Nongki PWA v174-sync-refresh-dedupe: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v174-sync-refresh-dedupe'
+// Nongki PWA v175-server-history-date-fix: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v175-server-history-date-fix'
 
 const CORE_FILES = [
   './',
