@@ -2971,8 +2971,8 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 
 <!-- thermal-print-ui-v1: isolated UI; no transaction or backend logic modified -->
 <style id="thermalPrintStyles">
-#thermalPrintOverlay{position:fixed;inset:0;z-index:2000;background:#10271dcc;display:none;align-items:flex-end;justify-content:center;padding:12px}
-#thermalPrintOverlay.open{display:flex}#thermalPrintPanel{width:min(100%,520px);max-height:90dvh;overflow:auto;background:#fffdf8;color:#1e2923;border-radius:22px;padding:18px;box-shadow:0 18px 55px #0005}
+#thermalPrintOverlay{position:fixed;inset:0;z-index:2000;background:#10271dcc;display:none;align-items:center;justify-content:center;padding:calc(8px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom));overflow-y:auto}
+#thermalPrintOverlay.open{display:flex}#thermalPrintPanel{width:min(100%,520px);max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;background:#fffdf8;color:#1e2923;border-radius:22px;padding:14px 16px;box-shadow:0 18px 55px #0005}
 #thermalPrintPanel h2{margin:0 40px 5px 0;color:#173d2c;font-size:20px}#thermalPrintPanel .tp-sub{font-size:12px;color:#758078;margin:0 0 14px;line-height:1.45}
 #thermalPrintPanel label{display:block;margin:11px 0 5px;font-size:12px;color:#758078}#thermalPrintPanel select{width:100%;padding:11px;border:1px solid #dfe5dc;border-radius:10px;background:white;color:#1e2923;font:inherit}
 #thermalPrintPanel .tp-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}#thermalPrintPanel .tp-actions{display:flex;gap:8px;margin-top:14px}
@@ -2989,7 +2989,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <div class="tp-row"><div><label for="thermalPrintWidth">Lebar kertas</label><select id="thermalPrintWidth"><option value="58">Thermal 58 mm</option><option value="80">Thermal 80 mm</option></select></div>
 <div><label for="thermalPrintCopies">Jumlah salinan</label><select id="thermalPrintCopies"><option value="1">1 salinan</option><option value="2">2 salinan</option></select></div></div>
 <div class="tp-actions"><button type="button" class="tp-btn" id="thermalPrintRefresh">↻ Muat ulang</button><button type="button" class="tp-btn primary" id="thermalPrintNow">▤ Cetak struk</button></div>
-<div id="thermalPrintStatus" role="status">Pilih transaksi untuk melihat pratinjau.</div><pre id="thermalPrintPreview">NONGKI
+<label for="thermalPrintLogo">Logo struk (opsional)</label><input id="thermalPrintLogo" type="file" accept="image/*" style="box-sizing:border-box;width:100%;font-size:12px;padding:8px;border:1px solid #dfe5dc;border-radius:10px;background:#fff"/><div id="thermalPrintLogoState" style="font-size:11px;color:#758078;margin-top:4px">Logo disimpan di perangkat ini.</div><label for="thermalPrintFooter">Tulisan di bawah struk</label><textarea id="thermalPrintFooter" rows="2" maxlength="240" placeholder="Contoh: Terima kasih sudah nongki!" style="box-sizing:border-box;width:100%;padding:9px;border:1px solid #dfe5dc;border-radius:10px;background:#fff;color:#1e2923;font:inherit;resize:vertical"></textarea><div id="thermalPrintStatus" role="status">Pilih transaksi untuk melihat pratinjau.</div><pre id="thermalPrintPreview">NONGKI
 Struk transaksi akan tampil di sini.</pre>
 </section></div>
 <script src="./thermal-print.js?v=1"></script>
