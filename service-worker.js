@@ -1,5 +1,5 @@
-// Nongki PWA v172-revert-history-experiment: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v172-revert-history-experiment'
+// Nongki PWA v173-batch-cloud-refresh: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v173-batch-cloud-refresh'
 
 const CORE_FILES = [
   './',
