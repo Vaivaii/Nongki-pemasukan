@@ -1604,8 +1604,11 @@ function normalizeServerHistory(result){
   }
   const timeMatch=time.match(/[ T](\d{2}:\d{2}(?::\d{2})?)/);
   if(timeMatch)time=timeMatch[1];
+  // Tanggal riwayat harus berasal dari data server, bukan tanggal filter yang sedang dipilih.
+  // Jika parsing gagal, biarkan kosong agar catatan terbaru tetap terlihat pada daftar server
+  // dan tidak salah ditempelkan ke tanggal hari ini.
   if(!date)date=isoDate(rawTime);
-  date=isoDate(date)||String($('historyDate')?.value||today());
+  date=isoDate(date);
   if(!time)time='Jam tidak tersedia';
   const amountText=String(rawAmount??'').replace(/\./g,'').replace(/,/g,'').replace(/[^\d-]/g,'');
   let amount=Number(amountText);
