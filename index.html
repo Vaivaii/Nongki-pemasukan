@@ -2936,7 +2936,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v172-revert-history-experiment').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v173-batch-cloud-refresh').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
