@@ -1,5 +1,5 @@
-// Nongki PWA v145-report-array-compat: verified transaction payload and cache refresh.
-const CACHE_NAME = 'nongki-v149-server-history-sort';
+// Nongki PWA v182-server-history-chronological-sort: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v182-server-history-chronological-sort'
 
 const CORE_FILES = [
   './',
