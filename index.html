@@ -1563,9 +1563,9 @@ function normalizeServerHistory(result){
   rows=matrix.map(values=>Object.fromEntries(columnNames.map((key,i)=>[String(key),values[i]])));
  }
  return rows.filter(row=>row&&typeof row==='object').map((row,index)=>{
-  const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu']);
-  const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date']);
-  const rawName=serverHistoryField(row,['ringkasan_produk','nama_item','nama_produk','produk','item','name','transactionName','description','deskripsi','rincian']);
+  const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu','tanggalWaktu']);
+  const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date','tanggalTransaksi']);
+  const rawName=serverHistoryField(row,['ringkasan_produk','ringkasanProduk','nama_item','nama_produk','namaProduk','produk','item','name','transactionName','description','deskripsi','rincian']);
   const rawAmount=serverHistoryField(row,['nominal','total','totalHarga','total_harga','jumlah','subtotal','amount','transactionTotal','nilai']);
   const rawPayment=serverHistoryField(row,['metode_pembayaran','metodePembayaran','paymentMethod','payment_method','pembayaran','metode','payment']);
   const rawProfile=serverHistoryField(row,['profil_pencatat','profil','pengguna','kasir','dicatat_oleh','pencatat','user','userName','updatedBy','role','profile']);
@@ -1627,7 +1627,7 @@ function normalizeServerHistory(result){
    else if(/\bpegawai\b|\bstaff\b|\bkasir\b/.test(lower))profile='Pegawai';
   }else profile='Tidak tercatat';
   return {
-   id:String(serverHistoryField(row,['id_transaksi','id','transactionId','transaction_id','id_event'])||'server-'+index),
+   id:String(serverHistoryField(row,['id_transaksi','idTransaksi','id','transactionId','transaction_id','id_event','idEvent'])||'server-'+index),
    date,time,name,amount,
    payment:String(rawPayment||'Tidak tercatat').trim(),
    profile,
