@@ -1,5 +1,5 @@
-// Nongki PWA v181-server-history-response-aliases: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v181-server-history-response-aliases'
+// Nongki PWA v182-server-history-chronological-sort: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v182-server-history-chronological-sort'
 
 const CORE_FILES = [
   './',
