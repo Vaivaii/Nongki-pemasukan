@@ -1549,6 +1549,19 @@ function serverHistoryArray(result){
  for(const candidate of candidates)if(Array.isArray(candidate))return candidate;
  return null;
 }
+function serverHistorySortValue(tx){
+ const date=String(tx?.date||'').trim();
+ const rawTime=String(tx?.time||'').trim();
+ const match=rawTime.match(/(?:^|\\s)(\\d{1,2}):(\\d{1,2})(?::(\\d{1,2}))?/);
+ if(!date)return 0;
+ const dateMatch=date.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+ if(!dateMatch)return 0;
+ const hour=match?Number(match[1]):0,minute=match?Number(match[2]):0,second=match?Number(match[3]||0):0;
+ return Date.UTC(Number(dateMatch[1]),Number(dateMatch[2])-1,Number(dateMatch[3]),hour,minute,second);
+}
+function sortServerHistoryNewestFirst(rows){
+ return rows.sort((a,b)=>serverHistorySortValue(b)-serverHistorySortValue(a));
+}
 function normalizeServerHistory(result){
  let rows=serverHistoryArray(result);
  if(!rows)return null;
@@ -1562,7 +1575,7 @@ function normalizeServerHistory(result){
   if(!columnNames)return null;
   rows=matrix.map(values=>Object.fromEntries(columnNames.map((key,i)=>[String(key),values[i]])));
  }
- return rows.filter(row=>row&&typeof row==='object').map((row,index)=>{
+ const normalizedRows=rows.filter(row=>row&&typeof row==='object').map((row,index)=>{
   const rawTime=serverHistoryField(row,['waktu','jam_transaksi','jam','time','timestamp','createdAt','created_at','tanggal_waktu','tanggalWaktu']);
   const rawDate=serverHistoryField(row,['tanggal','tanggal_transaksi','date','businessDate','business_date','tanggalTransaksi']);
   const rawName=serverHistoryField(row,['ringkasan_produk','ringkasanProduk','nama_item','nama_produk','namaProduk','produk','item','name','transactionName','description','deskripsi','rincian']);
@@ -1636,7 +1649,8 @@ function normalizeServerHistory(result){
    status:(/audit|keranjang|sebelum pembayaran/i.test(String(serverHistoryField(row,['jenis_event','jenisEvent','event_type','auditReason','audit_reason'])||''))||row.auditOnly===true||String(row.auditOnly||'').toLowerCase()==='true'||(amount===0&&/sukses|success|tunai|qris|audit|keranjang|dibatalkan|cancel/i.test(String(rawStatus||''))))?'Dibatalkan (Audit)':String(rawStatus||'').trim(),
    raw:row
   };
- }).sort((a,b)=>(String(b.date)+' '+String(b.time)).localeCompare(String(a.date)+' '+String(a.time)));
+ });
+ return sortServerHistoryNewestFirst(normalizedRows);
 }
 function renderServerHistory(){
  const date=$('historyDate').value||today();
@@ -1723,9 +1737,7 @@ async function fetchServerHistory(){
   // Respons sukses dari server adalah sumber kebenaran. Cache lokal hanya untuk
   // tampilan sementara/offline; jangan gabungkan cache lama ke respons baru karena
   // identitas catatan yang berbeda dapat membuat riwayat baru tertutup oleh catatan lama.
-  serverHistoryTransactions=normalized
-   .sort((a,b)=>(String(b.date||'')+' '+String(b.time||'')).localeCompare(String(a.date||'')+' '+String(a.time||'')))
-   .slice(0,200);
+  serverHistoryTransactions=sortServerHistoryNewestFirst(normalized).slice(0,200);
   serverHistoryLoaded=true;
   serverHistoryError='';
   try{localStorage.setItem(CLOUD_PREVIEW_KEY,JSON.stringify(serverHistoryTransactions));}catch(e){/* cache preview bersifat opsional */}
