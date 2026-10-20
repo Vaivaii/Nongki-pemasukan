@@ -1583,8 +1583,12 @@ function normalizeServerHistory(result){
    m=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
    if(m){
     const a=Number(m[1]),b=Number(m[2]),year=m[3];
-    // Ambiguous slash dates follow US month/day/year when first component > 12; otherwise use month/day/year for Sheets/Apps Script.
-    const month=a,day=b;
+    // Dukung tanggal Indonesia dd/MM/yyyy (mis. 20/10/2026) sekaligus format US MM/dd/yyyy.
+    // Jika komponen pertama > 12, formatnya pasti hari/bulan; jika komponen kedua > 12, formatnya bulan/hari.
+    let month,day;
+    if(a>12&&a<=31&&b>=1&&b<=12){day=a;month=b;}
+    else if(b>12&&b<=31&&a>=1&&a<=12){month=a;day=b;}
+    else {month=a;day=b;}
     if(month>=1&&month<=12&&day>=1&&day<=31)return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
    }
    const parsed=Date.parse(text);
