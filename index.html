@@ -2863,8 +2863,10 @@ async function syncPending(){
    if(sent)render();
    // Refresh cloud total only after the server confirms queued events.
    // This reads Income Log; it does not create or resend a transaction.
-   if(sent>0)await fetchCloudData();
-   if(sent>0){void fetchReport();void fetchServerHistory();}
+   // Saat Master Refresh sedang berjalan, biarkan orchestrator itu sendiri yang
+   // mengambil total/laporan/riwayat. Hindari GET duplikat yang bersaing dengan refresh.
+   if(sent>0&&!masterSyncPromise)await fetchCloudData();
+   if(sent>0&&!masterSyncPromise){void fetchReport();void fetchServerHistory();}
    await refreshGlobalCardStatus();
    await refreshStaffSyncBadge();
    return failed===0;
@@ -2928,7 +2930,7 @@ load();cleanupAbandonedCartDrafts();loadCloudPreview();try{ensureProfilePicker()
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();refreshPaymentUI();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
-const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();void fetchCloudData();void syncPending();};
+const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();void (async()=>{try{await syncPending();}finally{if(!globalServerConfirmed)await fetchCloudData();}})();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
 fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
