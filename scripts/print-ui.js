@@ -2,17 +2,10 @@
 (() => {
   const $p = id => document.getElementById(id);
   let selectedPrintTransaction = null, bridgePromise = null;
-  const originalRenderRecent = window.renderRecent;
-  const originalRenderHistory = window.renderHistory;
-  const originalRenderServerHistory = window.renderServerHistory;
   function loadBridge(){if(!bridgePromise)bridgePromise=import('./print-bridge.js');return bridgePromise;}
   function money(v){return 'Rp'+Math.round(Number(v)||0).toLocaleString('id-ID');}
   function escText(v){return String(v??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
-  function getTx(id){
-    const local=typeof data!=='undefined'&&Array.isArray(data.transactions)?data.transactions.find(t=>String(t.id)===String(id)):null;
-    if(local)return local;
-    return typeof serverHistoryTransactions!=='undefined'&&Array.isArray(serverHistoryTransactions)?serverHistoryTransactions.find(t=>String(t.id)===String(id)):null;
-  }
+  function getTx(id){return window.NongkiPrintAPI?.getTransaction(id)||null;}
   function decorateRows(root){
     if(!root)return;
     root.querySelectorAll('.history-row[data-transaction-id]').forEach(row=>{
@@ -23,9 +16,6 @@
       b.setAttribute('data-print-transaction',String(tx.id));b.setAttribute('aria-label','Cetak struk '+(tx.name||'transaksi'));row.appendChild(b);
     });
   }
-  if(typeof originalRenderRecent==='function')window.renderRecent=function(){const r=originalRenderRecent.apply(this,arguments);decorateRows($p('recentList'));return r;};
-  if(typeof originalRenderHistory==='function')window.renderHistory=function(){const r=originalRenderHistory.apply(this,arguments);decorateRows($p('historyList'));return r;};
-  if(typeof originalRenderServerHistory==='function')window.renderServerHistory=function(){const r=originalRenderServerHistory.apply(this,arguments);decorateRows($p('historyList'));return r;};
   function itemsFor(tx){
     if(Array.isArray(tx.items)&&tx.items.length)return tx.items.map(i=>{const q=Number(i.quantity||i.qty||1),p=Number(i.unitPrice??i.price??0);return{name:i.productName||i.name||tx.name||'Produk',quantity:q,price:p,total:Number(i.lineTotal??i.total??p*q)};});
     const q=Math.max(1,Number(tx.qty||1)),total=Number(tx.total||0);return[{name:tx.name||tx.productName||'Transaksi Nongki',quantity:q,price:Number(tx.unitPrice||total/q),total}];
@@ -52,4 +42,6 @@
   $p('printReceiptWidth')?.addEventListener('change',renderPreview);$p('printReceiptFooter')?.addEventListener('input',renderPreview);
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$p('printReceiptModal').hidden)closeModal();});
   decorateRows($p('recentList'));decorateRows($p('historyList'));
+  const observer = new MutationObserver(() => { decorateRows($p('recentList')); decorateRows($p('historyList')); });
+  ['recentList','historyList'].forEach(id => { const node=$p(id); if(node) observer.observe(node,{childList:true,subtree:true}); });
 })();
