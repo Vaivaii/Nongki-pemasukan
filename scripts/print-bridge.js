@@ -1,4 +1,4 @@
-import { Printer } from '@gingersnapsoftware/capacitor-plugin-printer';
+import { Printer } from '@bcyesil/capacitor-plugin-printer';
 import { Share } from '@capacitor/share';
 
 export async function printReceiptHtml(content, name = 'Struk Nongki') {
