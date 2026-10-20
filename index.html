@@ -1720,35 +1720,10 @@ async function fetchServerHistory(){
   if(normalized===null)throw new Error('Respons getRecentTransactions tidak berisi array data transaksi.');
   // Cache is a fallback, not the source of truth. Merge cached/previous rows with the fresh
   // server response so a partial server window cannot make already-visible history disappear.
-  const cacheRows=(()=>{
-   try{
-    const raw=localStorage.getItem(CLOUD_PREVIEW_KEY);
-    const parsed=raw?JSON.parse(raw):[];
-    return Array.isArray(parsed)?parsed:[];
-   }catch(e){return [];}
-  })();
-  const keyOf=t=>{
-   // Gunakan ID event unik bila tersedia. ID transaksi saja tidak cukup karena
-   // satu transaksi dapat memiliki beberapa event (mis. audit dan pembayaran).
-   const raw=t.raw&&typeof t.raw==='object'?t.raw:{};
-   const eventId=serverHistoryField(raw,['id_event','idEvent','eventId','event_id']);
-   if(eventId!==''&&eventId!==null&&eventId!==undefined)return 'event:'+String(eventId).trim();
-   // Fallback tidak memasukkan status: perubahan status harus memperbarui baris
-   // yang sama, bukan membuat salinan lama dan baru berdampingan.
-   return [
-    String(t.date||''),String(t.time||''),String(t.name||'').trim().toLowerCase(),
-    String(Number(t.amount)||0),String(t.profile||'').trim().toLowerCase(),
-    String(t.payment||'').trim().toLowerCase()
-   ].join('|');
-  };
-  const merged=new Map();
-  // Cache/riwayat lama dipertahankan agar tidak berkedip atau hilang saat server
-  // hanya mengirim jendela data terbaru. Respons server terbaru selalu menang
-  // atas event yang sama, termasuk saat statusnya berubah.
-  [...cacheRows,...serverHistoryTransactions,...normalized].forEach(t=>{
-   if(t&&typeof t==='object')merged.set(keyOf(t),t);
-  });
-  serverHistoryTransactions=[...merged.values()]
+  // Respons sukses dari server adalah sumber kebenaran. Cache lokal hanya untuk
+  // tampilan sementara/offline; jangan gabungkan cache lama ke respons baru karena
+  // identitas catatan yang berbeda dapat membuat riwayat baru tertutup oleh catatan lama.
+  serverHistoryTransactions=normalized
    .sort((a,b)=>(String(b.date||'')+' '+String(b.time||'')).localeCompare(String(a.date||'')+' '+String(a.time||'')))
    .slice(0,200);
   serverHistoryLoaded=true;
