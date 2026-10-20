@@ -1,4 +1,4 @@
-// Nongki PWA v182-server-history-chronological-sort: send pre-payment audit as a zero-value new event.
+// Nongki PWA v183-thermal-print-layout-sync: send pre-payment audit as a zero-value new event.
 const CACHE_NAME = 'nongki-v182-server-history-chronological-sort'
 
 const CORE_FILES = [
