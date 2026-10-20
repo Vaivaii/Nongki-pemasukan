@@ -1,6 +1,6 @@
 {
-  "appId": "com.nongki.pemasukan",
-  "appName": "Nongki",
+  "appId": "com.nongki.pemasukan.printtest",
+  "appName": "Nongki Print Test",
   "webDir": "www",
   "bundledWebRuntime": false,
   "android": {
