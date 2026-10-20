@@ -2614,7 +2614,7 @@ async function syncAllData(){
  });
  return masterSyncPromise;
 }
-async function fetchGlobalTotal(){
+async function fetchCloudData(){
  if(globalTotalFetchPromise)return globalTotalFetchPromise;
  loadAppsScriptSettings();
  if(!navigator.onLine){const display=$('todayGlobal');if(display)display.textContent='Rp0';globalServerConfirmed=false;setGlobalSyncStatus('offline');return false}
@@ -2657,6 +2657,8 @@ async function fetchGlobalTotal(){
  })();
  return globalTotalFetchPromise;
 }
+// Wrapper kompatibilitas untuk kontrol UI lama; fungsi ini hanya membaca data GET.
+function fetchGlobalTotal(){return fetchCloudData();}
 function localTimestamp(value){
  const d=value?new Date(value):new Date();
  if(Number.isNaN(d.getTime()))return new Date().toISOString().slice(0,19).replace('T',' ');
@@ -2861,7 +2863,7 @@ async function syncPending(){
    if(sent)render();
    // Refresh cloud total only after the server confirms queued events.
    // This reads Income Log; it does not create or resend a transaction.
-   if(sent>0&&failed===0)await fetchGlobalTotal();
+   if(sent>0)await fetchCloudData();
    if(sent>0){void fetchReport();void fetchServerHistory();}
    await refreshGlobalCardStatus();
    await refreshStaffSyncBadge();
@@ -2926,7 +2928,7 @@ load();cleanupAbandonedCartDrafts();loadCloudPreview();try{ensureProfilePicker()
 try { await persistProducts(); } catch(e) { console.error('Produk belum tersimpan ke IndexedDB:',e); }
 render();refreshPaymentUI();applyRole();refreshStaffSyncBadge();
 // Status dan total diperiksa otomatis saat aplikasi pertama kali dibuka.
-const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();syncPending();fetchGlobalTotal();};
+const refreshGlobalOnLoad=()=>{refreshGlobalCardStatus();loadAppsScriptSettings();void fetchCloudData();void syncPending();};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshGlobalOnLoad,{once:true});else refreshGlobalOnLoad();
 fetchSharedMenu({quiet:true});startSharedMenuPolling();
 })();
