@@ -1,5 +1,5 @@
-// Nongki PWA v176-server-history-cache-merge: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v176-server-history-cache-merge'
+// Nongki PWA v177-server-history-date-source: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v177-server-history-date-source'
 
 const CORE_FILES = [
   './',
