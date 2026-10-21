@@ -1,0 +1,19 @@
+{
+  "name": "nongki-android-ui-baru-v2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native Android Capacitor wrapper built cleanly from ui-baru-v2.",
+  "scripts": {
+    "android:sync": "cap sync android",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/core": "^6.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/assets": "^3.0.5",
+    "sharp": "^0.33.5"
+  }
+}
