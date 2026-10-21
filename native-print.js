@@ -157,9 +157,101 @@
     }, true);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeButton, { once: true });
+
+  function buildBluetoothText(tx) {
+    var items = txItems(tx);
+    var total = totalOf(tx, items);
+    var cash = tx.uangDiterima == null ? (tx.uang_diterima == null ? total : tx.uang_diterima) : tx.uangDiterima;
+    var method = tx.metode_pembayaran || tx.metodePembayaran || '-';
+    var lines = [
+      'STRUK PEMBELIAN',
+      createdAt(tx),
+      'No: ' + String(tx.id || tx.id_transaksi || '-').slice(0, 24),
+      'Kasir: ' + String(tx.userId || tx.profileName || 'Nongki'),
+      '--------------------------------'
+    ];
+    items.forEach(function (item) {
+      lines.push(String(item.name).slice(0, 32));
+      lines.push(item.qty + ' x ' + money(item.price));
+      lines.push('Subtotal: ' + money(item.total));
+    });
+    lines.push(
+      '--------------------------------',
+      'TOTAL: ' + money(total),
+      'Metode: ' + method,
+      'Diterima: ' + money(cash),
+      'Kembalian: ' + money(tx.kembalian || 0)
+    );
+    if (tx.status === 'canceled' || tx.status === 'cancelled') lines.push('TRANSAKSI DIBATALKAN');
+    lines.push('--------------------------------', 'Terima kasih', 'Selamat menikmati!');
+    return lines.join('\\n') + '\\n';
+  }
+
+  function addBluetoothButton() {
+    if (!isCapacitorNative()) return;
+    var printButton = document.getElementById('thermalPrintNow');
+    var picker = document.getElementById('thermalPrintTransaction');
+    var status = document.getElementById('thermalPrintStatus');
+    if (!printButton || !picker || !status || document.getElementById('thermalPrintBluetoothDirect')) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'thermalPrintBluetoothDirect';
+    button.className = 'tp-btn';
+    button.textContent = 'Cetak Bluetooth langsung · 58 mm';
+    button.style.gridColumn = '1 / -1';
+    button.addEventListener('click', async function () {
+      var selectedId = picker.value;
+      if (!selectedId) {
+        status.textContent = 'Pilih transaksi terlebih dahulu.';
+        return;
+      }
+      var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
+      if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function' || typeof plugin.printBluetoothReceipt !== 'function') {
+        status.textContent = 'Fitur Bluetooth langsung belum ada di APK ini. Pasang APK hasil build terbaru.';
+        return;
+      }
+      button.disabled = true;
+      try {
+        status.textContent = 'Mencari printer Bluetooth yang sudah dipasangkan…';
+        var result = await plugin.getPairedBluetoothPrinters();
+        var devices = result && Array.isArray(result.devices) ? result.devices : [];
+        if (!devices.length) throw new Error('Tidak ada perangkat terpasang. Pasangkan printer thermal melalui pengaturan Bluetooth Android terlebih dahulu.');
+        var selected = devices[0];
+        if (devices.length > 1) {
+          var options = devices.map(function (device, index) {
+            return (index + 1) + '. ' + (device.name || 'Printer Bluetooth') + ' (' + device.address + ')';
+          }).join('\\n');
+          var answer = window.prompt('Pilih nomor printer:\\n' + options, '1');
+          if (answer === null) {
+            status.textContent = 'Cetak dibatalkan.';
+            return;
+          }
+          var index = Number(answer) - 1;
+          if (!Number.isInteger(index) || index < 0 || index >= devices.length) throw new Error('Nomor printer tidak valid.');
+          selected = devices[index];
+        }
+        var txs = await loadTransactions();
+        var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
+        if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
+        status.textContent = 'Mengirim struk ke ' + (selected.name || selected.address) + '…';
+        await plugin.printBluetoothReceipt({ address: selected.address, text: buildBluetoothText(tx) });
+        status.textContent = 'Struk berhasil dikirim ke printer Bluetooth.';
+      } catch (error) {
+        status.textContent = 'Cetak Bluetooth gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
+      } finally {
+        button.disabled = false;
+      }
+    });
+    printButton.parentNode.appendChild(button);
+  }
+
+  function addNativeFeatures() {
+    addNativeButton();
+    addBluetoothButton();
+  }
+\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeFeatures, { once: true });
   else addNativeButton();
   document.addEventListener('click', function (event) {
-    if (event.target.closest('.tabs [data-view="thermalPrintView"]')) setTimeout(addNativeButton, 0);
+    if (event.target.closest('.tabs [data-view="thermalPrintView"]')) setTimeout(addNativeFeatures, 0);
   });
 })();
