@@ -3106,7 +3106,7 @@ fetchSharedMenu({quiet:true});startSharedMenuPolling();
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js?v=v182-server-history-chronological-sort').catch(err => console.warn('Service worker belum aktif:', err));
+    navigator.serviceWorker.register('./service-worker.js?v=v201-thermal-actions-force-refresh').catch(err => console.warn('Service worker belum aktif:', err));
   });
 }
 </script>
@@ -3158,7 +3158,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 </style>
-<script src="./thermal-print.js?v=thermal-live-v18-compact-buttons"></script>
+<script src="./thermal-print.js?v=thermal-live-v19-force-compact"></script>
 <script src="./native-print.js?v=native-capacitor-print-v8"></script>
 </body>
 </html>
