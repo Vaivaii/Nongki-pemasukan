@@ -1232,7 +1232,42 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 .print-receipt-actions button{min-height:44px;font-size:12px}
 .print-receipt-close{float:right;border:0;background:transparent;font-size:23px;line-height:1;padding:0 4px;color:#59655d}
 @media(min-width:560px){.print-receipt-backdrop{align-items:center}.print-receipt-sheet{max-height:86vh}}
-</style></head>
+</style><script>
+(function () {
+  'use strict';
+  function reportStartupError(message) {
+    try {
+      console.error('[Nongki startup]', message);
+      function show() {
+        try {
+          var box = document.getElementById('nongkiStartupError');
+          if (!box) {
+            box = document.createElement('div');
+            box.id = 'nongkiStartupError';
+            box.setAttribute('role', 'alert');
+            box.style.cssText = 'position:fixed;z-index:2147483647;top:10px;left:10px;right:10px;padding:12px;background:#7f1d1d;color:white;border-radius:8px;font:13px/1.5 sans-serif;overflow-wrap:anywhere';
+            (document.body || document.documentElement).appendChild(box);
+          }
+          box.textContent = 'Gangguan JavaScript Nongki: ' + String(message || 'Kesalahan tidak diketahui').slice(0, 500);
+        } catch (_) {}
+      }
+      if (document.body) show();
+      else document.addEventListener('DOMContentLoaded', show, { once: true });
+    } catch (_) {}
+  }
+  window.addEventListener('error', function (event) {
+    var message = event.message || 'JavaScript/resource error';
+    if (event.filename) message += ' — ' + event.filename + ':' + (event.lineno || 0);
+    reportStartupError(message);
+  });
+  window.addEventListener('unhandledrejection', function (event) {
+    var reason = event.reason;
+    reportStartupError(reason && reason.message ? reason.message : String(reason || 'Unhandled Promise rejection'));
+  });
+  window.NongkiStartupDiagnostics = { report: reportStartupError };
+})();
+</script>
+</head>
 <body>
 <div class="login-overlay" id="loginOverlay">
 <div class="login-card">
