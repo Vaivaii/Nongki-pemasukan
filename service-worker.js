@@ -1,5 +1,5 @@
 // Nongki PWA v186-thermal-slider-centering-fix: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v188-logo-centering-absolute-fix'
+const CACHE_NAME = 'nongki-v189-receipt-logo-centered'
 
 const CORE_FILES = [
   './',
