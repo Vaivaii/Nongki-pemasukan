@@ -343,7 +343,15 @@
     button.className = 'tp-btn';
     button.textContent = 'Ganti Printer Bluetooth';
     button.style.width = '100%';
-    button.style.marginTop = '8px';
+    button.style.height = '68px';
+    button.style.minHeight = '68px';
+    button.style.boxSizing = 'border-box';
+    button.style.padding = '12px 8px';
+    button.style.margin = '0';
+    button.style.alignSelf = 'stretch';
+    button.style.display = 'flex';
+    button.style.alignItems = 'center';
+    button.style.justifyContent = 'center';
     button.addEventListener('click', async function () {
       var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
       if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function') {
@@ -374,6 +382,7 @@
       row.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,1fr)';
       row.style.gap = '9px';
       row.style.marginTop = '10px';
+      row.style.alignItems = 'stretch';
       printButton.parentNode.insertAdjacentElement('afterend', row);
     }
     row.appendChild(button);
