@@ -15,7 +15,7 @@ if manifest.exists():
     ]
     for permission in permissions:
         if permission not in manifest_text:
-            manifest_text = re.sub(r"(<manifest[^>]*>)", r"\\1\\n    " + permission, manifest_text, count=1)
+            manifest_text = re.sub(r"(<manifest[^>]*>)", r"\1\n    " + permission, manifest_text, count=1)
     manifest.write_text(manifest_text, encoding="utf-8")
 else:
     print("ERROR: AndroidManifest.xml not found after Capacitor Android generation", file=sys.stderr)
