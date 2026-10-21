@@ -339,8 +339,8 @@
     if (!isCapacitorNative()) return;
     if (document.getElementById('changeBluetoothPrinter')) return;
     var status = document.getElementById('thermalPrintStatus');
-    var preview = document.getElementById('thermalPrintPaper');
-    if (!status || !preview) return;
+    var directButton = document.getElementById('thermalPrintBluetoothDirect');
+    if (!status || !directButton) return;
     var button = document.createElement('button');
     button.type = 'button';
     button.id = 'changeBluetoothPrinter';
@@ -371,7 +371,7 @@
         button.disabled = false;
       }
     });
-    preview.insertAdjacentElement('afterend', button);
+    directButton.insertAdjacentElement('afterend', button);
   }
 
   function addBluetoothButton() {
