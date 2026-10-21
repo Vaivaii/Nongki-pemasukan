@@ -7,6 +7,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.print.PrintAttributes;
 import android.print.PrintJob;
 import android.print.PrintManager;
@@ -87,6 +89,32 @@ public class NativePrinterPlugin extends Plugin {
                 webView.loadDataWithBaseURL("https://localhost/", html, "text/html", "UTF-8", null);
             } catch (Exception e) {
                 call.reject("Tidak dapat menyiapkan struk untuk dicetak: " + e.getMessage(), e);
+            }
+        });
+    }
+
+
+    @PluginMethod
+    public void shareBluetoothPrintText(PluginCall call) {
+        final String text = call.getString("text");
+        if (text == null || text.trim().isEmpty()) {
+            call.reject("Data struk untuk Bluetooth Print kosong.");
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            try {
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setPackage("mate.bluetoothprint");
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_TEXT, text);
+                intent.putExtra(Intent.EXTRA_TITLE, "Struk Nongki");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getActivity().startActivity(intent);
+                call.resolve(new JSObject().put("opened", true).put("package", "mate.bluetoothprint"));
+            } catch (ActivityNotFoundException e) {
+                call.reject("Aplikasi Bluetooth Print (mate.bluetoothprint) belum terpasang. Instal aplikasi tersebut lalu coba lagi.", e);
+            } catch (Exception e) {
+                call.reject("Tidak dapat membuka Bluetooth Print: " + e.getMessage(), e);
             }
         });
     }
