@@ -3157,16 +3157,17 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   float: none !important;
 }
 
-</style>
 
-/* Force equal compact size for both extra thermal actions, overriding generic button rules. */
+/* Compact thermal action buttons: same height as primary print controls. */
 #thermalPrintView #thermalPrintExtraActions,
-#thermalPrintView #nativeBluetoothPrintActions { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; grid-auto-rows:68px !important; height:68px !important; max-height:68px !important; align-items:stretch !important; box-sizing:border-box !important; }
+#thermalPrintView #nativeBluetoothPrintActions { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; grid-auto-rows:68px !important; height:68px !important; min-height:68px !important; max-height:68px !important; align-items:stretch !important; box-sizing:border-box !important; }
 #thermalPrintView #thermalPrintExtraActions > button,
 #thermalPrintView #nativeBluetoothPrintActions > button,
 #thermalPrintView #changeBluetoothPrinter,
-#thermalPrintView #thermalPrintRawBt { height:68px !important; min-height:68px !important; max-height:68px !important; box-sizing:border-box !important; padding:10px 8px !important; margin:0 !important; align-self:stretch !important; line-height:1.25 !important; }
-<script src="./thermal-print.js?v=thermal-live-v20-hard-compact"></script>
-<script src="./native-print.js?v=native-capacitor-print-v9-hard-compact"></script>
+#thermalPrintView #thermalPrintRawBt { width:100% !important; height:68px !important; min-height:68px !important; max-height:68px !important; box-sizing:border-box !important; padding:10px 8px !important; margin:0 !important; align-self:stretch !important; line-height:1.25 !important; }
+</style>
+
+<script src="./thermal-print.js?v=thermal-live-v21-compact-stylefix"></script>
+<script src="./native-print.js?v=native-capacitor-print-v10-compact-stylefix"></script>
 </body>
 </html>
