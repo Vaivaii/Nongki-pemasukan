@@ -5,6 +5,21 @@ import re
 import sys
 
 root = Path("android")
+manifest = root / "app/src/main/AndroidManifest.xml"
+if manifest.exists():
+    manifest_text = manifest.read_text(encoding="utf-8")
+    permissions = [
+        '<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />',
+        '<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />',
+        '<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />',
+    ]
+    for permission in permissions:
+        if permission not in manifest_text:
+            manifest_text = re.sub(r"(<manifest[^>]*>)", r"\\1\\n    " + permission, manifest_text, count=1)
+    manifest.write_text(manifest_text, encoding="utf-8")
+else:
+    print("ERROR: AndroidManifest.xml not found after Capacitor Android generation", file=sys.stderr)
+    sys.exit(1)
 main_activity = next(root.glob("app/src/main/java/**/MainActivity.java"), None)
 if main_activity is None:
     print("ERROR: MainActivity.java not found after Capacitor Android generation", file=sys.stderr)
