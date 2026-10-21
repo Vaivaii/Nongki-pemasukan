@@ -1277,6 +1277,53 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
   }
 }
 </style>
+<style id="bottom-nav-fluid-expansion-fix">
+/* Smooth return from compact pill: avoid display:none, which makes labels pop in instantly. */
+.tabs.bottom-nav-glass .nav-item{
+  gap:3px!important;
+  transition:
+    color .24s ease,
+    padding .52s cubic-bezier(.22,1,.36,1),
+    gap .52s cubic-bezier(.22,1,.36,1)!important;
+}
+.tabs.bottom-nav-glass .nav-label{
+  display:block!important;
+  overflow:hidden!important;
+  max-height:1.2em;
+  opacity:1!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  transform:translateY(0);
+  transform-origin:center center;
+  transition:
+    opacity .34s ease,
+    max-height .52s cubic-bezier(.22,1,.36,1),
+    font-size .52s cubic-bezier(.22,1,.36,1),
+    line-height .52s cubic-bezier(.22,1,.36,1),
+    transform .52s cubic-bezier(.22,1,.36,1)!important;
+}
+.tabs.bottom-nav-glass.collapsed .nav-label{
+  display:block!important;
+  opacity:0!important;
+  font-size:0!important;
+  line-height:0!important;
+  max-height:0!important;
+  transform:translateY(-4px);
+  pointer-events:none!important;
+}
+.tabs.bottom-nav-glass .nav-item .ico{
+  transition:transform .52s cubic-bezier(.22,1,.36,1),font-size .52s cubic-bezier(.22,1,.36,1)!important;
+  transform-origin:center center;
+}
+.tabs.bottom-nav-glass.collapsed .nav-item{gap:0!important}
+@media(prefers-reduced-motion:reduce){
+  .tabs.bottom-nav-glass .nav-item,
+  .tabs.bottom-nav-glass .nav-label,
+  .tabs.bottom-nav-glass .nav-item .ico{
+    transition:none!important;
+  }
+}
+</style>
 <style id="thermalPrintStyles">
 #thermalPrintView{padding:0;margin:0;min-width:0;width:100%;max-width:100%;overflow:visible}
 #thermalPrintView .section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 8px}
