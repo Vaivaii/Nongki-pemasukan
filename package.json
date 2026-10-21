@@ -6,13 +6,14 @@
   "scripts": {
     "android:sync": "cap sync android",
     "android:open": "cap open android",
-    "build:print-bridge": "esbuild scripts/print-bridge.js --bundle --format=esm --outfile=www/print-bridge.js"
+    "build:print-bridge": "esbuild scripts/print-bridge.js --bundle --format=esm --outfile=www/print-bridge.js && esbuild scripts/bluetooth-bridge.js --bundle --format=esm --outfile=www/bluetooth-bridge.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",
     "@capacitor/core": "^6.2.1",
     "@capacitor/share": "^6.0.0",
-    "@bcyesil/capacitor-plugin-printer": "^0.0.5"
+    "@bcyesil/capacitor-plugin-printer": "^0.0.5",
+    "@fedejm/capacitor-esc-pos-printer": "^0.2.4"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.1",
