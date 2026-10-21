@@ -2413,7 +2413,7 @@ const PROFILE_LIST=[
  {id:'staff',name:'Pegawai',role:'staff'}
 ];
 const PROFILE_PIN_STORAGE_KEY='nongki_profile_pins_v1';
-const PROFILE_PINS={owner:'1212',wife:'2323'};
+const PROFILE_PINS={owner:'1234',wife:'5678'};
 try{const storedPins=JSON.parse(localStorage.getItem(PROFILE_PIN_STORAGE_KEY)||'{}');if(typeof storedPins.owner==='string'&&/^\d{4,8}$/.test(storedPins.owner))PROFILE_PINS.owner=storedPins.owner;if(typeof storedPins.wife==='string'&&/^\d{4,8}$/.test(storedPins.wife))PROFILE_PINS.wife=storedPins.wife;}catch(error){console.warn('PIN profil tersimpan tidak dapat dibaca; menggunakan PIN awal.',error);}
 let currentUser=null;
 const ACTIVE_ROLE_KEY='nongki_active_role';
@@ -2519,7 +2519,7 @@ function applyRole(){
  // Tampilkan kontrol perubahan produk bagi Owner dan Istri.
  renderReports();renderProducts();updateProfileButtonLabel(currentUser?.role);
 }
-async async function sendLoginSession(profile){
+async function sendLoginSession(profile){
  loadAppsScriptSettings();
  if(!profile||!appScriptConfigured())return false;
  if(!navigator.onLine){console.info('Login sesi belum dikirim karena perangkat offline.');return false;}
