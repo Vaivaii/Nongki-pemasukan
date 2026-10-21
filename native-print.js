@@ -184,7 +184,7 @@
     );
     if (tx.status === 'canceled' || tx.status === 'cancelled') lines.push('TRANSAKSI DIBATALKAN');
     lines.push('--------------------------------', 'Terima kasih', 'Selamat menikmati!');
-    return lines.join('\\n') + '\\n';
+    return lines.join('\n') + '\n';
   }
 
   function addBluetoothButton() {
@@ -220,8 +220,8 @@
         if (devices.length > 1) {
           var options = devices.map(function (device, index) {
             return (index + 1) + '. ' + (device.name || 'Printer Bluetooth') + ' (' + device.address + ')';
-          }).join('\\n');
-          var answer = window.prompt('Pilih nomor printer:\\n' + options, '1');
+          }).join('\n');
+          var answer = window.prompt('Pilih nomor printer:\n' + options, '1');
           if (answer === null) {
             status.textContent = 'Cetak dibatalkan.';
             return;
@@ -250,7 +250,7 @@
     addBluetoothButton();
   }
 \n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeFeatures, { once: true });
-  else addNativeButton();
+  else addNativeFeatures();
   document.addEventListener('click', function (event) {
     if (event.target.closest('.tabs [data-view="thermalPrintView"]')) setTimeout(addNativeFeatures, 0);
   });
