@@ -109,47 +109,44 @@
     var picker = document.getElementById('thermalPrintTransaction');
     var widthInput = document.getElementById('thermalPrintWidth');
     var status = document.getElementById('thermalPrintStatus');
-    var preview = document.getElementById('thermalPrintPaper');
     if (!printButton || !picker || !status || printButton.dataset.nativePrintBound === '1') return;
 
-    // Keep the existing compact "Cetak struk" button and route it to native Android printing.
+    // Keep the original "Cetak struk" button as the single direct Bluetooth print entry point.
     printButton.dataset.nativePrintBound = '1';
     printButton.addEventListener('click', async function (event) {
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (printButton.disabled) return;
       printButton.disabled = true;
       try {
         var selectedId = picker.value;
         if (!selectedId) throw new Error('Pilih transaksi terlebih dahulu.');
+        var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
+        if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function' || typeof plugin.printBluetoothReceipt !== 'function') {
+          throw new Error('Fitur Bluetooth langsung belum tersedia di APK ini. Pasang APK terbaru.');
+        }
+        status.textContent = 'Mencari printer Bluetooth yang sudah dipasangkan…';
+        var result = await plugin.getPairedBluetoothPrinters();
+        var devices = result && Array.isArray(result.devices) ? result.devices : [];
+        if (!devices.length) throw new Error('Tidak ada perangkat terpasang. Pasangkan printer thermal melalui pengaturan Bluetooth Android terlebih dahulu.');
+        var selected = await selectBluetoothPrinter(devices, false);
+        if (!selected) {
+          status.textContent = 'Pemilihan printer dibatalkan.';
+          return;
+        }
         var txs = await loadTransactions();
         var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
         if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
-        var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
-        if (!plugin || typeof plugin.printHtml !== 'function') {
-          throw new Error('Plugin NativePrinter belum terpasang di APK ini. Pasang APK hasil build terbaru.');
-        }
         var width = Number(widthInput && widthInput.value) === 80 ? 80 : 58;
-        // Force the preview logo/header to be centered as well.
-        if (preview) {
-          var header = preview.querySelector('header');
-          if (header) {
-            header.style.display = 'flex';
-            header.style.flexDirection = 'column';
-            header.style.alignItems = 'center';
-            header.style.justifyContent = 'center';
-            header.style.textAlign = 'center';
-            header.style.width = '100%';
-          }
-          var logo = preview.querySelector('header .logo');
-          if (logo) {
-            logo.style.display = 'block';
-            logo.style.marginLeft = 'auto';
-            logo.style.marginRight = 'auto';
-          }
-        }
-        status.textContent = 'Menyiapkan struk untuk cetak Android…';
-        await plugin.printHtml({ name: 'Struk Nongki', html: buildReceipt(tx, width) });
-        status.textContent = 'Dialog cetak Android terbuka. Pilih printer yang tersedia.';
+        status.textContent = 'Mengirim struk ke ' + (selected.name || selected.address) + '…';
+        var logoBase64 = await receiptLogoBase64();
+        await plugin.printBluetoothReceipt({
+          address: selected.address,
+          text: buildBluetoothText(tx),
+          logoBase64: logoBase64,
+          width: width
+        });
+        status.textContent = 'Struk berhasil dikirim ke printer Bluetooth.';
       } catch (error) {
         status.textContent = 'Cetak struk gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
       } finally {
@@ -157,7 +154,6 @@
       }
     }, true);
   }
-
 
   function receiptLogoBase64() {
     var source = localStorage.getItem('nongki_thermal_logo') || DEFAULT_NONGKI_LOGO;
@@ -339,8 +335,8 @@
     if (!isCapacitorNative()) return;
     if (document.getElementById('changeBluetoothPrinter')) return;
     var status = document.getElementById('thermalPrintStatus');
-    var directButton = document.getElementById('thermalPrintBluetoothDirect');
-    if (!status || !directButton) return;
+    var printButton = document.getElementById('thermalPrintNow');
+    if (!status || !printButton) return;
     var button = document.createElement('button');
     button.type = 'button';
     button.id = 'changeBluetoothPrinter';
@@ -370,62 +366,13 @@
         button.disabled = false;
       }
     });
-    directButton.insertAdjacentElement('afterend', button);
+    printButton.insertAdjacentElement('afterend', button);
   }
 
-  function addBluetoothButton() {
-    if (!isCapacitorNative()) return;
-    var printButton = document.getElementById('thermalPrintNow');
-    var picker = document.getElementById('thermalPrintTransaction');
-    var status = document.getElementById('thermalPrintStatus');
-    if (!printButton || !picker || !status || document.getElementById('thermalPrintBluetoothDirect')) return;
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.id = 'thermalPrintBluetoothDirect';
-    button.className = 'tp-btn';
-    button.textContent = 'Cetak Bluetooth langsung · 58 mm';
-    button.style.gridColumn = '1 / -1';
-    button.addEventListener('click', async function () {
-      var selectedId = picker.value;
-      if (!selectedId) {
-        status.textContent = 'Pilih transaksi terlebih dahulu.';
-        return;
-      }
-      var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
-      if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function' || typeof plugin.printBluetoothReceipt !== 'function') {
-        status.textContent = 'Fitur Bluetooth langsung belum ada di APK ini. Pasang APK hasil build terbaru.';
-        return;
-      }
-      button.disabled = true;
-      try {
-        status.textContent = 'Mencari printer Bluetooth yang sudah dipasangkan…';
-        var result = await plugin.getPairedBluetoothPrinters();
-        var devices = result && Array.isArray(result.devices) ? result.devices : [];
-        if (!devices.length) throw new Error('Tidak ada perangkat terpasang. Pasangkan printer thermal melalui pengaturan Bluetooth Android terlebih dahulu.');
-        var selected = await selectBluetoothPrinter(devices, false);
-        if (!selected) {
-          status.textContent = 'Pemilihan printer dibatalkan.';
-          return;
-        }
-        var txs = await loadTransactions();
-        var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
-        if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
-        status.textContent = 'Mengirim struk ke ' + (selected.name || selected.address) + '…';
-        var logoBase64 = await receiptLogoBase64();
-        await plugin.printBluetoothReceipt({ address: selected.address, text: buildBluetoothText(tx), logoBase64: logoBase64 });
-        status.textContent = 'Struk berhasil dikirim ke printer Bluetooth.';
-      } catch (error) {
-        status.textContent = 'Cetak Bluetooth gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
-      } finally {
-        button.disabled = false;
-      }
-    });
-    printButton.parentNode.appendChild(button);
-  }
+
 
   function addNativeFeatures() {
     addNativeButton();
-    addBluetoothButton();
     addChangePrinterButton();
   }
 
