@@ -47,11 +47,15 @@
       : date.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
+  var DEFAULT_NONGKI_LOGO = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20700%20287%22%3E%3Cg%20fill%3D%22%23003b2b%22%3E%3Ctext%20x%3D%22350%22%20y%3D%22145%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2CHelvetica%2Csans-serif%22%20font-size%3D%22112%22%20font-weight%3D%22500%22%20letter-spacing%3D%225%22%3ENONGKI%3C%2Ftext%3E%3Ctext%20x%3D%22350%22%20y%3D%22218%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2CHelvetica%2Csans-serif%22%20font-size%3D%2229%22%20font-weight%3D%22700%22%20letter-spacing%3D%2212%22%3EICE%20%E2%80%A2%20SNACK%20%E2%80%A2%20COFFEE%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fsvg%3E";
   function buildReceipt(tx, width) {
     var items = txItems(tx);
     var total = totalOf(tx, items);
     var cash = tx.uangDiterima == null ? (tx.uang_diterima == null ? total : tx.uang_diterima) : tx.uangDiterima;
     var method = tx.metode_pembayaran || tx.metodePembayaran || '-';
+    var logo = localStorage.getItem('nongki_thermal_logo') || DEFAULT_NONGKI_LOGO;
+    var logoSize = Math.max(20, Math.min(100, Number(localStorage.getItem('nongki_thermal_logo_size') || 65)));
+    var logoWidthMm = ((width - 4) * logoSize / 100).toFixed(2);
     var rows = items.map(function (item) {
       return '<div class="item"><div class="name">' + esc(item.name) + '</div>' +
         '<div class="pair"><span>' + item.qty + ' x ' + esc(money(item.price)) + '</span><b>' + esc(money(item.total)) + '</b></div></div>';
@@ -61,7 +65,7 @@
       '<title>Struk Nongki</title><style>' +
       '@page{size:' + (width === 80 ? '80mm' : '58mm') + ' auto;margin:0}' +
       '*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:11px}' +
-      'body{padding:2mm}.receipt{width:100%;overflow-wrap:anywhere}.center{text-align:center;line-height:1.5}.brand{font-size:19px;font-weight:800;letter-spacing:2px;margin-bottom:2px}' +
+      'body{padding:2mm}.receipt{width:100%;overflow-wrap:anywhere}.center{text-align:center;line-height:1.5}.brand-logo{display:block;width:'+logoWidthMm+'mm;max-width:100%;max-height:30mm;object-fit:contain;margin:0 auto 4px}' +
       'hr{border:0;border-top:1px dashed #000;margin:7px 0}.item{margin:6px 0}.name{font-weight:600}.pair,.sum{display:flex;justify-content:space-between;gap:6px;margin-top:3px}.pair b{text-align:right}.sum{font-size:14px;font-weight:800;margin:8px 0}.footer{text-align:center;line-height:1.5;margin-top:8px}' +
       '</style></head><body><main class="receipt"><div class="center"><div class="brand">NONGKI</div>ICE AND COFFEE</div><hr>' +
       '<div class="center"><b>STRUK PEMBELIAN</b><br>' + esc(createdAt(tx)) + '<br>No: ' + esc(String(tx.id || tx.id_transaksi || '-')) + '</div><hr>' +
