@@ -36,6 +36,7 @@ function plainEscPosText(tx){
   out.push('--------------------------------','Terima kasih','Selamat menikmati!');
   return out.join('\\n')+'\\n';
 }
+async function getReceiptLogoBase64(){var source=localStorage.getItem('nongki_thermal_logo')||DEFAULT_NONGKI_LOGO;var image=await loadLogoImage(source);if(!image)return '';var canvas=document.createElement('canvas'),width=Math.min(384,image.naturalWidth||image.width||384),height=Math.max(1,Math.round((image.naturalHeight||image.height||1)*width/(image.naturalWidth||image.width||384)));canvas.width=width;canvas.height=height;var context=canvas.getContext('2d',{willReadFrequently:true});context.clearRect(0,0,width,height);context.drawImage(image,0,0,width,height);var data=context.getImageData(0,0,width,height),pixels=data.data;for(var i=0;i<pixels.length;i+=4){var lum=(pixels[i]*299+pixels[i+1]*587+pixels[i+2]*114)/1000;if(pixels[i+3]<80||lum>190){pixels[i+3]=0;}else{pixels[i]=0;pixels[i+1]=0;pixels[i+2]=0;pixels[i+3]=255;}}context.putImageData(data,0,0);return canvas.toDataURL('image/png').split(',')[1];}
 async function printTx(tx,width,copies){
   var plugin=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.NativePrinter;
   if(!plugin||typeof plugin.getPairedBluetoothPrinters!=='function'||typeof plugin.printBluetoothReceipt!=='function'){
@@ -61,7 +62,7 @@ async function printTx(tx,width,copies){
     var count=Math.max(1,Math.min(2,Number(copies)||1));
     var receipt=Array.from({length:count},function(){return plainEscPosText(tx);}).join('\\n\\n');
     status.textContent='Menghubungkan ke '+(selected.name||selected.address)+'…';
-    await plugin.printBluetoothReceipt({address:selected.address,text:receipt});
+    var logoBase64=await getReceiptLogoBase64();await plugin.printBluetoothReceipt({address:selected.address,text:receipt,logoBase64:logoBase64});
     status.textContent='Struk berhasil dikirim langsung ke printer '+(selected.name||selected.address)+'.';
   }catch(error){
     status.textContent='Cetak Bluetooth gagal: '+(error&&error.message?error.message:'kesalahan tidak diketahui');
