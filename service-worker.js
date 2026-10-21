@@ -1,5 +1,5 @@
 // Nongki PWA v186-thermal-slider-centering-fix: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v196-bluetooth-printer-picker-modal'
+const CACHE_NAME = 'nongki-v197-single-button-direct-print'
 
 const CORE_FILES = [
   './',
