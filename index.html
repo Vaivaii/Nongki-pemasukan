@@ -3135,7 +3135,10 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 /* Fix: keep receipt logo and header centered regardless of image size. */
 #receiptPreview .receipt-header,
 #receiptPreview .logo-container,
-#receiptPreview .receipt-logo-wrapper {
+#receiptPreview .receipt-logo-wrapper,
+#thermalPrintPaper .receipt-header,
+#thermalPrintPaper .logo-container,
+#thermalPrintPaper .receipt-logo-wrapper {
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -3145,7 +3148,9 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 #receiptPreview img,
-#receiptPreview svg {
+#receiptPreview svg,
+#thermalPrintPaper img,
+#thermalPrintPaper svg {
   display: block !important;
   margin-left: auto !important;
   margin-right: auto !important;
