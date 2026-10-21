@@ -1,0 +1,9 @@
+{
+  "appId": "com.nongki.pemasukan.uibaru",
+  "appName": "Nongki UI Baru",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false
+  }
+}
