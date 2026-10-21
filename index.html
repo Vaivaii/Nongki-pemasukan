@@ -2632,76 +2632,46 @@ async function sendLoginSession(profile){
   return false;
  }
 }
-function loginSuccess(profile){
- if(!profile||!PROFILE_LIST.some(p=>p.id===profile.id))throw new Error('Profil login tidak valid.');
- currentUser=profile;
- try{saveProfileSession(profile);}catch(storageError){console.warn('Sesi tidak dapat disimpan; login dilanjutkan untuk sesi ini.',storageError);}
- try{
-  localStorage.setItem(ACTIVE_ROLE_KEY,String(profile.name||profile.id));
-  localStorage.setItem(LOGGED_IN_KEY,'true');
-  localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:String(profile.id),savedAt:new Date().toISOString()}));
- }catch(storageError){console.warn('Penyimpanan sesi lokal gagal:',storageError);}
- const overlay=document.getElementById('loginOverlay');
- try{showView('salesView');}catch(viewError){console.error('Tidak dapat membuka tampilan kasir:',viewError);}
- document.querySelectorAll('.view').forEach(view=>view.classList.toggle('active',view.id==='salesView'));
- try{applyRole();}catch(roleError){console.warn('UI role belum seluruhnya diperbarui:',roleError);}
- // Tutup overlay terakhir, setelah pergantian view/role selesai.
- if(overlay){
-  overlay.classList.add('hidden');
-  overlay.classList.remove('active');
-  overlay.setAttribute('aria-hidden','true');
-  overlay.style.setProperty('display','none','important');
-  overlay.style.setProperty('visibility','hidden','important');
-  overlay.style.setProperty('pointer-events','none','important');
- }
- const pinInput=document.getElementById('loginPin');if(pinInput)pinInput.value='';
- try{updateProfileButtonLabel(profile.role);}catch(e){}
- try{toast('Masuk sebagai '+String(profile.name||profile.id));}catch(e){}
- try{void sendLoginSession(profile);}catch(logError){console.warn('Log sesi gagal dikirim:',logError);}
- return true;
-}
 function attemptProfileLogin(){
  try{
-  const id=document.getElementById('loginProfile')?.value;
+  const id=$('loginProfile')?.value;
   const profile=PROFILE_LIST.find(p=>p.id===id);
-  const pin=String(document.getElementById('loginPin')?.value||'').trim();
+  const pin=String($('loginPin')?.value||'');
   if(!profile){toast('Pilih profil yang valid.');return false;}
-  if(profile.id==='owner'&&String(pin)!==String(PROFILE_PINS.owner)){
+  if(profile.id==='owner'&&pin!==String(PROFILE_PINS.owner)){
    alert('PIN Owner salah. Masukkan PIN Owner untuk melanjutkan.');
    const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
    return false;
   }
-  if(profile.id==='wife'&&String(pin)!==String(PROFILE_PINS.wife)){
+  if(profile.id==='wife'&&pin!==String(PROFILE_PINS.wife)){
    alert('PIN Istri salah.');
    const pinInput=$('loginPin');if(pinInput){pinInput.value='';pinInput.focus();}
    return false;
   }
-  return loginSuccess(profile);
+  // Pulihkan alur login stabil dari file acuan: state -> simpan sesi -> buka kasir -> refresh UI.
+  currentUser=profile;
+  saveProfileSession(profile);
+  void sendLoginSession(profile);
+  const pinInput=$('loginPin');if(pinInput)pinInput.value='';
+  showView('salesView');
+  safeProfileUiRefresh();
+  try{toast('Masuk sebagai '+profile.name);}catch(error){}
+  return true;
  }catch(error){
   console.error('Login profil mengalami kendala:',error);
-  try{alert('Login gagal: '+String(error&&error.message?error.message:error));}catch(e){}
+  try{toast('Login gagal. Muat ulang aplikasi lalu coba lagi.');}catch(e){}
   return false;
  }
 }
-// Handler login tunggal untuk klik tombol maupun submit/Enter.
+// Satu handler autentikasi yang sama untuk klik dan submit; tidak menggandakan eksekusi.
 (function bindProfileLoginForm(){
  const bind=()=>{
-  const form=document.getElementById('loginForm');
-  const button=document.getElementById('btnLogin')||(form?form.querySelector('button[type="submit"]'):null);
+  const form=$('loginForm');
+  const button=$('btnLogin');
   if(!form&&!button)return;
   const executeLogin=function(e){
    if(e){e.preventDefault();e.stopPropagation();}
-   try{
-    const profileSelect=document.getElementById('loginProfile');
-    const pinInput=document.getElementById('loginPin');
-    if(!profileSelect||!pinInput){alert('Elemen login tidak ditemukan. Muat ulang aplikasi.');return false;}
-    // Tetap gunakan validasi profil/PIN asli; jangan melewati autentikasi.
-    return attemptProfileLogin();
-   }catch(err){
-    console.error('Kesalahan login:',err);
-    alert('Gagal login: '+String(err&&err.message?err.message:err));
-    return false;
-   }
+   return attemptProfileLogin();
   };
   if(form&&form.dataset.profileLoginBound!=='true'){
    form.dataset.profileLoginBound='true';
