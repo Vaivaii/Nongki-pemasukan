@@ -13,7 +13,7 @@
     "@capacitor/core": "^6.2.1",
     "@capacitor/share": "^6.0.0",
     "@bcyesil/capacitor-plugin-printer": "^0.0.5",
-    "@fedejm/capacitor-esc-pos-printer": "^0.2.4"
+    "@kduma-autoid/capacitor-bluetooth-printer": "^0.2.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.1",
