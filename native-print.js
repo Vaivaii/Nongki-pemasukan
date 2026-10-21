@@ -366,7 +366,17 @@
         button.disabled = false;
       }
     });
-    printButton.insertAdjacentElement('afterend', button);
+    var row = document.getElementById('thermalPrintExtraActions');
+    if (!row) {
+      row = document.createElement('div');
+      row.id = 'thermalPrintExtraActions';
+      row.style.display = 'grid';
+      row.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,1fr)';
+      row.style.gap = '9px';
+      row.style.marginTop = '10px';
+      printButton.parentNode.insertAdjacentElement('afterend', row);
+    }
+    row.appendChild(button);
   }
 
 
