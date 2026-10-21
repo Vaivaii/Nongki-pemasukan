@@ -1,5 +1,5 @@
 // Nongki PWA v186-thermal-slider-centering-fix: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v190-receipt-preview-logo-hard-center'
+const CACHE_NAME = 'nongki-v191-default-png-receipt-logo'
 
 const CORE_FILES = [
   './',
@@ -7,7 +7,8 @@ const CORE_FILES = [
   './manifest.json',
   './icon-192.png',
   './nongki-icon.svg',
-  './icon-512.png'
+  './icon-512.png',
+  './assets/nongki-receipt-logo.png'
 ];
 
 self.addEventListener('install', event => {
