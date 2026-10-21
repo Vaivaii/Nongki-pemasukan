@@ -360,7 +360,6 @@
         var result = await plugin.getPairedBluetoothPrinters();
         var devices = result && Array.isArray(result.devices) ? result.devices : [];
         if (!devices.length) throw new Error('Tidak ada printer terpasang. Pasangkan printer di Pengaturan Bluetooth Android.');
-        localStorage.removeItem(BT_PRINTER_KEY);
         var chosen = await selectBluetoothPrinter(devices, true);
         status.textContent = chosen
           ? 'Printer tersimpan: ' + (chosen.name || chosen.address)
