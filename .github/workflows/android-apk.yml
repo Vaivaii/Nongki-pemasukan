@@ -1,0 +1,75 @@
+name: Build Nongki Android APK from ui-baru-v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - android/ui-baru-v2-native-clean
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'service-worker.js'
+      - 'icon-192.png'
+      - 'icon-512.png'
+      - 'thermal-print.js'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - 'scripts/**'
+      - 'assets/**'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build installable debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout clean native branch
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Capacitor dependencies
+        run: npm install
+      - name: Bundle web app from this branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p www
+          cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js www/
+          test -s www/index.html
+          test -s www/thermal-print.js
+          echo "Bundled assets from android/ui-baru-v2-native-clean"
+          ls -lh www/
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Prepare launcher icon
+        run: |
+          mkdir -p assets
+          node -e "require('sharp')('assets/nongki-icon.svg').resize(1024,1024).png().toFile('assets/icon.png').then(()=>console.log('Launcher icon prepared'))"
+          npx capacitor-assets generate --android --iconBackgroundColor "#F8F7F2"
+      - name: Configure Android status bar
+        run: python3 scripts/configure-android-statusbar.py
+      - name: Sync local web assets
+        run: npx cap sync android
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nongki-ui-baru-v2-native-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
