@@ -1258,35 +1258,45 @@ button,
   -webkit-perspective: 1000;
   perspective: 1000;
 }
+/* GPU acceleration is intentionally limited to the floating bottom navigation. */
 .tabs.bottom-nav-glass,
 .tabs.bottom-nav-glass .nav-indicator,
-.nav-indicator,
-.card,
-.product,
-.modal,
-.cash-modal,
-.cash-modal-backdrop,
-.tab-panel,
-.view,
-button,
-.btn,
-.tab {
+.tabs.bottom-nav-glass .nav-item {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transform: translateZ(0);
+  will-change: transform;
 }
-/* Keep will-change limited to elements that actually animate to avoid excess GPU memory. */
-.tabs.bottom-nav-glass,
-.tabs.bottom-nav-glass .nav-indicator,
-.nav-indicator,
-.product,
-.card,
-.cash-modal,
-.cash-modal-backdrop,
-.tab-panel,
-.view,
-button:not(:disabled),
-.btn:not(:disabled),
-.tab {
-  will-change: transform, opacity;
+/* Login must remain in the normal hit-testing stack; no transform/perspective promotion. */
+#loginOverlay,
+.login-overlay,
+#loginForm,
+.login-card,
+#btnLogin,
+#loginPin,
+#loginProfile {
+  pointer-events: auto !important;
+}
+#loginOverlay,
+.login-overlay {
+  z-index: 9999 !important;
+}
+#loginForm,
+.login-card,
+#btnLogin {
+  position: relative;
+  z-index: 10000 !important;
+}
+#loginOverlay,
+.login-overlay,
+#loginForm,
+.login-card,
+#btnLogin,
+#loginPin,
+#loginProfile {
+  perspective: none !important;
+  -webkit-perspective: none !important;
+  will-change: auto !important;
 }
 :root {
   --nongki-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -2637,7 +2647,6 @@ async function sendLoginSession(profile){
 }
 function loginSuccess(profile){
  if(!profile||!PROFILE_LIST.some(p=>p.id===profile.id))throw new Error('Profil login tidak valid.');
- // Sesi disimpan terpisah: storage yang gagal tidak boleh mencegah transisi UI.
  currentUser=profile;
  try{saveProfileSession(profile);}catch(storageError){console.warn('Sesi tidak dapat disimpan; login dilanjutkan untuk sesi ini.',storageError);}
  try{
@@ -2646,19 +2655,19 @@ function loginSuccess(profile){
   localStorage.setItem(SESSION_KEY,JSON.stringify({profileId:String(profile.id),savedAt:new Date().toISOString()}));
  }catch(storageError){console.warn('Penyimpanan sesi lokal gagal:',storageError);}
  const overlay=document.getElementById('loginOverlay');
+ try{showView('salesView');}catch(viewError){console.error('Tidak dapat membuka tampilan kasir:',viewError);}
+ document.querySelectorAll('.view').forEach(view=>view.classList.toggle('active',view.id==='salesView'));
+ try{applyRole();}catch(roleError){console.warn('UI role belum seluruhnya diperbarui:',roleError);}
+ // Tutup overlay terakhir, setelah pergantian view/role selesai.
  if(overlay){
   overlay.classList.add('hidden');
   overlay.classList.remove('active');
   overlay.setAttribute('aria-hidden','true');
-  overlay.style.display='none';
+  overlay.style.setProperty('display','none','important');
+  overlay.style.setProperty('visibility','hidden','important');
+  overlay.style.setProperty('pointer-events','none','important');
  }
- // Dashboard kasir menggunakan view internal aplikasi, bukan kontainer main terpisah.
- try{showView('salesView');}catch(viewError){console.error('Tidak dapat membuka tampilan kasir:',viewError);}
- document.querySelectorAll('.view').forEach(view=>view.classList.toggle('active',view.id==='salesView'));
  const pinInput=document.getElementById('loginPin');if(pinInput)pinInput.value='';
- try{applyRole();}catch(roleError){console.warn('UI role belum seluruhnya diperbarui:',roleError);}
- // applyRole mungkin mengubah class overlay; tegaskan status tertutup setelahnya.
- if(overlay){overlay.classList.add('hidden');overlay.classList.remove('active');overlay.setAttribute('aria-hidden','true');overlay.style.display='none';}
  try{updateProfileButtonLabel(profile.role);}catch(e){}
  try{toast('Masuk sebagai '+String(profile.name||profile.id));}catch(e){}
  try{void sendLoginSession(profile);}catch(logError){console.warn('Log sesi gagal dikirim:',logError);}
