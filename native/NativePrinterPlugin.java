@@ -1,6 +1,8 @@
 package com.nongki.pemasukan.uibaru;
 
 import android.Manifest;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -24,6 +26,7 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
 import java.io.OutputStream;
+import android.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -154,6 +157,7 @@ public class NativePrinterPlugin extends Plugin {
     private void performBluetoothPrint(PluginCall call) {
         final String address = call.getString("address");
         final String receipt = call.getString("text");
+        final String logoBase64 = call.getString("logoBase64");
         if (address == null || address.trim().isEmpty() || receipt == null || receipt.trim().isEmpty()) {
             call.reject("Alamat printer atau isi struk kosong.");
             return;
@@ -169,7 +173,8 @@ public class NativePrinterPlugin extends Plugin {
                 socket.connect();
                 OutputStream output = socket.getOutputStream();
                 output.write(new byte[] { 0x1B, 0x40, 0x1B, 0x61, 0x01 });
-                output.write("NONGKI\nICE AND COFFEE\n".getBytes("UTF-8"));
+                if (logoBase64 != null && !logoBase64.trim().isEmpty()) writeRasterLogo(output, logoBase64);
+                else output.write("NONGKI\nICE AND COFFEE\n".getBytes("UTF-8"));
                 output.write(new byte[] { 0x1B, 0x61, 0x00 });
                 output.write(receipt.getBytes("UTF-8"));
                 output.write(new byte[] { 0x0A, 0x0A, 0x0A });
@@ -188,6 +193,38 @@ public class NativePrinterPlugin extends Plugin {
                 }
             }
         }).start();
+    }
+
+
+    private void writeRasterLogo(OutputStream output, String encoded) throws Exception {
+        byte[] imageBytes = Base64.decode(encoded, Base64.DEFAULT);
+        Bitmap original = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        if (original == null) throw new Exception("Gambar logo tidak dapat dibaca.");
+        int targetWidth = Math.min(384, original.getWidth());
+        int targetHeight = Math.max(1, Math.round((float) original.getHeight() * targetWidth / original.getWidth()));
+        Bitmap bitmap = Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
+        int widthBytes = (targetWidth + 7) / 8;
+        byte[] raster = new byte[widthBytes * targetHeight];
+        for (int y = 0; y < targetHeight; y++) {
+            for (int x = 0; x < targetWidth; x++) {
+                int pixel = bitmap.getPixel(x, y);
+                int alpha = (pixel >>> 24) & 0xff;
+                int red = (pixel >>> 16) & 0xff;
+                int green = (pixel >>> 8) & 0xff;
+                int blue = pixel & 0xff;
+                int luminance = (red * 299 + green * 587 + blue * 114) / 1000;
+                if (alpha > 80 && luminance < 190) {
+                    int index = y * widthBytes + (x / 8);
+                    raster[index] |= (byte) (0x80 >> (x % 8));
+                }
+            }
+        }
+        output.write(new byte[] { 0x1B, 0x61, 0x01 });
+        output.write(new byte[] { 0x1D, 0x76, 0x30, 0x00, (byte)(widthBytes & 0xff), (byte)((widthBytes >> 8) & 0xff), (byte)(targetHeight & 0xff), (byte)((targetHeight >> 8) & 0xff) });
+        output.write(raster);
+        output.write(new byte[] { 0x0A, 0x1B, 0x61, 0x00 });
+        bitmap.recycle();
+        if (original != bitmap) original.recycle();
     }
 
     private void cleanupWhenFinished(PrintJob job, WebView view, int attempts) {
