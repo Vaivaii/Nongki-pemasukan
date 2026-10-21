@@ -2,9 +2,10 @@
   'use strict';
 
   function isCapacitorNative() {
-    return !!(window.Capacitor &&
-      typeof window.Capacitor.isNativePlatform === 'function' &&
-      window.Capacitor.isNativePlatform());
+    return !!(window.Capacitor && (
+      (typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) ||
+      (window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter)
+    ));
   }
 
   function esc(value) {
