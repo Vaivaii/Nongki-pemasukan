@@ -3131,6 +3131,27 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 /* Bottom navigation icons only: monochrome outline icons inherit the existing active/inactive tab colors. */
 .tabs.bottom-nav-glass .nav-item .ico{display:flex!important;align-items:center;justify-content:center;line-height:1!important;}
 .tabs.bottom-nav-glass .nav-item .ico svg{display:block;width:1em;height:1em;flex:0 0 auto;stroke:currentColor;fill:none;}
+
+/* Fix: keep receipt logo and header centered regardless of image size. */
+#receiptPreview .receipt-header,
+#receiptPreview .logo-container,
+#receiptPreview .receipt-logo-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+#receiptPreview img,
+#receiptPreview svg {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  float: none !important;
+}
+
 </style>
 <script src="./thermal-print.js?v=thermal-live-v7"></script>
 <script src="./native-print.js?v=native-capacitor-print-v1"></script>
