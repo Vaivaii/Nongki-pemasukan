@@ -1265,10 +1265,15 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 }
 #loginForm,
 .login-card,
-#btnLogin {
-  position: relative;
+#btnLogin,
+.login-card input,
+.login-card select {
+  position: relative !important;
   z-index: 10000 !important;
+  pointer-events: auto !important;
 }
+#loginForm { isolation: isolate; }
+#btnLogin { touch-action: manipulation; }
 #loginOverlay,
 .login-overlay,
 #loginForm,
@@ -2678,25 +2683,34 @@ function attemptProfileLogin(){
   return false;
  }
 }
-// Submit tunggal: klik tombol atau tekan Enter menjalankan handler login yang sama.
+// Handler login tunggal untuk klik tombol maupun submit/Enter.
 (function bindProfileLoginForm(){
  const bind=()=>{
   const form=document.getElementById('loginForm');
-  if(!form||form.dataset.profileLoginBound==='true')return;
-  form.dataset.profileLoginBound='true';
-  form.addEventListener('submit',function(e){
-   e.preventDefault();
+  const button=document.getElementById('btnLogin')||(form?form.querySelector('button[type="submit"]'):null);
+  if(!form&&!button)return;
+  const executeLogin=function(e){
+   if(e){e.preventDefault();e.stopPropagation();}
    try{
     const profileSelect=document.getElementById('loginProfile');
     const pinInput=document.getElementById('loginPin');
-    if(!profileSelect||!pinInput){alert('Elemen login tidak ditemukan. Muat ulang aplikasi.');return;}
-    const result=attemptProfileLogin();
-    if(result===false)console.warn('Login belum berhasil; periksa pesan validasi.');
+    if(!profileSelect||!pinInput){alert('Elemen login tidak ditemukan. Muat ulang aplikasi.');return false;}
+    // Tetap gunakan validasi profil/PIN asli; jangan melewati autentikasi.
+    return attemptProfileLogin();
    }catch(err){
     console.error('Kesalahan login:',err);
     alert('Gagal login: '+String(err&&err.message?err.message:err));
+    return false;
    }
-  });
+  };
+  if(form&&form.dataset.profileLoginBound!=='true'){
+   form.dataset.profileLoginBound='true';
+   form.addEventListener('submit',executeLogin);
+  }
+  if(button&&button.dataset.profileLoginClickBound!=='true'){
+   button.dataset.profileLoginClickBound='true';
+   button.addEventListener('click',executeLogin);
+  }
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();
