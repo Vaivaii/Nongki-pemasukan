@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - android/capacitor-apk
+      - android/capacitor-v2-nav-icons
     paths:
       - 'index.html'
       - 'manifest.json'
