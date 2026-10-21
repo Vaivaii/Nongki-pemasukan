@@ -1239,25 +1239,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 @media(prefers-reduced-motion:reduce){.tabs.bottom-nav-glass,.tabs.bottom-nav-glass *{transition:none!important}}
 
 
-/* Global animation rendering optimization — UI only; no business logic changes. */
-.tabs.bottom-nav-glass,
-.tabs.bottom-nav-glass .nav-indicator,
-.nav-indicator,
-.card,
-.product,
-.modal,
-.cash-modal,
-.cash-modal-backdrop,
-.tab-panel,
-.view,
-button,
-.btn,
-.tab {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
-}
+/* No global perspective/backface rules: preserve normal hit testing for forms and dialogs. */
 /* GPU acceleration is intentionally limited to the floating bottom navigation. */
 .tabs.bottom-nav-glass,
 .tabs.bottom-nav-glass .nav-indicator,
