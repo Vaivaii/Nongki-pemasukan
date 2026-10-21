@@ -1217,47 +1217,44 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 
 
 
-/* Liquid Glass Floating Pill — scoped exclusively to bottom navigation */
+
+
+/* Nongki sage Liquid Glass nav — scoped to bottom navigation only */
 .tabs.bottom-nav-glass {
-  position: fixed !important; left: 50% !important; right: auto !important;
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-  transform: translateX(-50%) !important; width: calc(100% - 24px) !important;
-  max-width: 656px !important; height: 68px !important; min-height: 68px !important; max-height: 68px !important;
-  margin: 0 !important; padding: 4px !important; display: flex !important;
-  align-items: stretch !important; justify-content: space-between !important; gap: 0 !important;
-  overflow: hidden !important; isolation: isolate !important;
-  background: rgba(20, 20, 20, 0.55) !important;
-  -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: 999px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.035), 0 8px 30px rgba(0,0,0,.22) !important;
-  z-index: 1000 !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 8px 26px rgba(20,41,29,.12) !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 .tabs.bottom-nav-glass .nav-indicator {
-  position: absolute !important; top: 4px !important; bottom: 4px !important; left: 4px !important;
-  width: calc(20% - 2.4px) !important; flex: none !important; padding: 0 !important; margin: 0 !important;
-  background: rgba(255,255,255,0.15) !important; border: 1px solid rgba(255,255,255,0.10) !important;
-  border-radius: 999px !important; -webkit-backdrop-filter: blur(8px) !important; backdrop-filter: blur(8px) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 0 12px rgba(255,255,255,.035) !important;
-  transform: translateX(0); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  pointer-events: none !important; z-index: 0 !important;
+  background: rgba(216, 232, 221, 0.9) !important;
+  border: 1px solid rgba(29, 57, 41, 0.06) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 2px 8px rgba(29,57,41,.07) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
-.tabs.bottom-nav-glass .nav-item {
-  position: relative !important; z-index: 1 !important; flex: 1 1 0 !important; width: 20% !important;
-  min-width: 0 !important; max-width: none !important; height: 100% !important; min-height: 0 !important; max-height: none !important;
-  margin: 0 !important; padding: 5px 1px !important; display: flex !important; flex-direction: column !important;
-  align-items: center !important; justify-content: center !important; gap: 3px !important;
-  border: 0 !important; border-radius: 999px !important; background: transparent !important;
-  color: rgba(255,255,255,.60) !important; font-family: inherit !important; font-size: 10px !important;
-  font-weight: 600 !important; line-height: 1.2 !important; white-space: nowrap !important; box-shadow: none !important;
-  -webkit-tap-highlight-color: transparent;
+.tabs.bottom-nav-glass .nav-item { color: #708075 !important; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; }
+.tabs.bottom-nav-glass .nav-item.active { color: #1D3929 !important; font-weight: 700 !important; }
+.tabs.bottom-nav-glass .nav-item.active .ico,
+.tabs.bottom-nav-glass .nav-item.active .nav-label { color: #1D3929 !important; font-weight: 700 !important; }
+.tabs.bottom-nav-glass .nav-item .ico,
+.tabs.bottom-nav-glass .nav-item .nav-label { color: inherit !important; }
+/* Collapse while scrolling down; retain the original five icons and their order. */
+.tabs.bottom-nav-glass.nav-collapsed {
+  height: 48px !important; min-height: 48px !important; max-height: 48px !important;
+  padding: 3px !important;
 }
-.tabs.bottom-nav-glass .nav-item.active { color: rgba(255,255,255,.98) !important; background: transparent !important; }
-.tabs.bottom-nav-glass .nav-item .ico { display: block !important; margin: 0 !important; font-size: 19px !important; line-height: 1 !important; }
-.tabs.bottom-nav-glass .nav-label { display: block !important; font-size: 10px !important; line-height: 1.2 !important; font-weight: 600 !important; white-space: nowrap !important; }
-@media (max-width: 360px) {
-  .tabs.bottom-nav-glass { width: calc(100% - 16px) !important; height: 62px !important; min-height: 62px !important; max-height: 62px !important; }
-  .tabs.bottom-nav-glass .nav-item .ico { font-size: 17px !important; }
-  .tabs.bottom-nav-glass .nav-label { font-size: 9px !important; }
+.tabs.bottom-nav-glass.nav-collapsed .nav-label {
+  opacity: 0 !important; display: none !important;
+}
+.tabs.bottom-nav-glass.nav-collapsed .nav-item { padding-top: 0 !important; padding-bottom: 0 !important; gap: 0 !important; }
+.tabs.bottom-nav-glass.nav-collapsed .nav-item .ico { font-size: 20px !important; }
+.tabs.bottom-nav-glass.nav-collapsed .nav-indicator { top: 3px !important; bottom: 3px !important; }
+@media (prefers-reduced-motion: reduce) {
+  .tabs.bottom-nav-glass, .tabs.bottom-nav-glass .nav-item, .tabs.bottom-nav-glass .nav-indicator { transition: none !important; }
 }
 </style>
 <style id="report-tab-animation-and-refresh">#refreshReportBtn{background-color:#fdfbf7!important;background-image:none!important;border:1px solid #e0dcd3!important;border-radius:12px!important;padding:10px 16px!important;font-size:14px!important;font-weight:600!important;color:#5c4d3c!important;box-shadow:0 1px 3px rgba(0,0,0,.05)!important}#refreshReportBtn:hover,#refreshReportBtn:focus-visible{background-color:#f5f1e9!important;border-color:#d4cec2!important}#refreshReportBtn:active{background-color:#eee8de!important;transform:translateY(1px) scale(.985)}#reportsView.report-tab-entering .chart-box{animation:reportChartRise .55s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-chart-index,0)*85ms)}#reportsView.report-tab-entering .report-card{animation:reportCardRise .42s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-card-index,0)*65ms)}#reportsView.report-tab-entering .chart-box:nth-of-type(1){--report-chart-index:0}#reportsView.report-tab-entering .chart-box:nth-of-type(2){--report-chart-index:1}#reportsView.report-tab-entering .chart-box:nth-of-type(3){--report-chart-index:2}#reportsView.report-tab-entering .chart-box:nth-of-type(4){--report-chart-index:3}#reportsView.report-tab-entering .report-card:nth-child(1){--report-card-index:0}#reportsView.report-tab-entering .report-card:nth-child(2){--report-card-index:1}#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart{animation:reportDataReveal .65s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}#reportsView.report-data-updating #productChart .bar-fill,#reportsView.report-data-updating #weeklyChart .bar-fill{animation:reportBarGrow .72s cubic-bezier(.16,1,.3,1) both;transform-origin:left center}#reportsView.report-data-updating #dailyChart .month-bar,#reportsView.report-data-updating #monthlyChart .month-bar{animation:reportBarGrowVertical .72s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}@keyframes reportChartRise{0%{opacity:.25;transform:translateY(18px) scale(.985)}70%{opacity:1;transform:translateY(-2px) scale(1.003)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes reportCardRise{0%{opacity:.35;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}@keyframes reportDataReveal{0%{opacity:.45}100%{opacity:1}}@keyframes reportBarGrow{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}@keyframes reportBarGrowVertical{0%{transform:scaleY(0);opacity:.35}100%{transform:scaleY(1);opacity:1}}@media(prefers-reduced-motion:reduce){#reportsView.report-tab-entering .chart-box,#reportsView.report-tab-entering .report-card,#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart,#reportsView.report-data-updating .bar-fill,#reportsView.report-data-updating .month-bar{animation:none!important}}</style>
@@ -2238,6 +2235,28 @@ async function cancelTx(id){
 function resetForm(){editingId=null;$('productName').value='';$('productPrice').value='';$('productIcon').value='🥤';$('productCategory').value='Minuman';$('saveProduct').textContent='Tambah produk';$('cancelEdit').style.display='none'}
 function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser.role)){toast('Profil ini tidak dapat mengubah produk dan harga');return}let p=data.products.find(x=>x.id===id);if(!p)return;editingId=id;$('productName').value=p.name;$('productPrice').value=p.price;$('productIcon').value=p.icon;$('productCategory').value=p.category;$('saveProduct').textContent='Simpan perubahan';$('cancelEdit').style.display='inline-block';showView('productsView');window.scrollTo({top:0,behavior:'smooth'})}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>{const active=t.dataset.view===id;t.classList.toggle('active',active);if(t.closest('#bottomNavigation'))t.setAttribute('aria-current',active?'page':'false');});const nav=document.getElementById('bottomNavigation'),indicator=document.getElementById('navIndicator');if(nav&&indicator){const navItems=Array.from(nav.querySelectorAll('.nav-item'));const activeIndex=navItems.findIndex(t=>t.dataset.view===id);if(activeIndex>=0)indicator.style.transform='translateX('+(activeIndex*100)+'%)';}if(id==='historyView'){historySource='local';renderHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
+
+
+ /* Auto-collapse nav on main-content scroll; restore on upward scroll or when scrolling settles. */
+ (function initBottomNavAutoCollapse(){
+   const scroller=document.querySelector('main');
+   const nav=document.getElementById('bottomNavigation');
+   if(!scroller||!nav||nav.dataset.autoCollapseBound==='true')return;
+   nav.dataset.autoCollapseBound='true';
+   let lastTop=scroller.scrollTop||0;
+   let settleTimer=null;
+   let scrollDown=false;
+   const expand=()=>{nav.classList.remove('nav-collapsed');};
+   scroller.addEventListener('scroll',()=>{
+     const top=scroller.scrollTop||0;
+     const delta=top-lastTop;
+     if(top<=8||delta < -2){scrollDown=false;expand();}
+     else if(delta>2){scrollDown=true;nav.classList.add('nav-collapsed');}
+     lastTop=top;
+     if(settleTimer!==null)clearTimeout(settleTimer);
+     settleTimer=setTimeout(()=>{expand();scrollDown=false;settleTimer=null;},180);
+   },{passive:true});
+ })();
  function switchTab(element,index){const nav=document.getElementById('bottomNavigation');if(!nav||!element||!nav.contains(element))return;const items=Array.from(nav.querySelectorAll('.nav-item'));if(!Number.isInteger(index)||index<0||index>=items.length||items[index]!==element)return;showView(element.dataset.view);const indicator=document.getElementById('navIndicator');if(indicator)indicator.style.transform='translateX('+(index*100)+'%)';}
 $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
