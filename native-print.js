@@ -215,6 +215,165 @@
     return lines.join('\n') + '\n';
   }
 
+
+  var BT_PRINTER_KEY = 'nongki_bluetooth_printer_mac';
+
+  function ensureBluetoothModal() {
+    if (document.getElementById('btPrinterModal')) return;
+    var style = document.createElement('style');
+    style.id = 'btPrinterModalStyles';
+    style.textContent = `
+      .bt-modal{display:none;position:fixed;inset:0;z-index:10050;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+      .bt-modal.is-open{display:flex}
+      .bt-modal-backdrop{position:absolute;inset:0;background:rgba(8,20,14,.62);backdrop-filter:blur(3px)}
+      .bt-modal-card{position:relative;width:100%;max-width:440px;max-height:82dvh;display:flex;flex-direction:column;overflow:hidden;background:#fffdf8;color:#173d2c;border:1px solid #e2e7df;border-radius:20px;box-shadow:0 18px 55px rgba(0,0,0,.24)}
+      .bt-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 18px 14px;border-bottom:1px solid #e7ebe4}
+      .bt-modal-header h3{margin:0;font-size:18px;line-height:1.3}.bt-modal-header p{margin:6px 0 0;color:#758078;font-size:12px;line-height:1.5}
+      .bt-icon-button{flex:0 0 36px;width:36px;height:36px;border:0;border-radius:50%;background:#edf1eb;color:#173d2c;font-size:24px}
+      .bt-printer-list{overflow-y:auto;padding:12px;overscroll-behavior:contain}
+      .bt-printer-option{display:flex;align-items:center;width:100%;gap:12px;padding:14px 12px;margin:0 0 8px;text-align:left;color:#173d2c;background:#fff;border:1px solid #e1e7df;border-radius:13px;cursor:pointer}
+      .bt-printer-option:active{background:#edf4ee}.bt-printer-option:focus-visible{outline:2px solid #397b5a;outline-offset:2px}
+      .bt-printer-icon{display:flex;flex:0 0 42px;width:42px;height:42px;align-items:center;justify-content:center;border-radius:12px;background:#eaf1e9;font-size:21px}
+      .bt-printer-info{flex:1;min-width:0}.bt-printer-name{display:block;font-size:14px;font-weight:700;overflow-wrap:anywhere}
+      .bt-printer-address{display:block;margin-top:4px;color:#7a847d;font-size:11px;overflow-wrap:anywhere}
+      .bt-printer-check{font-size:18px;font-weight:700}.bt-printer-message{padding:14px 8px;color:#758078;font-size:13px;line-height:1.6}
+      .bt-modal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid #e7ebe4;font-size:11px;color:#758078}
+      .bt-secondary{padding:10px 16px;border:1px solid #dfe5dc;border-radius:10px;background:#fff;color:#173d2c;font-weight:700}
+    `;
+    document.head.appendChild(style);
+    var modal = document.createElement('div');
+    modal.id = 'btPrinterModal';
+    modal.className = 'bt-modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = '<div class="bt-modal-backdrop" data-bt-close></div><section class="bt-modal-card" role="dialog" aria-modal="true" aria-labelledby="btPrinterTitle"><div class="bt-modal-header"><div><h3 id="btPrinterTitle">Pilih Printer Bluetooth</h3><p>Pilih printer yang akan digunakan untuk mencetak struk.</p></div><button type="button" id="btPrinterClose" class="bt-icon-button" aria-label="Tutup">×</button></div><div id="btPrinterList" class="bt-printer-list"></div><div class="bt-modal-footer"><span id="btPrinterSavedLabel">Printer belum dipilih</span><button type="button" id="btPrinterCancel" class="bt-secondary">Batal</button></div></section>';
+    document.body.appendChild(modal);
+  }
+
+  function openBluetoothModal(devices) {
+    ensureBluetoothModal();
+    return new Promise(function (resolve) {
+      var modal = document.getElementById('btPrinterModal');
+      var list = document.getElementById('btPrinterList');
+      var savedLabel = document.getElementById('btPrinterSavedLabel');
+      var savedMac = localStorage.getItem(BT_PRINTER_KEY) || '';
+      list.replaceChildren();
+      savedLabel.textContent = savedMac ? 'Tersimpan: ' + savedMac : 'Pilih printer untuk menyimpan perangkat';
+
+      devices.forEach(function (device) {
+        var address = String(device.address || '').trim();
+        if (!address) return;
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'bt-printer-option';
+        var icon = document.createElement('span');
+        icon.className = 'bt-printer-icon';
+        icon.textContent = '🖨️';
+        var info = document.createElement('span');
+        info.className = 'bt-printer-info';
+        var name = document.createElement('span');
+        name.className = 'bt-printer-name';
+        name.textContent = device.name || 'Printer Bluetooth';
+        var mac = document.createElement('span');
+        mac.className = 'bt-printer-address';
+        mac.textContent = address;
+        info.appendChild(name);
+        info.appendChild(mac);
+        button.appendChild(icon);
+        button.appendChild(info);
+        if (address.toUpperCase() === savedMac.toUpperCase()) {
+          var check = document.createElement('span');
+          check.className = 'bt-printer-check';
+          check.textContent = '✓';
+          button.appendChild(check);
+        }
+        button.addEventListener('click', function () {
+          localStorage.setItem(BT_PRINTER_KEY, address);
+          finish(address);
+        });
+        list.appendChild(button);
+      });
+
+      if (!list.children.length) {
+        var message = document.createElement('p');
+        message.className = 'bt-printer-message';
+        message.textContent = 'Tidak ada printer Bluetooth yang bisa dipilih. Pasangkan printer di Pengaturan Bluetooth Android terlebih dahulu.';
+        list.appendChild(message);
+      }
+
+      function finish(value) {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.getElementById('btPrinterClose').removeEventListener('click', cancel);
+        document.getElementById('btPrinterCancel').removeEventListener('click', cancel);
+        modal.querySelector('[data-bt-close]').removeEventListener('click', cancel);
+        modal.removeEventListener('keydown', onKey);
+        resolve(value || null);
+      }
+      function cancel() { finish(null); }
+      function onKey(event) { if (event.key === 'Escape') cancel(); }
+      document.getElementById('btPrinterClose').addEventListener('click', cancel);
+      document.getElementById('btPrinterCancel').addEventListener('click', cancel);
+      modal.querySelector('[data-bt-close]').addEventListener('click', cancel);
+      modal.addEventListener('keydown', onKey);
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    });
+  }
+
+  async function selectBluetoothPrinter(devices, forcePicker) {
+    var savedMac = localStorage.getItem(BT_PRINTER_KEY) || '';
+    var selected = !forcePicker && savedMac
+      ? devices.find(function (device) {
+          return String(device.address || '').toUpperCase() === savedMac.toUpperCase();
+        })
+      : null;
+    if (selected) return selected;
+    var chosenMac = await openBluetoothModal(devices);
+    if (!chosenMac) return null;
+    selected = devices.find(function (device) { return device.address === chosenMac; });
+    if (!selected) throw new Error('Printer yang dipilih tidak ditemukan.');
+    return selected;
+  }
+
+  function addChangePrinterButton() {
+    if (!isCapacitorNative()) return;
+    if (document.getElementById('changeBluetoothPrinter')) return;
+    var status = document.getElementById('thermalPrintStatus');
+    var preview = document.getElementById('thermalPrintPaper');
+    if (!status || !preview) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'changeBluetoothPrinter';
+    button.className = 'tp-btn';
+    button.textContent = 'Ganti Printer Bluetooth';
+    button.style.width = '100%';
+    button.style.marginTop = '8px';
+    button.addEventListener('click', async function () {
+      var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
+      if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function') {
+        status.textContent = 'Fitur Bluetooth tidak tersedia di APK ini.';
+        return;
+      }
+      button.disabled = true;
+      try {
+        status.textContent = 'Memuat daftar printer Bluetooth…';
+        var result = await plugin.getPairedBluetoothPrinters();
+        var devices = result && Array.isArray(result.devices) ? result.devices : [];
+        if (!devices.length) throw new Error('Tidak ada printer terpasang. Pasangkan printer di Pengaturan Bluetooth Android.');
+        localStorage.removeItem(BT_PRINTER_KEY);
+        var chosen = await selectBluetoothPrinter(devices, true);
+        status.textContent = chosen
+          ? 'Printer tersimpan: ' + (chosen.name || chosen.address)
+          : 'Pergantian printer dibatalkan.';
+      } catch (error) {
+        status.textContent = 'Gagal memilih printer: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
+      } finally {
+        button.disabled = false;
+      }
+    });
+    preview.insertAdjacentElement('afterend', button);
+  }
+
   function addBluetoothButton() {
     if (!isCapacitorNative()) return;
     var printButton = document.getElementById('thermalPrintNow');
@@ -244,19 +403,10 @@
         var result = await plugin.getPairedBluetoothPrinters();
         var devices = result && Array.isArray(result.devices) ? result.devices : [];
         if (!devices.length) throw new Error('Tidak ada perangkat terpasang. Pasangkan printer thermal melalui pengaturan Bluetooth Android terlebih dahulu.');
-        var selected = devices[0];
-        if (devices.length > 1) {
-          var options = devices.map(function (device, index) {
-            return (index + 1) + '. ' + (device.name || 'Printer Bluetooth') + ' (' + device.address + ')';
-          }).join('\n');
-          var answer = window.prompt('Pilih nomor printer:\n' + options, '1');
-          if (answer === null) {
-            status.textContent = 'Cetak dibatalkan.';
-            return;
-          }
-          var index = Number(answer) - 1;
-          if (!Number.isInteger(index) || index < 0 || index >= devices.length) throw new Error('Nomor printer tidak valid.');
-          selected = devices[index];
+        var selected = await selectBluetoothPrinter(devices, false);
+        if (!selected) {
+          status.textContent = 'Pemilihan printer dibatalkan.';
+          return;
         }
         var txs = await loadTransactions();
         var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
@@ -277,8 +427,10 @@
   function addNativeFeatures() {
     addNativeButton();
     addBluetoothButton();
+    addChangePrinterButton();
   }
-\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeFeatures, { once: true });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeFeatures, { once: true });
   else addNativeFeatures();
   document.addEventListener('click', function (event) {
     if (event.target.closest('.tabs [data-view="thermalPrintView"]')) setTimeout(addNativeFeatures, 0);
