@@ -1,5 +1,7 @@
 /* Isolated receipt-print UI. Does not modify or replace login handlers. */
 (() => {
+  function bootPrintUi() {
+    try {
   const $p = id => document.getElementById(id);
   let selectedPrintTransaction = null, bridgePromise = null;
   function loadBridge(){if(!bridgePromise)bridgePromise=import('./print-bridge.js');return bridgePromise;}
@@ -57,4 +59,21 @@
   const observer = new MutationObserver(() => { decorateRows($p('recentList')); decorateRows($p('historyList')); renderPrintList(); });
   ['recentList','historyList','printHistoryList'].forEach(id => { const node=$p(id); if(node) observer.observe(node,{childList:true,subtree:true}); });
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="printView"]'))renderPrintList();});
+    } catch (error) {
+      console.error('[Nongki Print UI] Bootstrap gagal; aplikasi utama tetap berjalan:', error);
+      try {
+        if (window.NongkiStartupDiagnostics && typeof window.NongkiStartupDiagnostics.report === 'function') {
+          window.NongkiStartupDiagnostics.report(error && error.message ? error.message : String(error));
+        }
+      } catch (_) {}
+    }
+  }
+
+  // Start print-only UI after the login/application UI has had time to initialize.
+  const scheduleBoot = () => window.setTimeout(bootPrintUi, 400);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleBoot, { once: true });
+  } else {
+    scheduleBoot();
+  }
 })();
