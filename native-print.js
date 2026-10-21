@@ -159,6 +159,33 @@
   }
 
 
+  function receiptLogoBase64() {
+    var source = localStorage.getItem('nongki_thermal_logo') || DEFAULT_NONGKI_LOGO;
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var originalWidth = img.naturalWidth || img.width || 384;
+        var originalHeight = img.naturalHeight || img.height || 1;
+        var width = Math.min(384, originalWidth);
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = Math.max(1, Math.round(originalHeight * width / originalWidth));
+        var ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < data.data.length; i += 4) {
+          var lum = (data.data[i] * 299 + data.data[i + 1] * 587 + data.data[i + 2] * 114) / 1000;
+          if (data.data[i + 3] < 80 || lum > 190) data.data[i + 3] = 0;
+          else { data.data[i] = 0; data.data[i + 1] = 0; data.data[i + 2] = 0; data.data[i + 3] = 255; }
+        }
+        ctx.putImageData(data, 0, 0);
+        resolve(canvas.toDataURL('image/png').split(',')[1]);
+      };
+      img.onerror = function () { reject(new Error('Logo struk tidak dapat dibaca untuk printer Bluetooth.')); };
+      img.src = source;
+    });
+  }
+
   function buildBluetoothText(tx) {
     var items = txItems(tx);
     var total = totalOf(tx, items);
@@ -235,7 +262,8 @@
         var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
         if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
         status.textContent = 'Mengirim struk ke ' + (selected.name || selected.address) + '…';
-        await plugin.printBluetoothReceipt({ address: selected.address, text: buildBluetoothText(tx) });
+        var logoBase64 = await receiptLogoBase64();
+        await plugin.printBluetoothReceipt({ address: selected.address, text: buildBluetoothText(tx), logoBase64: logoBase64 });
         status.textContent = 'Struk berhasil dikirim ke printer Bluetooth.';
       } catch (error) {
         status.textContent = 'Cetak Bluetooth gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
