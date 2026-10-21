@@ -1,5 +1,5 @@
 // Nongki PWA v186-thermal-slider-centering-fix: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v198-thermal-app-action-layout'
+const CACHE_NAME = 'nongki-v199-thermal-buttons-equal-height'
 
 const CORE_FILES = [
   './',
