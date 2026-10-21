@@ -48,6 +48,8 @@ jobs:
           set -euo pipefail
           mkdir -p www
           cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js native-print.js www/
+          mkdir -p www/assets
+          cp assets/nongki-receipt-logo.png www/assets/
           test -s www/index.html
           test -s www/thermal-print.js
           test -s www/native-print.js
