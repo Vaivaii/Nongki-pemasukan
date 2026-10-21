@@ -1219,53 +1219,22 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 
 
 
-/* Nongki sage Liquid Glass nav — scoped to bottom navigation only */
-.tabs.bottom-nav-glass {
-  position:fixed!important; left:50%!important; right:auto!important;
-  bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;
-  transform:translateX(-50%)!important; width:90%!important; max-width:656px!important;
-  height:64px!important; min-height:64px!important; max-height:64px!important;
-  box-sizing:border-box!important; margin:0!important; padding:5px!important;
-  display:flex!important; align-items:stretch!important; justify-content:space-between!important; gap:0!important;
-  overflow:hidden!important; isolation:isolate!important; border-radius:30px!important;
-  background:rgba(255,255,255,.85)!important;
-  -webkit-backdrop-filter:blur(12px)!important; backdrop-filter:blur(12px)!important;
-  border:1px solid rgba(0,0,0,.05)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 26px rgba(20,41,29,.12)!important;
-  transition:height .3s cubic-bezier(.175,.885,.32,1.275),padding .3s cubic-bezier(.175,.885,.32,1.275),border-radius .3s ease!important;
-  z-index:1000!important;
-}
-.tabs.bottom-nav-glass .nav-indicator {
-  position:absolute!important; left:5px!important; top:5px!important; bottom:5px!important;
-  width:calc(20% - 2px)!important; flex:none!important; margin:0!important; padding:0!important;
-  border-radius:25px!important; background:#D8E8DD!important;
-  border:1px solid rgba(31,58,43,.06)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 8px rgba(29,57,41,.07)!important;
-  transform:translateX(0); transition:transform .4s cubic-bezier(.175,.885,.32,1.275),top .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275)!important;
-  pointer-events:none!important; z-index:0!important;
-}
-.tabs.bottom-nav-glass .nav-item {
-  position:relative!important; z-index:1!important; flex:1 1 0!important; width:20%!important;
-  min-width:0!important; max-width:none!important; height:100%!important; min-height:0!important; max-height:none!important;
-  margin:0!important; padding:4px 1px!important; display:flex!important; flex-direction:column!important;
-  align-items:center!important; justify-content:center!important; gap:3px!important;
-  border:0!important; border-radius:25px!important; background:transparent!important;
-  color:#708075!important; font-family:inherit!important; font-size:10px!important; line-height:1.2!important;
-  font-weight:500!important; white-space:nowrap!important; box-shadow:none!important;
-  transition:color .22s ease, padding .3s cubic-bezier(.175,.885,.32,1.275)!important;
-  -webkit-tap-highlight-color:transparent;
-}
-.tabs.bottom-nav-glass .nav-item.active,
-.tabs.bottom-nav-glass .nav-item.active .ico,
-.tabs.bottom-nav-glass .nav-item.active .nav-label {color:#1F3A2B!important;font-weight:700!important;background:transparent!important}
-.tabs.bottom-nav-glass .nav-item .ico {display:block!important;margin:0!important;font-size:19px!important;line-height:1!important;color:inherit!important}
-.tabs.bottom-nav-glass .nav-item .nav-label {display:block!important;opacity:1;font-size:10px!important;line-height:1.2!important;font-weight:inherit!important;white-space:nowrap!important;color:inherit!important;transition:opacity .16s ease,font-size .2s ease!important}
-.tabs.bottom-nav-glass.collapsed {height:48px!important;min-height:48px!important;max-height:48px!important;padding:3px!important;border-radius:26px!important}
-.tabs.bottom-nav-glass.collapsed .nav-label {opacity:0!important;display:none!important;font-size:0!important}
-.tabs.bottom-nav-glass.collapsed .nav-item {padding:0!important;gap:0!important}
-.tabs.bottom-nav-glass.collapsed .nav-item .ico {font-size:20px!important}
-.tabs.bottom-nav-glass.collapsed .nav-indicator {top:3px!important;bottom:3px!important}
-@media(max-width:360px){.tabs.bottom-nav-glass{width:90%!important;height:62px!important;min-height:62px!important;max-height:62px!important}.tabs.bottom-nav-glass.collapsed{height:46px!important;min-height:46px!important;max-height:46px!important}.tabs.bottom-nav-glass .nav-item .ico{font-size:18px!important}.tabs.bottom-nav-glass .nav-label{font-size:9px!important}}
+/* Nongki Liquid Glass Floating Pill — navigation only */
+.tabs.bottom-nav-glass{position:fixed!important;left:50%!important;right:auto!important;bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;rotate:var(--nav-tilt,0deg);width:90%!important;max-width:440px!important;height:66px!important;min-height:66px!important;max-height:66px!important;box-sizing:border-box!important;margin:0!important;padding:5px!important;display:flex!important;align-items:stretch!important;justify-content:space-between!important;gap:0!important;overflow:hidden!important;isolation:isolate!important;border-radius:30px!important;background:rgba(255,255,255,.85)!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border:1px solid rgba(0,0,0,.06)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 26px rgba(20,41,29,.12)!important;transition:height .3s cubic-bezier(.175,.885,.32,1.275),padding .3s cubic-bezier(.175,.885,.32,1.275),border-radius .3s ease,rotate .18s ease!important;z-index:1000!important}
+.tabs.bottom-nav-glass .nav-indicator{position:absolute!important;left:5px!important;top:5px!important;bottom:5px!important;width:calc(20% - 2px)!important;flex:none!important;margin:0!important;padding:0!important;border-radius:25px!important;background:#D8E8DD!important;border:1px solid rgba(31,58,43,.06)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 8px rgba(29,57,41,.07)!important;transform:translateX(0);scale:1;transition:transform .4s cubic-bezier(.175,.885,.32,1.275),top .3s cubic-bezier(.175,.885,.32,1.275),bottom .3s cubic-bezier(.175,.885,.32,1.275),scale .22s cubic-bezier(.175,.885,.32,1.275)!important;pointer-events:none!important;z-index:0!important}
+.tabs.bottom-nav-glass .nav-item{position:relative!important;z-index:1!important;flex:1 1 0!important;width:20%!important;min-width:0!important;max-width:none!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:4px 1px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;border:0!important;border-radius:25px!important;background:transparent!important;color:#708075!important;font-family:inherit!important;font-size:10px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;box-shadow:none!important;transition:color .22s ease,padding .3s cubic-bezier(.175,.885,.32,1.275)!important;-webkit-tap-highlight-color:transparent}
+.tabs.bottom-nav-glass .nav-item.active,.tabs.bottom-nav-glass .nav-item.active .ico,.tabs.bottom-nav-glass .nav-item.active .nav-label{color:#1F3A2B!important;font-weight:700!important;background:transparent!important}
+.tabs.bottom-nav-glass .nav-item .ico{display:block!important;margin:0!important;font-size:19px!important;line-height:1!important;color:inherit!important;transform:scale(1);transition:transform .22s cubic-bezier(.175,.885,.32,1.275)!important}
+.tabs.bottom-nav-glass .nav-item .nav-label{display:block!important;opacity:1;font-size:10px!important;line-height:1.2!important;font-weight:inherit!important;white-space:nowrap!important;color:inherit!important;transition:opacity .16s ease,font-size .2s ease!important}
+.tabs.bottom-nav-glass.collapsed{height:46px!important;min-height:46px!important;max-height:46px!important;padding:3px!important;border-radius:26px!important}
+.tabs.bottom-nav-glass.collapsed .nav-label{opacity:0!important;display:none!important;font-size:0!important}
+.tabs.bottom-nav-glass.collapsed .nav-item{padding:0!important;gap:0!important}
+.tabs.bottom-nav-glass.collapsed .nav-item .ico{font-size:19px!important;transform:scale(.85)!important}
+.tabs.bottom-nav-glass.collapsed .nav-indicator{top:3px!important;bottom:3px!important}
+.tabs.bottom-nav-glass.dragging .nav-indicator{scale:1.1!important}
+.tabs.bottom-nav-glass.dragging .nav-item.drag-over .ico{transform:scale(1.2)!important}
+@media(max-width:360px){.tabs.bottom-nav-glass .nav-item .ico{font-size:18px!important}.tabs.bottom-nav-glass .nav-label{font-size:9px!important}}
+@media(prefers-reduced-motion:reduce){.tabs.bottom-nav-glass,.tabs.bottom-nav-glass *{transition:none!important}}
 </style>
 <style id="report-tab-animation-and-refresh">#refreshReportBtn{background-color:#fdfbf7!important;background-image:none!important;border:1px solid #e0dcd3!important;border-radius:12px!important;padding:10px 16px!important;font-size:14px!important;font-weight:600!important;color:#5c4d3c!important;box-shadow:0 1px 3px rgba(0,0,0,.05)!important}#refreshReportBtn:hover,#refreshReportBtn:focus-visible{background-color:#f5f1e9!important;border-color:#d4cec2!important}#refreshReportBtn:active{background-color:#eee8de!important;transform:translateY(1px) scale(.985)}#reportsView.report-tab-entering .chart-box{animation:reportChartRise .55s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-chart-index,0)*85ms)}#reportsView.report-tab-entering .report-card{animation:reportCardRise .42s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--report-card-index,0)*65ms)}#reportsView.report-tab-entering .chart-box:nth-of-type(1){--report-chart-index:0}#reportsView.report-tab-entering .chart-box:nth-of-type(2){--report-chart-index:1}#reportsView.report-tab-entering .chart-box:nth-of-type(3){--report-chart-index:2}#reportsView.report-tab-entering .chart-box:nth-of-type(4){--report-chart-index:3}#reportsView.report-tab-entering .report-card:nth-child(1){--report-card-index:0}#reportsView.report-tab-entering .report-card:nth-child(2){--report-card-index:1}#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart{animation:reportDataReveal .65s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}#reportsView.report-data-updating #productChart .bar-fill,#reportsView.report-data-updating #weeklyChart .bar-fill{animation:reportBarGrow .72s cubic-bezier(.16,1,.3,1) both;transform-origin:left center}#reportsView.report-data-updating #dailyChart .month-bar,#reportsView.report-data-updating #monthlyChart .month-bar{animation:reportBarGrowVertical .72s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}@keyframes reportChartRise{0%{opacity:.25;transform:translateY(18px) scale(.985)}70%{opacity:1;transform:translateY(-2px) scale(1.003)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes reportCardRise{0%{opacity:.35;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}@keyframes reportDataReveal{0%{opacity:.45}100%{opacity:1}}@keyframes reportBarGrow{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}@keyframes reportBarGrowVertical{0%{transform:scaleY(0);opacity:.35}100%{transform:scaleY(1);opacity:1}}@media(prefers-reduced-motion:reduce){#reportsView.report-tab-entering .chart-box,#reportsView.report-tab-entering .report-card,#reportsView.report-data-updating #productChart,#reportsView.report-data-updating #dailyChart,#reportsView.report-data-updating #weeklyChart,#reportsView.report-data-updating #monthlyChart,#reportsView.report-data-updating .bar-fill,#reportsView.report-data-updating .month-bar{animation:none!important}}</style>
 <style id="nongki-interaction-polish">#profileDropdown.menu-opening{animation:profilePopIn .25s cubic-bezier(.16,1,.3,1) both!important;transform-origin:bottom right!important}#profileDropdown.menu-closing{animation:profilePopOut .15s ease-in both!important;pointer-events:none}#cashPaymentModal.modal-closing .cash-modal{animation:cashPanelOut .19s ease-in both!important}#cashPaymentModal.modal-closing{animation:cashBackdropOut .19s ease-in both!important}.history-row.cancelled-flash{animation:cancelCardImpact .72s ease-out both!important}.history-row.cancelled-flash .history-icon{animation:cancelIconPop .42s ease-out both}.product.cancelled-product-flash{animation:cancelProductCard .62s cubic-bezier(.2,.8,.2,1) both!important;position:relative;z-index:1}.product.cancelled-product-flash .emoji{animation:none!important}#salesView .product-group-selected.product-grid-entering .product{animation:productGridSpringIn .34s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--product-index,0)*22ms);will-change:transform,opacity}#salesView .product-group-selected .product.product-tap-pop{animation:productCardTapPop .34s cubic-bezier(.2,.8,.2,1.15) both!important;animation-delay:0ms!important;will-change:transform}#salesView .product-group-selected .product:nth-child(1){--product-index:0}#salesView .product-group-selected .product:nth-child(2){--product-index:1}#salesView .product-group-selected .product:nth-child(3){--product-index:2}#salesView .product-group-selected .product:nth-child(4){--product-index:3}#salesView .product-group-selected .product:nth-child(5){--product-index:4}#salesView .product-group-selected .product:nth-child(6){--product-index:5}#salesView .product-group-selected .product:nth-child(7){--product-index:6}#salesView .product-group-selected .product:nth-child(8){--product-index:7}#salesView .product-group-selected .product:nth-child(9){--product-index:8}#salesView .product-group-selected .product:nth-child(10){--product-index:9}#salesView .product-category-tab.icon-pop{animation:categoryTabSpring .3s cubic-bezier(.16,1,.3,1)}@keyframes productGridSpringIn{0%{opacity:0;transform:translateY(14px) scale(.96)}68%{opacity:1;transform:translateY(-2px) scale(1.012)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes categoryTabSpring{0%{transform:scale(.94)}65%{transform:scale(1.045)}100%{transform:scale(1)}}@keyframes profilePopIn{0%{opacity:0;translate:0 14px;scale:.88}65%{opacity:1;translate:0 -2px;scale:1.015}100%{opacity:1;translate:0 0;scale:1}}@keyframes profilePopOut{to{opacity:0;translate:0 8px;scale:.94}}@keyframes cashPanelOut{to{opacity:0;transform:translateY(38px) scale(.96)}}@keyframes cashBackdropOut{to{opacity:0}}@keyframes cancelProductCard{0%{background:#fff0e8;box-shadow:0 0 0 0 rgba(220,75,55,0)}20%{background:#ffd9ca;box-shadow:0 0 0 3px rgba(220,75,55,.22);transform:scale(1.035)}55%{background:#fff4ef;transform:scale(.99)}100%{background:transparent;box-shadow:0 0 0 0 rgba(220,75,55,0);transform:scale(1)}}@keyframes cancelCardImpact{0%{background:#fff0e8}20%{background:#ffd9ca;transform:scale(1.018)}55%{background:#fff4ef;transform:scale(.995)}100%{background:transparent;transform:scale(1)}}@keyframes cancelIconPop{35%{transform:scale(1.22) rotate(-7deg)}65%{transform:scale(.92) rotate(4deg)}100%{transform:scale(1)}}@media(prefers-reduced-motion:reduce){#profileDropdown.menu-opening,#profileDropdown.menu-closing,#cashPaymentModal.modal-closing,.history-row.cancelled-flash,.product.cancelled-product-flash{animation:none!important}}</style><!-- thermal-print-ui-v1: isolated UI; no transaction or backend logic modified -->
@@ -2247,25 +2216,25 @@ function editProduct(id){if(!currentUser||!['owner','wife'].includes(currentUser
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>{const active=t.dataset.view===id;t.classList.toggle('active',active);if(t.closest('#bottomNavigation'))t.setAttribute('aria-current',active?'page':'false');});const nav=document.getElementById('bottomNavigation'),indicator=document.getElementById('navIndicator');if(nav&&indicator){const navItems=Array.from(nav.querySelectorAll('.nav-item'));const activeIndex=navItems.findIndex(t=>t.dataset.view===id);if(activeIndex>=0)indicator.style.transform='translateX('+(activeIndex*100)+'%)';}if(id==='historyView'){historySource='local';renderHistory();}if(id==='productsView')renderProducts();if(id==='reportsView'){const reportView=$('reportsView');if(reportView){reportView.classList.remove('report-tab-entering');void reportView.offsetWidth;reportView.classList.add('report-tab-entering');setTimeout(()=>reportView.classList.remove('report-tab-entering'),950);}renderReports();void fetchReport();}}
 
 
- /* Auto-collapse without hiding the floating navigation off-screen. */
- (function initBottomNavAutoCollapse(){
-   const scroller=document.querySelector('main');
-   const nav=document.getElementById('bottomNavigation');
-   if(!scroller||!nav||nav.dataset.autoCollapseBound==='true')return;
-   nav.dataset.autoCollapseBound='true';
-   let lastTop=scroller.scrollTop||0;
-   let settleTimer=null;
-   scroller.addEventListener('scroll',()=>{
-     const top=scroller.scrollTop||0;
-     const delta=top-lastTop;
-     if(top<=8||delta < -1){nav.classList.remove('collapsed');}
-     else if(delta>1){nav.classList.add('collapsed');}
-     lastTop=top;
-     if(settleTimer!==null)clearTimeout(settleTimer);
-     settleTimer=setTimeout(()=>{nav.classList.remove('collapsed');settleTimer=null;},260);
-   },{passive:true});
- })();
- function switchTab(element,index){const nav=document.getElementById('bottomNavigation');if(!nav||!element||!nav.contains(element))return;const items=Array.from(nav.querySelectorAll('.nav-item'));if(!Number.isInteger(index)||index<0||index>=items.length||items[index]!==element)return;showView(element.dataset.view);const indicator=document.getElementById('navIndicator');if(indicator)indicator.style.transform='translateX('+(index*100)+'%)';}
+ /* Auto-shrink + fluid press/drag. Isolated to bottom navigation. */
+(function initNongkiBottomNavigation(){
+ const nav=document.getElementById('bottomNavigation'),scroller=document.querySelector('main');
+ if(!nav||nav.dataset.fluidNavigation==='true')return;
+ nav.dataset.fluidNavigation='true';
+ const indicator=nav.querySelector('#navIndicator'),items=Array.from(nav.querySelectorAll('.nav-item'));
+ if(!indicator||!items.length)return;
+ let lastTop=scroller?scroller.scrollTop||0:0,settleTimer=null,pressTimer=null,pointerId=null,dragging=false,startX=0,startY=0,lastX=0,dragIndex=-1;
+ const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+ function indexAtX(x){const r=nav.getBoundingClientRect();return clamp(Math.floor((x-r.left)/r.width*items.length),0,items.length-1)}
+ function selectIndex(i){items.forEach((it,n)=>{it.classList.toggle('active',n===i);it.classList.toggle('drag-over',dragging&&n===i);it.setAttribute('aria-current',n===i?'page':'false')});indicator.style.transform='translateX('+(i*100)+'%)'}
+ if(scroller)scroller.addEventListener('scroll',()=>{const top=scroller.scrollTop||0,delta=top-lastTop;if(top<=8||delta < -1)nav.classList.remove('collapsed');else if(delta>1)nav.classList.add('collapsed');lastTop=top;if(settleTimer!==null)clearTimeout(settleTimer);settleTimer=setTimeout(()=>{nav.classList.remove('collapsed');settleTimer=null},260)},{passive:true});
+ nav.addEventListener('pointerdown',e=>{const item=e.target.closest('.nav-item');if(!item||!nav.contains(item))return;pointerId=e.pointerId;startX=lastX=e.clientX;startY=e.clientY;dragging=false;pressTimer=setTimeout(()=>{dragging=true;nav.classList.add('dragging');nav.classList.remove('collapsed');try{nav.setPointerCapture(pointerId)}catch(_){}dragIndex=indexAtX(lastX);selectIndex(dragIndex);indicator.style.scale='1.1'},200)});
+ nav.addEventListener('pointermove',e=>{if(pointerId!==e.pointerId)return;lastX=e.clientX;if(!dragging){if(Math.abs(e.clientX-startX)>9||Math.abs(e.clientY-startY)>12){if(pressTimer!==null)clearTimeout(pressTimer);pressTimer=null}return}const r=nav.getBoundingClientRect(),i=indexAtX(e.clientX),x=clamp(e.clientX-r.left-5,0,r.width-indicator.offsetWidth-10);indicator.style.transition='transform 80ms linear,scale .22s cubic-bezier(.175,.885,.32,1.275)';indicator.style.transform='translateX('+x+'px)';items.forEach((it,n)=>it.classList.toggle('drag-over',n===i));dragIndex=i;nav.style.setProperty('--nav-tilt',clamp((e.clientX-startX)/18,-2,2)+'deg')});
+ function finish(e){if(pointerId!==null&&e&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;if(pressTimer!==null)clearTimeout(pressTimer);pressTimer=null;if(dragging&&dragIndex>=0){selectIndex(dragIndex);showView(items[dragIndex].dataset.view)}dragging=false;pointerId=null;nav.classList.remove('dragging');items.forEach(it=>it.classList.remove('drag-over'));indicator.style.transition='transform .4s cubic-bezier(.175,.885,.32,1.275),scale .22s cubic-bezier(.175,.885,.32,1.275)';indicator.style.scale='1';nav.style.setProperty('--nav-tilt','0deg')}
+ nav.addEventListener('pointerup',finish);nav.addEventListener('pointercancel',finish);nav.addEventListener('lostpointercapture',()=>{if(dragging)finish()});
+})();
+function switchTab(element,index){const nav=document.getElementById('bottomNavigation');if(!nav||!element||!nav.contains(element))return;const items=Array.from(nav.querySelectorAll('.nav-item'));if(!Number.isInteger(index)||index<0||index>=items.length||items[index]!==element)return;showView(element.dataset.view);items.forEach((it,n)=>{it.classList.toggle('active',n===index);it.classList.remove('drag-over')});const indicator=nav.querySelector('#navIndicator');if(indicator)indicator.style.transform='translateX('+(index*100)+'%)'}
+
 $('paymentCashCard')?.addEventListener('click',()=>{if(cartCount())openCashModal();});
 $('paymentCashCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&cartCount()){e.preventDefault();openCashModal();}});
 $('paymentQrisCard')?.addEventListener('click',()=>{if(cartCount())completeCartPayment('QRIS',cartTotal());});
