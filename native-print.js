@@ -99,42 +99,58 @@
   }
 
   function addNativeButton() {
-    if (!isCapacitorNative() || document.getElementById('nativeCapacitorPrint')) return;
-    var actions = document.querySelector('#thermalPrintView .tp-actions');
+    if (!isCapacitorNative()) return;
+    var printButton = document.getElementById('thermalPrintNow');
     var picker = document.getElementById('thermalPrintTransaction');
     var widthInput = document.getElementById('thermalPrintWidth');
     var status = document.getElementById('thermalPrintStatus');
-    if (!actions || !picker || !status) return;
+    var preview = document.getElementById('thermalPrintPaper');
+    if (!printButton || !picker || !status || printButton.dataset.nativePrintBound === '1') return;
 
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.id = 'nativeCapacitorPrint';
-    button.className = 'tp-btn primary';
-    button.textContent = '▤ Cetak Native (Capacitor)';
-    button.style.gridColumn = '1 / -1';
-    button.addEventListener('click', async function () {
-      button.disabled = true;
+    // Keep the existing compact "Cetak struk" button and route it to native Android printing.
+    printButton.dataset.nativePrintBound = '1';
+    printButton.addEventListener('click', async function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      printButton.disabled = true;
       try {
         var selectedId = picker.value;
         if (!selectedId) throw new Error('Pilih transaksi terlebih dahulu.');
-        status.textContent = 'Menyiapkan struk untuk dialog cetak Android…';
         var txs = await loadTransactions();
         var tx = txs.find(function (item) { return String(item.id || item.id_transaksi || '') === selectedId; });
         if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
         var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
         if (!plugin || typeof plugin.printHtml !== 'function') {
-          throw new Error('Plugin NativePrinter belum terpasang di APK ini. Build ulang APK dari branch native-clean.');
+          throw new Error('Plugin NativePrinter belum terpasang di APK ini. Pasang APK hasil build terbaru.');
         }
         var width = Number(widthInput && widthInput.value) === 80 ? 80 : 58;
+        // Force the preview logo/header to be centered as well.
+        if (preview) {
+          var header = preview.querySelector('header');
+          if (header) {
+            header.style.display = 'flex';
+            header.style.flexDirection = 'column';
+            header.style.alignItems = 'center';
+            header.style.justifyContent = 'center';
+            header.style.textAlign = 'center';
+            header.style.width = '100%';
+          }
+          var logo = preview.querySelector('header .logo');
+          if (logo) {
+            logo.style.display = 'block';
+            logo.style.marginLeft = 'auto';
+            logo.style.marginRight = 'auto';
+          }
+        }
+        status.textContent = 'Menyiapkan struk untuk cetak Android…';
         await plugin.printHtml({ name: 'Struk Nongki', html: buildReceipt(tx, width) });
-        status.textContent = 'Dialog cetak native Android sudah dibuka. Pilih printer yang tersedia.';
+        status.textContent = 'Dialog cetak Android terbuka. Pilih printer yang tersedia.';
       } catch (error) {
-        status.textContent = 'Cetak native gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
+        status.textContent = 'Cetak struk gagal: ' + (error && error.message ? error.message : 'kesalahan tidak diketahui');
       } finally {
-        button.disabled = false;
+        printButton.disabled = false;
       }
-    });
-    actions.appendChild(button);
+    }, true);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addNativeButton, { once: true });
