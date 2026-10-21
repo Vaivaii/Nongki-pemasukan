@@ -68,7 +68,7 @@
       '*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:11px}' +
       'body{padding:2mm}.receipt{width:100%;overflow-wrap:anywhere}.center{text-align:center;line-height:1.5}.brand-logo{display:block;width:'+logoWidthMm+'mm;max-width:100%;max-height:30mm;position:static;object-fit:contain;object-position:center;margin:0 auto 4px;transform:none;float:none}' +
       'hr{border:0;border-top:1px dashed #000;margin:7px 0}.item{margin:6px 0}.name{font-weight:600}.pair,.sum{display:flex;justify-content:space-between;gap:6px;margin-top:3px}.pair b{text-align:right}.sum{font-size:14px;font-weight:800;margin:8px 0}.footer{text-align:center;line-height:1.5;margin-top:8px}' +
-      '</style></head><body><main class="receipt"><div class="brand-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;text-align:center"><img class="brand-logo" src="' + esc(logo) + '" alt="Logo Nongki"></div></div><hr>' +
+      '</style></head><body><main class="receipt"><div class="brand-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;text-align:center"><img class="brand-logo" src="' + esc(logo) + '" alt="Logo Nongki"></div><hr>' +
       '<div class="center"><b>STRUK PEMBELIAN</b><br>' + esc(createdAt(tx)) + '<br>No: ' + esc(String(tx.id || tx.id_transaksi || '-')) + '</div><hr>' +
       '<div>Kasir: ' + esc(tx.userId || tx.profileName || 'Nongki') + '</div>' + rows + '<hr>' +
       '<div class="sum"><span>TOTAL</span><b>' + esc(money(total)) + '</b></div>' +
