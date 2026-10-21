@@ -343,8 +343,10 @@
     button.className = 'tp-btn';
     button.textContent = 'Ganti Printer Bluetooth';
     button.style.width = '100%';
-    button.style.height = '68px';
-    button.style.minHeight = '68px';
+    button.style.setProperty('height', '68px', 'important');
+    button.style.setProperty('min-height', '68px', 'important');
+    button.style.setProperty('max-height', '68px', 'important');
+    button.style.setProperty('flex', '0 0 68px', 'important');
     button.style.boxSizing = 'border-box';
     button.style.padding = '12px 8px';
     button.style.margin = '0';
@@ -383,9 +385,19 @@
       row.style.gap = '9px';
       row.style.marginTop = '10px';
       row.style.alignItems = 'stretch';
+      row.style.setProperty('grid-auto-rows', '68px', 'important');
+      row.style.setProperty('height', '68px', 'important');
+      row.style.setProperty('max-height', '68px', 'important');
+      row.style.setProperty('box-sizing', 'border-box', 'important');
       printButton.parentNode.insertAdjacentElement('afterend', row);
     }
     row.appendChild(button);
+    button.style.setProperty('height', '68px', 'important');
+    button.style.setProperty('min-height', '68px', 'important');
+    button.style.setProperty('max-height', '68px', 'important');
+    button.style.setProperty('box-sizing', 'border-box', 'important');
+    button.style.setProperty('padding', '10px 8px', 'important');
+    button.style.setProperty('margin', '0', 'important');
   }
 
 
