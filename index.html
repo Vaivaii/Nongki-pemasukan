@@ -1345,6 +1345,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 @media(min-width:760px){#thermalPrintView .tp-layout{grid-template-columns:minmax(280px,.9fr) minmax(260px,1.1fr)}#thermalPrintPaper{max-width:340px}}
 </style>
   <!-- Product/category/payment shrinking disabled; only bottom navigation auto-shrinks. -->
+<script id="nongki-theme-bootstrap">(function(){try{if(localStorage.getItem('nongki_dark_mode_v1')==='true')document.documentElement.setAttribute('data-theme','dark');}catch(_){}})();</script>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -1407,6 +1408,14 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 <details class="panel settings-accordion" id="settingsAccordion">
   <summary>Setting</summary>
   <div class="settings-accordion-content">
+<div class="panel dark-mode-setting" id="darkModeSettingPanel">
+  <div class="dark-mode-row">
+    <div class="dark-mode-copy"><strong>Mode Gelap</strong><small>Gunakan tema gelap untuk tampilan aplikasi. Pilihan tersimpan di perangkat ini.</small></div>
+    <label class="dark-mode-switch" for="darkModeToggle" aria-label="Aktifkan mode gelap">
+      <input type="checkbox" id="darkModeToggle" role="switch" aria-checked="false" /><span aria-hidden="true"></span>
+    </label>
+  </div>
+</div>
 <div class="panel hidden" id="profilePinPanel">
   <div class="section-head"><div><h3>Setelan Keamanan Profil</h3><span class="sub" id="profilePinOwnerLabel">Ubah PIN profil aktif</span></div></div>
   <p class="note">PIN hanya berlaku untuk profil yang sedang masuk. Gunakan 4–8 angka dan jangan bagikan PIN kepada pegawai.</p>
@@ -3504,5 +3513,95 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   }
 }
 </style>
+<style id="nongki-dark-mode-styles">
+/* Dark theme for app UI. Thermal receipt paper and preview remain white. */
+html[data-theme="dark"]{color-scheme:dark;--cream:#111713;--ink:#e5eee7;--muted:#a3b1a7;--line:#35443a;--white:#202a23;--green:#8ec9a5;--green2:#9cdbb4;--red:#ff9388}
+html[data-theme="dark"] body{background:#111713!important;color:#e5eee7!important}
+html[data-theme="dark"] main,html[data-theme="dark"] .view{background:transparent!important;color:#e5eee7!important}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .settings-accordion,html[data-theme="dark"] .login-card,html[data-theme="dark"] .report-card,html[data-theme="dark"] .chart-box,html[data-theme="dark"] .history-row,html[data-theme="dark"] .role-demo,html[data-theme="dark"] .history-switch,html[data-theme="dark"] #salesView>#paymentCartSummary,html[data-theme="dark"] #salesView .cart-summary,html[data-theme="dark"] #serverHistoryToolbar,html[data-theme="dark"] #historySummary,html[data-theme="dark"] #historyList,html[data-theme="dark"] #productsList,html[data-theme="dark"] #productManager,html[data-theme="dark"] .admin-user-panel,html[data-theme="dark"] #thermalPrintView .tp-settings{background:#1b251f!important;color:#e5eee7!important;border-color:#35443a!important;box-shadow:0 2px 8px rgba(0,0,0,.16)!important}
+html[data-theme="dark"] .product{background:#1b251f!important;color:#e5eee7!important;border-color:#35443a!important;box-shadow:0 2px 7px rgba(0,0,0,.18)!important}
+html[data-theme="dark"] .product-group-title{background:#1b251f!important;color:#a5d8b7!important;border-color:#35443a!important;box-shadow:none!important}
+html[data-theme="dark"] .product-category-tabs{background:rgba(17,23,19,.97)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html[data-theme="dark"] .product-category-tab{background:#202b24!important;color:#c0cec4!important;border-color:#38483d!important}
+html[data-theme="dark"] .product-category-tab.active{background:#294b38!important;color:#c7f0d3!important;border-color:#456b52!important;box-shadow:inset 0 0 0 1px #456b52!important}
+html[data-theme="dark"] .payment-checkout-card{background:#1b251f!important;border-color:#35443a!important;box-shadow:0 3px 12px rgba(0,0,0,.18)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html[data-theme="dark"] #salesView>.payment-checkout-card::before{background:rgba(27,37,31,.96)!important}
+html[data-theme="dark"] .history-switch-btn{color:#acb9af!important}
+html[data-theme="dark"] .history-switch-btn.active{background:#2a3a30!important;color:#c0e9cd!important;box-shadow:0 2px 7px rgba(0,0,0,.2)!important}
+html[data-theme="dark"] .history-switch-btn span{background:#35463a!important;color:#dbe8de!important}
+html[data-theme="dark"] .user-row,html[data-theme="dark"] .history-row,html[data-theme="dark"] .history-row:not(:last-child){border-color:#35443a!important}
+html[data-theme="dark"] .history-icon{background:#2b3b30!important;color:#c3e5cd!important}
+html[data-theme="dark"] .section-head h2,html[data-theme="dark"] .section-head h3,html[data-theme="dark"] .settings-accordion>summary,html[data-theme="dark"] .history-row b,html[data-theme="dark"] .user-row,html[data-theme="dark"] .product .name,html[data-theme="dark"] .product .price,html[data-theme="dark"] .report-card b,html[data-theme="dark"] .chart-title,html[data-theme="dark"] .bar-value,html[data-theme="dark"] #salesView>#paymentCartSummary>b,html[data-theme="dark"] .cart-summary>b{color:#a0d6b1!important}
+html[data-theme="dark"] .sub,html[data-theme="dark"] .note,html[data-theme="dark"] label,html[data-theme="dark"] .product .hint,html[data-theme="dark"] .chart-sub,html[data-theme="dark"] .report-card span,html[data-theme="dark"] .report-card small,html[data-theme="dark"] .bar-label,html[data-theme="dark"] .month-label,html[data-theme="dark"] .history-row small,html[data-theme="dark"] .locked-note,html[data-theme="dark"] .product-group-title .category-chevron{color:#a3b1a7!important}
+html[data-theme="dark"] .locked-note{background:#302a1b!important;border-color:#5b4b2a!important;color:#e0c98c!important}
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:#111914!important;color:#e5eee7!important;border-color:#405044!important;caret-color:#a0d6b1}
+html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#7f9084!important}
+html[data-theme="dark"] .btn:not(.primary):not(.gold),html[data-theme="dark"] .btn:not(.primary):not(.gold):disabled,html[data-theme="dark"] .history-row .history-price button,html[data-theme="dark"] .history-row .btn,html[data-theme="dark"] .history-row button:not(.primary){background:#253129!important;color:#dce9df!important;border-color:#405044!important;box-shadow:none!important}
+html[data-theme="dark"] .btn.primary,html[data-theme="dark"] .cash-confirm{background:#286c49!important;color:#f5fff7!important;border-color:#39835c!important}
+html[data-theme="dark"] .btn.gold{background:#352f20!important;color:#efdaa0!important;border-color:#66572f!important}
+html[data-theme="dark"] .separator,html[data-theme="dark"] .history-row{border-color:#35443a!important}
+html[data-theme="dark"] .history-row{border-bottom-color:#35443a!important}
+html[data-theme="dark"] .history-price{color:#a0d6b1!important}
+html[data-theme="dark"] .tabs.bottom-nav-glass{background:rgba(27,37,31,.97)!important;border-color:#35443a!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 20px rgba(0,0,0,.32)!important}
+html[data-theme="dark"] .tabs.bottom-nav-glass .nav-item{color:#9caca1!important}
+html[data-theme="dark"] .tabs.bottom-nav-glass .nav-item.active{color:#c3f0d0!important}
+html[data-theme="dark"] .tabs.bottom-nav-glass .nav-indicator{background:#2b4937!important;border-color:#355c43!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 1px 4px rgba(0,0,0,.12)!important}
+html[data-theme="dark"] .bar-track{background:#2b372f!important}
+html[data-theme="dark"] .chart-box svg text,html[data-theme="dark"] #reportsView svg text{fill:#c4d1c8!important}
+html[data-theme="dark"] .history-switch{background:#161e19!important}
+html[data-theme="dark"] .cash-modal{background:#1b251f!important;color:#e5eee7!important;border:1px solid #35443a!important}
+html[data-theme="dark"] .cash-modal h2,html[data-theme="dark"] .cash-total b,html[data-theme="dark"] .cash-change b{color:#a0d6b1!important}
+html[data-theme="dark"] .cash-total,html[data-theme="dark"] .cash-change{background:#26372c!important;color:#e5eee7!important}
+html[data-theme="dark"] .cash-total span,html[data-theme="dark"] .cash-change span,html[data-theme="dark"] .cash-change small{color:#b1c0b6!important}
+html[data-theme="dark"] .cash-shortcuts button,html[data-theme="dark"] .cash-numpad button{background:#253129!important;color:#e5eee7!important;border-color:#405044!important}
+html[data-theme="dark"] .cash-shortcuts button:last-child{background:#2a4936!important;border-color:#477456!important}
+html[data-theme="dark"] .cash-modal-close{background:#2c3a30!important;color:#d9e9dd!important}
+html[data-theme="dark"] .post-payment-print-card,html[data-theme="dark"] .bt-modal-card{background:#1b251f!important;color:#e5eee7!important;border-color:#35443a!important}
+html[data-theme="dark"] .post-payment-print-close-icon,html[data-theme="dark"] .bt-icon-button{background:#2b3a30!important;color:#e5eee7!important}
+html[data-theme="dark"] .post-payment-print-total,html[data-theme="dark"] .post-payment-print-icon,html[data-theme="dark"] .bt-printer-icon{background:#2a3a30!important;color:#c7e7d0!important}
+html[data-theme="dark"] #postPaymentPrintTitle,html[data-theme="dark"] .post-payment-print-total strong{color:#a0d6b1!important}
+html[data-theme="dark"] #postPaymentPrintDescription,html[data-theme="dark"] .post-payment-print-status,html[data-theme="dark"] .bt-modal-header p,html[data-theme="dark"] .bt-printer-address,html[data-theme="dark"] .bt-modal-footer{color:#a3b1a7!important}
+html[data-theme="dark"] .post-payment-print-secondary,html[data-theme="dark"] .bt-secondary{background:#253129!important;color:#e5eee7!important;border-color:#405044!important}
+html[data-theme="dark"] .bt-printer-option{background:#202b24!important;color:#e5eee7!important;border-color:#35443a!important}
+html[data-theme="dark"] .bt-printer-option:active{background:#2a3d30!important}
+html[data-theme="dark"] .bt-printer-message{color:#a3b1a7!important}
+.dark-mode-setting{padding:12px 14px!important}
+.dark-mode-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.dark-mode-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.dark-mode-copy strong{display:block;font-size:13px;color:var(--green)}
+.dark-mode-copy small{display:block;font-size:11px;line-height:1.45;color:var(--muted)}
+.dark-mode-switch{flex:0 0 48px;width:48px;height:28px;position:relative;display:inline-flex;align-items:center;margin:0!important;padding:0!important;cursor:pointer}
+.dark-mode-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.dark-mode-switch span{display:block;position:relative;width:48px;height:28px;border-radius:99px;background:#c8d0c9;transition:background-color 150ms ease-out;pointer-events:none}
+.dark-mode-switch span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform 160ms cubic-bezier(.2,.7,.2,1)}
+.dark-mode-switch input:checked+span{background:#28764e}
+.dark-mode-switch input:checked+span::after{transform:translateX(20px)}
+.dark-mode-switch input:focus-visible+span{outline:2px solid #77ba91;outline-offset:3px}
+html[data-theme="dark"] .dark-mode-setting{background:#202b24!important;border-color:#35443a!important}
+html[data-theme="dark"] .dark-mode-copy strong{color:#a0d6b1!important}
+html[data-theme="dark"] .dark-mode-copy small{color:#a3b1a7!important}
+html[data-theme="dark"] .dark-mode-switch span{background:#4a594e}
+html[data-theme="dark"] .dark-mode-switch input:checked+span{background:#39845a}
+
+/* Always preserve white background and black text in thermal receipt preview/paper. */
+html[data-theme="dark"] #receiptPreview,html[data-theme="dark"] #thermalPrintPaper,html[data-theme="dark"] #thermalPrintView #thermalPrintPaper{background:#fff!important;color:#111!important;border-color:transparent!important;box-shadow:0 4px 16px rgba(23,37,27,.12)!important}
+html[data-theme="dark"] #receiptPreview *,html[data-theme="dark"] #thermalPrintPaper *,html[data-theme="dark"] #thermalPrintView #thermalPrintPaper *{color:inherit}
+@media(prefers-reduced-motion:reduce){.dark-mode-switch span,.dark-mode-switch span::after{transition:none!important}}
+</style>
+<script id="nongki-dark-mode-logic">
+(function(){
+  'use strict';
+  var key='nongki_dark_mode_v1',root=document.documentElement,toggle=document.getElementById('darkModeToggle');
+  if(!toggle)return;
+  function setDarkMode(enabled,save){
+    if(enabled)root.setAttribute('data-theme','dark');else root.removeAttribute('data-theme');
+    toggle.checked=!!enabled;toggle.setAttribute('aria-checked',enabled?'true':'false');
+    if(save){try{localStorage.setItem(key,enabled?'true':'false');}catch(error){console.warn('Preferensi tema tidak dapat disimpan:',error);}}
+  }
+  var enabled=false;try{enabled=localStorage.getItem(key)==='true';}catch(_){}
+  setDarkMode(enabled,false);
+  toggle.addEventListener('change',function(){setDarkMode(toggle.checked,true);});
+})();
+</script>
 </body>
 </html>
