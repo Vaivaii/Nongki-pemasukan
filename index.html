@@ -3586,6 +3586,107 @@ html[data-theme="dark"] .dark-mode-switch input:checked+span{background:#39845a}
 
 /* Thermal paper preview is intentionally outside dark-theme selectors. */
 @media(prefers-reduced-motion:reduce){.dark-mode-switch span,.dark-mode-switch span::after{transition:none!important}}
+
+<style id="nongki-dark-mode-component-fixes">
+/* Resolve hard-coded light surfaces that override the main dark theme.
+   Deliberately scoped to controls; thermal paper preview is not styled here. */
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass{
+  background:#1b251f!important;background-image:none!important;
+  border-color:#35443a!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 20px rgba(0,0,0,.32)!important;
+}
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item{
+  background:transparent!important;color:#9caca1!important;
+}
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active{
+  background:transparent!important;color:#c3f0d0!important;
+}
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-indicator{
+  background:#2b4937!important;border-color:#45664e!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 1px 4px rgba(0,0,0,.12)!important;
+}
+html[data-theme="dark"] #reportsView #refreshReportBtn,
+html[data-theme="dark"] #reportsView #refreshReportBtn:hover,
+html[data-theme="dark"] #reportsView #refreshReportBtn:focus-visible,
+html[data-theme="dark"] #reportsView #refreshReportBtn:active{
+  background:#25352b!important;background-color:#25352b!important;background-image:none!important;
+  color:#dce9df!important;border:1px solid #405747!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"] body .toolbar #profileDropdown,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown,
+html[data-theme="dark"] body .toolbar #profileDropdown[hidden]{
+  background:#1b251f!important;background-color:#1b251f!important;color:#e5eee7!important;
+  border:1px solid #405044!important;box-shadow:0 12px 32px rgba(0,0,0,.42)!important;
+}
+html[data-theme="dark"] #profileDropdown .profile-option,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown .profile-option{
+  background:transparent!important;color:#e5eee7!important;
+}
+html[data-theme="dark"] #profileDropdown .profile-option:hover,
+html[data-theme="dark"] #profileDropdown .profile-option:focus,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown .profile-option:hover,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown .profile-option:focus{
+  background:#2a3a30!important;color:#f0f7f1!important;
+}
+html[data-theme="dark"] #profileDropdown .profile-option b,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown .profile-option b{
+  color:#e5eee7!important;
+}
+html[data-theme="dark"] #profileDropdown .profile-option small,
+html[data-theme="dark"] body.staff-mode .toolbar .profile-dropdown .profile-option small{
+  color:#a3b1a7!important;
+}
+/* Thermal settings controls only. Never select #thermalPrintPaper or its descendants. */
+html[data-theme="dark"] #thermalPrintView .tp-settings input[type="file"],
+html[data-theme="dark"] #thermalPrintView #thermalPrintLogo{
+  background:#111914!important;background-color:#111914!important;
+  color:#dce9df!important;border:1px solid #405044!important;
+}
+html[data-theme="dark"] #thermalPrintView #thermalPrintLogo::file-selector-button,
+html[data-theme="dark"] #thermalPrintView #thermalPrintLogo::-webkit-file-upload-button{
+  background:#2b3b30!important;color:#e5eee7!important;
+  border:1px solid #4a5c4e!important;border-radius:7px!important;
+  padding:7px 10px!important;margin-right:8px!important;
+}
+html[data-theme="dark"] #thermalPrintView .tp-settings .tp-btn,
+html[data-theme="dark"] #thermalPrintView .tp-settings .tp-btn:not(.primary),
+html[data-theme="dark"] #thermalPrintView #thermalPrintExtraActions > button,
+html[data-theme="dark"] #thermalPrintView #nativeBluetoothPrintActions > button,
+html[data-theme="dark"] #thermalPrintView #changeBluetoothPrinter,
+html[data-theme="dark"] #thermalPrintView #thermalPrintRawBt{
+  background:#253129!important;background-color:#253129!important;background-image:none!important;
+  color:#e5eee7!important;border:1px solid #405044!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"] #thermalPrintView .tp-settings .tp-btn.primary,
+html[data-theme="dark"] #thermalPrintView #thermalPrintExtraActions > button.primary,
+html[data-theme="dark"] #thermalPrintView #nativeBluetoothPrintActions > button.primary{
+  background:#286c49!important;background-color:#286c49!important;
+  color:#f5fff7!important;border-color:#39835c!important;
+}
+html[data-theme="dark"] #thermalPrintView .tp-settings .tp-btn:active,
+html[data-theme="dark"] #thermalPrintView #thermalPrintExtraActions > button:active,
+html[data-theme="dark"] #thermalPrintView #nativeBluetoothPrintActions > button:active,
+html[data-theme="dark"] #thermalPrintView #changeBluetoothPrinter:active,
+html[data-theme="dark"] #thermalPrintView #thermalPrintRawBt:active{
+  filter:brightness(1.12)!important;
+}
+html[data-theme="dark"] #thermalPrintView #thermalPrintLogoState,
+html[data-theme="dark"] #thermalPrintView #thermalPrintStatus{
+  color:#a3b1a7!important;
+}
+html[data-theme="dark"] #thermalPrintView .tp-settings select,
+html[data-theme="dark"] #thermalPrintView .tp-settings textarea{
+  background:#111914!important;color:#e5eee7!important;border-color:#405044!important;
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass,
+  html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item{
+    transition:none!important;
+  }
+}
+</style>
 </style>
 <script id="nongki-dark-mode-logic">
 (function(){
