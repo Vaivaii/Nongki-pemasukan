@@ -1,5 +1,5 @@
-// Nongki PWA v186-thermal-slider-centering-fix: send pre-payment audit as a zero-value new event.
-const CACHE_NAME = 'nongki-v202-login-script-parse-fix'
+// Nongki PWA navbar-only-fluid-motion: send pre-payment audit as a zero-value new event.
+const CACHE_NAME = 'nongki-v202-navbar-only-fluid-motion-v1'
 
 const CORE_FILES = [
   './',
