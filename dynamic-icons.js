@@ -1,35 +1,38 @@
-/* Nongki dynamic icon shrink.
-   Visual-only scroll observer; does not touch cart, payment, database, sync or navigation logic. */
+/* Nongki dynamic shrink.
+   Follows the same scroll-direction rule as the bottom navbar.
+   Visual-only: does not touch cart, payment, database, sync, login, or navigation logic. */
 (function initNongkiDynamicSalesIcons(){
   'use strict';
+
   var main = document.querySelector('main');
   var sales = document.getElementById('salesView');
   if (!main || !sales || main.dataset.dynamicIconsObserver === 'ready') return;
   main.dataset.dynamicIconsObserver = 'ready';
 
-  var previousTop = main.scrollTop || 0;
-  var compact = false;
+  var previousTop = Math.max(0, main.scrollTop || 0);
   var rafPending = false;
 
   function applyScrollState() {
     rafPending = false;
+
     var top = Math.max(0, main.scrollTop || 0);
-    var delta = top - previousTop;
+    var currentCompact = sales.getAttribute('data-icons-compact') === 'true';
+    var nextCompact = currentCompact;
 
-    /* Follow the floating navbar: compact while scrolling down, restore while scrolling up.
-       Small deltas are ignored to prevent touch-scroll jitter from repeatedly toggling state. */
-    if (top <= 18) {
-      compact = false;
-    } else if (delta >= 3) {
-      compact = true;
-    } else if (delta <= -4) {
-      compact = false;
+    /* Match bottomNavigation: collapse on downward page movement after 20px,
+       expand as soon as the user reverses direction, reset at the top. */
+    if (top <= 20) {
+      nextCompact = false;
+    } else if (top > previousTop) {
+      nextCompact = true;
+    } else if (top < previousTop) {
+      nextCompact = false;
     }
 
-    var value = compact ? 'true' : 'false';
-    if (sales.getAttribute('data-icons-compact') !== value) {
-      sales.setAttribute('data-icons-compact', value);
+    if (nextCompact !== currentCompact) {
+      sales.setAttribute('data-icons-compact', nextCompact ? 'true' : 'false');
     }
+
     previousTop = top;
   }
 
@@ -39,11 +42,6 @@
     window.requestAnimationFrame(applyScrollState);
   }, { passive: true });
 
-  /* Keep restored scroll positions consistent without an initial animation jump. */
-  if (previousTop > 18) {
-    compact = true;
-    sales.setAttribute('data-icons-compact', 'true');
-  } else {
-    sales.setAttribute('data-icons-compact', 'false');
-  }
+  /* Set the initial state without changing any app data or behavior. */
+  sales.setAttribute('data-icons-compact', previousTop > 20 ? 'true' : 'false');
 })();
