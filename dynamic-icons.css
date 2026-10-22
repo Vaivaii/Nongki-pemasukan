@@ -1,41 +1,24 @@
-/* Nongki dynamic shrink — matches the bottom navigation's scroll-direction behavior.
-   Visual-only: keep product names, IDs, and all transaction logic intact. */
+/* Nongki dynamic shrink — stable on scroll, with glyphs kept at full size.
+   UI-only: preserve all product, payment, cart, database, sync and login behavior. */
 :root {
   --nongki-shrink-ease: cubic-bezier(.22,1,.36,1);
-  --nongki-shrink-duration: .48s;
+  --nongki-shrink-duration: .36s;
 }
-
-/* Smoothly fold the category strip into icon-only controls. */
 #salesView .product-category-tabs {
-  transition:
-    padding-top var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    padding-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    gap var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  transition: padding-top var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease);
 }
 #salesView .product-category-tab {
   min-height: 42px;
-  transition:
-    width var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    min-width var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    min-height var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    padding var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    gap var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    background-color .22s ease,
-    color .22s ease,
-    border-color .22s ease,
-    transform .22s ease;
+  box-sizing: border-box;
+  transition: width var(--nongki-shrink-duration) var(--nongki-shrink-ease), min-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease), border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease), background-color .22s ease, color .22s ease, border-color .22s ease;
 }
 #salesView .product-category-icon {
   display: inline-block;
-  transform: scale(1);
-  transform-origin: center center;
-  transition:
-    font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    transform var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
+  transform: none !important;
+  transition: none !important;
 }
 #salesView .product-category-name {
   display: block;
@@ -44,77 +27,40 @@
   opacity: 1;
   font-size: 10px;
   line-height: 1.15;
-  transform: translateY(0);
-  transform-origin: top center;
-  transition:
-    opacity .24s ease,
-    max-height var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    line-height var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    transform var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  transform: none;
+  transition: opacity .2s ease, max-height var(--nongki-shrink-duration) var(--nongki-shrink-ease), font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease), line-height var(--nongki-shrink-duration) var(--nongki-shrink-ease);
 }
-
-/* Product glyphs get a subtle scale-down, while product names remain visible. */
-#salesView .product .emoji {
-  display: inline-block;
-  transform: translateY(0) scale(1);
-  transform-origin: left center;
-  transition:
-    transform var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease);
-}
-#salesView[data-icons-compact="true"] .product .emoji {
-  transform: translateY(-1px) scale(.82);
-  margin-bottom: 2px;
-}
-
-/* Payment controls compact in height and fold their text/count out of the way. */
+/* Product-card emoji stays at its normal size in both scroll states. */
+#salesView .product .emoji { transform: none !important; transition: none !important; }
+/* Payment controls keep full icon size and stable height. */
 #salesView .payment-checkout-card,
 #salesView .payment-methods,
 #salesView .payment-method-card {
-  transition:
-    min-height var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    height var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    padding var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    gap var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    box-shadow .22s ease;
+  transition: padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease), box-shadow .22s ease;
 }
+#salesView .payment-method-card { box-sizing: border-box; }
 #salesView .payment-icon {
   display: inline-block;
+  flex: 0 0 auto;
   font-size: 18px;
   line-height: 1;
-  transform: scale(1);
-  transform-origin: center center;
-  transition:
-    font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    transform var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  transform: none !important;
+  transition: none !important;
 }
 #salesView .payment-method-card > span:nth-child(2) {
   max-width: 180px;
   opacity: 1;
   overflow: hidden;
-  transform: translateY(0);
-  transition:
-    max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    opacity .24s ease,
-    transform var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  transform: none;
+  transition: max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease), opacity .2s ease;
 }
 #salesView .payment-cart-count {
   max-width: 110px;
   opacity: 1;
   overflow: hidden;
-  transition:
-    max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    padding var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    margin var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease),
-    opacity .24s ease;
+  transition: max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin var(--nongki-shrink-duration) var(--nongki-shrink-ease), opacity .2s ease;
 }
-
-/* Compact state: icon-only category buttons and compact payment controls. */
+/* Hide labels, narrow category chips slightly, and do not shorten the glyphs. */
 #salesView[data-icons-compact="true"] .product-category-tabs {
   padding-top: 4px;
   padding-bottom: 4px;
@@ -122,73 +68,40 @@
   gap: 5px;
 }
 #salesView[data-icons-compact="true"] .product-category-tab {
-  width: 44px;
-  min-width: 44px;
-  max-width: 44px;
-  flex: 0 0 44px;
-  min-height: 30px;
-  padding: 5px 4px;
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  flex: 0 0 54px;
+  min-height: 42px;
+  padding: 6px 4px;
   gap: 0;
   border-radius: 10px;
 }
-#salesView[data-icons-compact="true"] .product-category-icon {
-  font-size: 16px;
-  transform: scale(.94);
-}
-#salesView[data-icons-compact="true"] .product-category-name {
-  max-height: 0;
-  opacity: 0;
-  font-size: 0;
-  line-height: 0;
-  transform: translateY(-3px);
-}
-#salesView[data-icons-compact="true"] > .payment-checkout-card {
-  padding-top: 3px;
-  padding-bottom: 3px;
-  margin-bottom: 4px;
-}
-#salesView[data-icons-compact="true"] .payment-methods {
-  gap: 5px;
-}
+#salesView[data-icons-compact="true"] .product-category-icon { font-size: 18px; transform: none !important; }
+#salesView[data-icons-compact="true"] .product-category-name { max-height: 0; opacity: 0; font-size: 0; line-height: 0; }
+/* Payment buttons remain 40px tall; inset them by only a few pixels horizontally. */
+#salesView[data-icons-compact="true"] > .payment-checkout-card { padding: 6px 7px; margin-bottom: 6px; }
+#salesView[data-icons-compact="true"] .payment-methods { gap: 7px; }
 #salesView[data-icons-compact="true"] .payment-method-card {
-  min-height: 29px;
-  height: 29px;
-  padding: 3px 5px;
+  width: calc(100% - 4px);
+  height: 40px;
+  min-height: 40px;
+  justify-self: center;
+  padding: 6px 5px;
   gap: 0;
   justify-content: center;
   border-radius: 9px;
 }
-#salesView[data-icons-compact="true"] .payment-icon {
-  font-size: 17px;
-  transform: scale(.9);
-}
-#salesView[data-icons-compact="true"] .payment-method-card > span:nth-child(2) {
-  max-width: 0;
-  flex: 0 1 0;
-  opacity: 0;
-  transform: translateY(-3px);
-}
-#salesView[data-icons-compact="true"] .payment-cart-count {
-  max-width: 0;
-  margin: 0;
-  padding: 0;
-  font-size: 0;
-  opacity: 0;
-}
-
-/* Preserve accessibility for users who explicitly request reduced motion. */
+#salesView[data-icons-compact="true"] .payment-icon { font-size: 18px; transform: none !important; }
+#salesView[data-icons-compact="true"] .payment-method-card > span:nth-child(2) { max-width: 0; flex: 0 1 0; opacity: 0; }
+#salesView[data-icons-compact="true"] .payment-cart-count { max-width: 0; margin: 0; padding: 0; font-size: 0; opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-  #salesView .product .emoji,
   #salesView .product-category-tabs,
   #salesView .product-category-tab,
-  #salesView .product-category-icon,
   #salesView .product-category-name,
   #salesView .payment-checkout-card,
   #salesView .payment-methods,
   #salesView .payment-method-card,
   #salesView .payment-method-card > span:nth-child(2),
-  #salesView .payment-cart-count,
-  #salesView .payment-icon {
-    transition: none !important;
-  }
+  #salesView .payment-cart-count { transition: none !important; }
 }
