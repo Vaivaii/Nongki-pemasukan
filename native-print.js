@@ -208,7 +208,7 @@
     );
     if (tx.status === 'canceled' || tx.status === 'cancelled') lines.push('TRANSAKSI DIBATALKAN');
     lines.push('--------------------------------', 'Terima kasih', 'Selamat menikmati!');
-    return lines.join('\n') + '\n';
+    return lines.join('\n') + '\n\n\n\n';
   }
 
 

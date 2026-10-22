@@ -182,6 +182,55 @@ public class NativePrinterPlugin extends Plugin {
         performBluetoothPrint(call);
     }
 
+    private static final int BLUETOOTH_WRITE_CHUNK_SIZE = 160;
+    private static final long BLUETOOTH_WRITE_DELAY_MS = 50L;
+
+    /**
+     * Pace ESC/POS output for small thermal-printer buffers (including RPP02).
+     * Runs on the dedicated Bluetooth worker thread, never the UI thread.
+     * Each chunk is flushed before the next chunk is sent.
+     */
+    private void writeBluetoothChunks(OutputStream output, byte[] data) throws Exception {
+        if (data == null || data.length == 0) return;
+        int offset = 0;
+        while (offset < data.length) {
+            int length = Math.min(BLUETOOTH_WRITE_CHUNK_SIZE, data.length - offset);
+            output.write(data, offset, length);
+            output.flush();
+            offset += length;
+            if (offset < data.length) {
+                try {
+                    Thread.sleep(BLUETOOTH_WRITE_DELAY_MS);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new Exception("Pengiriman ke printer terhenti sebelum seluruh data terkirim.", interrupted);
+                }
+            }
+        }
+    }
+
+    private void pauseBluetoothPrinter(long milliseconds) throws Exception {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new Exception("Pengiriman ke printer terhenti sebelum proses selesai.", interrupted);
+        }
+    }
+
+    /** Ensure four trailing line feeds even when another caller supplies a plain receipt. */
+    private byte[] receiptBytesWithFeed(String receipt) throws Exception {
+        int trailingLineFeeds = 0;
+        for (int i = receipt.length() - 1; i >= 0 && receipt.charAt(i) == '\n'; i--) {
+            trailingLineFeeds++;
+        }
+        StringBuilder printable = new StringBuilder(receipt);
+        for (int i = trailingLineFeeds; i < 4; i++) {
+            printable.append('\n');
+        }
+        return printable.toString().getBytes("UTF-8");
+    }
+
     private void performBluetoothPrint(PluginCall call) {
         final String address = call.getString("address");
         final String receipt = call.getString("text");
@@ -190,8 +239,10 @@ public class NativePrinterPlugin extends Plugin {
             call.reject("Alamat printer atau isi struk kosong.");
             return;
         }
+
         new Thread(() -> {
             BluetoothSocket socket = null;
+            Exception printFailure = null;
             try {
                 BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
                 if (adapter == null) throw new Exception("Bluetooth tidak tersedia.");
@@ -199,26 +250,50 @@ public class NativePrinterPlugin extends Plugin {
                 BluetoothDevice device = adapter.getRemoteDevice(address);
                 socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
                 socket.connect();
+
                 OutputStream output = socket.getOutputStream();
-                output.write(new byte[] { 0x1B, 0x40, 0x1B, 0x61, 0x01 });
-                if (logoBase64 != null && !logoBase64.trim().isEmpty()) writeRasterLogo(output, logoBase64);
-                else output.write("NONGKI\nICE AND COFFEE\n".getBytes("UTF-8"));
-                output.write(new byte[] { 0x1B, 0x61, 0x00 });
-                output.write(receipt.getBytes("UTF-8"));
-                output.write(new byte[] { 0x0A, 0x0A, 0x0A });
+                writeBluetoothChunks(output, new byte[] { 0x1B, 0x40, 0x1B, 0x61, 0x01 });
+
+                if (logoBase64 != null && !logoBase64.trim().isEmpty()) {
+                    writeRasterLogo(output, logoBase64);
+                    // Give the printer time to finish processing its raster block before text.
+                    pauseBluetoothPrinter(120L);
+                } else {
+                    writeBluetoothChunks(output, "NONGKI\nICE AND COFFEE\n".getBytes("UTF-8"));
+                }
+
+                writeBluetoothChunks(output, new byte[] { 0x1B, 0x61, 0x00 });
+                writeBluetoothChunks(output, receiptBytesWithFeed(receipt));
+
+                // ESC d 4: explicit paper feed after the four trailing line feeds.
+                writeBluetoothChunks(output, new byte[] { 0x1B, 0x64, 0x04 });
                 output.flush();
-                JSObject result = new JSObject();
-                result.put("printed", true);
-                result.put("printerAddress", address);
-                call.resolve(result);
+
+                // Let the Bluetooth stack/printer consume the final queued bytes before close.
+                pauseBluetoothPrinter(250L);
             } catch (SecurityException e) {
-                call.reject("Izin Bluetooth belum diberikan.", e);
+                printFailure = new Exception("Izin Bluetooth belum diberikan.", e);
             } catch (Exception e) {
-                call.reject("Gagal mencetak. Pastikan printer thermal sudah dipasangkan dan mendukung Bluetooth Classic SPP. " + e.getMessage(), e);
+                printFailure = new Exception(
+                    "Gagal mencetak. Pastikan printer thermal sudah dipasangkan dan mendukung Bluetooth Classic SPP. " +
+                    (e.getMessage() == null ? "" : e.getMessage()), e
+                );
             } finally {
+                // Always close after all writes/feed have completed, even after a failure.
                 if (socket != null) {
                     try { socket.close(); } catch (Exception ignored) {}
                 }
+            }
+
+            // Resolve/reject only after the socket has been closed.
+            if (printFailure != null) {
+                call.reject(printFailure.getMessage(), printFailure);
+            } else {
+                JSObject result = new JSObject();
+                result.put("printed", true);
+                result.put("printerAddress", address);
+                result.put("bytesPaced", true);
+                call.resolve(result);
             }
         }).start();
     }
@@ -247,10 +322,12 @@ public class NativePrinterPlugin extends Plugin {
                 }
             }
         }
-        output.write(new byte[] { 0x1B, 0x61, 0x01 });
-        output.write(new byte[] { 0x1D, 0x76, 0x30, 0x00, (byte)(widthBytes & 0xff), (byte)((widthBytes >> 8) & 0xff), (byte)(targetHeight & 0xff), (byte)((targetHeight >> 8) & 0xff) });
-        output.write(raster);
-        output.write(new byte[] { 0x0A, 0x1B, 0x61, 0x00 });
+        writeBluetoothChunks(output, new byte[] { 0x1B, 0x61, 0x01 });
+        writeBluetoothChunks(output, new byte[] { 0x1D, 0x76, 0x30, 0x00, (byte)(widthBytes & 0xff), (byte)((widthBytes >> 8) & 0xff), (byte)(targetHeight & 0xff), (byte)((targetHeight >> 8) & 0xff) });
+        // Raster bitmaps can exceed a compact printer's receive buffer; never burst the whole image.
+        writeBluetoothChunks(output, raster);
+        output.flush();
+        writeBluetoothChunks(output, new byte[] { 0x0A, 0x1B, 0x61, 0x00 });
         bitmap.recycle();
         if (original != bitmap) original.recycle();
     }
