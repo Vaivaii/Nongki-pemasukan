@@ -3583,9 +3583,7 @@ html[data-theme="dark"] .dark-mode-copy small{color:#a3b1a7!important}
 html[data-theme="dark"] .dark-mode-switch span{background:#4a594e}
 html[data-theme="dark"] .dark-mode-switch input:checked+span{background:#39845a}
 
-/* Always preserve white background and black text in thermal receipt preview/paper. */
-html[data-theme="dark"] #receiptPreview,html[data-theme="dark"] #thermalPrintPaper,html[data-theme="dark"] #thermalPrintView #thermalPrintPaper{background:#fff!important;color:#111!important;border-color:transparent!important;box-shadow:0 4px 16px rgba(23,37,27,.12)!important}
-html[data-theme="dark"] #receiptPreview *,html[data-theme="dark"] #thermalPrintPaper *,html[data-theme="dark"] #thermalPrintView #thermalPrintPaper *{color:inherit}
+/* Thermal paper preview is intentionally outside dark-theme selectors. */
 @media(prefers-reduced-motion:reduce){.dark-mode-switch span,.dark-mode-switch span::after{transition:none!important}}
 </style>
 <script id="nongki-dark-mode-logic">
