@@ -1344,7 +1344,7 @@ body:has(#cashPaymentModal:not([hidden])) .top-bar {
 #thermalPrintPaper header{position:static;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;text-align:center;margin:0 auto;padding:0;background:#fff;color:#111;border-radius:0;box-shadow:none}#thermalPrintPaper .receipt-logo-wrapper{width:100%!important;display:flex!important;justify-content:center!important;align-items:center!important;text-align:center!important;margin:0 auto 5px!important;box-sizing:border-box}#thermalPrintPaper .receipt-logo-wrapper img.logo{display:block!important;margin-left:auto!important;margin-right:auto!important;height:auto!important;max-height:70px;object-fit:contain;flex:0 1 auto}#thermalPrintPaper .logo{display:block!important;margin-left:auto!important;margin-right:auto!important;height:auto!important;max-height:70px;object-fit:contain}#thermalPrintPaper h1{font-size:19px;letter-spacing:2px;margin:0 0 2px;color:#111}#thermalPrintPaper .brand-sub{font-size:10px}#thermalPrintPaper hr{border:0;border-top:1px dashed #111;margin:7px 0}#thermalPrintPaper .center{text-align:center;line-height:1.5}#thermalPrintPaper .item{margin:6px 0}#thermalPrintPaper .name{font-weight:600}#thermalPrintPaper .detail,#thermalPrintPaper .sum,#thermalPrintPaper .pair{display:flex;justify-content:space-between;gap:5px;margin-top:3px}#thermalPrintPaper .detail span,#thermalPrintPaper .pair span{flex:1}#thermalPrintPaper .detail b,#thermalPrintPaper .pair b{text-align:right}#thermalPrintPaper .sum{font-size:14px;font-weight:700}#thermalPrintPaper .thanks{text-align:center;line-height:1.5;overflow-wrap:anywhere}
 @media(min-width:760px){#thermalPrintView .tp-layout{grid-template-columns:minmax(280px,.9fr) minmax(260px,1.1fr)}#thermalPrintPaper{max-width:340px}}
 </style>
-  <link rel="stylesheet" href="./dynamic-icons.css?v=dynamic-icons-v3-stable">
+  <link rel="stylesheet" href="./dynamic-icons.css?v=dynamic-icons-v4-fluid">
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -3315,6 +3315,86 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
  });
 })();
 </script>
-<script src="./dynamic-icons.js?v=dynamic-icons-v4-stable"></script>
+<script src="./dynamic-icons.js?v=dynamic-icons-v5-fluid"></script>
+
+<style id="fluid-animation-performance-overrides">
+/* Short, predictable transitions; avoid backdrops and oversized spring animations
+   that can cause extra compositing work on mid-range phones and battery saver. */
+.tabs.bottom-nav-glass {
+  background: rgba(255,255,255,.96) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transition: height 180ms var(--nongki-motion-ease), width 180ms var(--nongki-motion-ease), max-width 180ms var(--nongki-motion-ease), padding 180ms var(--nongki-motion-ease), border-radius 180ms var(--nongki-motion-ease), scale 140ms ease-out !important;
+}
+.tabs.bottom-nav-glass .nav-indicator {
+  transition: transform 190ms var(--nongki-motion-ease), top 160ms ease-out, bottom 160ms ease-out !important;
+}
+.tabs.bottom-nav-glass .nav-item {
+  transition: color 140ms ease-out, padding 180ms var(--nongki-motion-ease), gap 180ms var(--nongki-motion-ease) !important;
+}
+.tabs.bottom-nav-glass .nav-label {
+  transition: opacity 120ms ease-out, max-height 180ms var(--nongki-motion-ease), transform 180ms var(--nongki-motion-ease) !important;
+}
+.tabs.bottom-nav-glass.collapsed .nav-label {
+  display: block !important;
+}
+.tabs.bottom-nav-glass.dragging .nav-indicator,
+.tabs.bottom-nav-glass.dragging .nav-item.drag-over .ico {
+  scale: 1 1 !important;
+}
+#salesView .product-category-tab.icon-pop .product-category-icon {
+  animation: none !important;
+}
+#salesView .product-group-selected.product-grid-entering .product {
+  animation: nongkiQuickFade 140ms ease-out both !important;
+  animation-delay: 0ms !important;
+  will-change: auto !important;
+}
+#salesView .product-group-selected .product.product-tap-pop {
+  animation: nongkiTapFeedback 120ms ease-out both !important;
+  animation-delay: 0ms !important;
+  will-change: auto !important;
+}
+#reportsView.report-tab-entering .chart-box,
+#reportsView.report-tab-entering .report-card {
+  animation-duration: 180ms !important;
+  animation-delay: 0ms !important;
+  animation-timing-function: ease-out !important;
+  will-change: auto !important;
+}
+#reportsView.report-data-updating #productChart,
+#reportsView.report-data-updating #dailyChart,
+#reportsView.report-data-updating #weeklyChart,
+#reportsView.report-data-updating #monthlyChart {
+  animation-duration: 180ms !important;
+  animation-timing-function: ease-out !important;
+}
+#reportsView.report-data-updating #productChart .bar-fill,
+#reportsView.report-data-updating #weeklyChart .bar-fill,
+#reportsView.report-data-updating #dailyChart .month-bar,
+#reportsView.report-data-updating #monthlyChart .month-bar {
+  animation-duration: 220ms !important;
+  animation-timing-function: ease-out !important;
+}
+@keyframes nongkiQuickFade { from { opacity: .65; } to { opacity: 1; } }
+@keyframes nongkiTapFeedback { from { transform: scale(.99); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .tabs.bottom-nav-glass,
+  .tabs.bottom-nav-glass *,
+  #salesView .product-group-selected.product-grid-entering .product,
+  #salesView .product-group-selected .product.product-tap-pop,
+  #reportsView.report-tab-entering .chart-box,
+  #reportsView.report-tab-entering .report-card,
+  #reportsView.report-data-updating #productChart,
+  #reportsView.report-data-updating #dailyChart,
+  #reportsView.report-data-updating #weeklyChart,
+  #reportsView.report-data-updating #monthlyChart,
+  #reportsView.report-data-updating .bar-fill,
+  #reportsView.report-data-updating .month-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+</style>
 </body>
 </html>
