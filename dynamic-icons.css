@@ -1,0 +1,108 @@
+/* Nongki dynamic icon shrink — visual-only, limited to Catat/Kasir.
+   Keeps the existing markup, IDs, class names and transaction behavior intact. */
+#salesView .product .emoji,
+#salesView .product-category-icon,
+#salesView .payment-icon {
+  transition:
+    transform 300ms cubic-bezier(.22,1,.36,1),
+    margin-bottom 300ms cubic-bezier(.22,1,.36,1),
+    font-size 300ms cubic-bezier(.22,1,.36,1);
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+
+/* The category strip gives up a few pixels while scrolling, then eases back. */
+#salesView .product-category-tabs {
+  transition:
+    padding-top 300ms cubic-bezier(.22,1,.36,1),
+    padding-bottom 300ms cubic-bezier(.22,1,.36,1),
+    margin-bottom 300ms cubic-bezier(.22,1,.36,1);
+}
+#salesView .product-category-tab {
+  transition:
+    padding 300ms cubic-bezier(.22,1,.36,1),
+    min-height 300ms cubic-bezier(.22,1,.36,1),
+    background-color .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
+}
+
+/* Shrunk state toggled by the isolated visual-only scroll observer. */
+#salesView[data-icons-compact="true"] .product-category-tabs {
+  padding-top: 2px;
+  padding-bottom: 4px;
+  margin-bottom: 5px;
+}
+#salesView[data-icons-compact="true"] .product-category-tab {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  gap: 2px;
+}
+#salesView[data-icons-compact="true"] .product-category-icon {
+  font-size: 17px;
+}
+
+/* Product glyphs scale smoothly; reduce their reserved bottom gap a little too. */
+#salesView .product .emoji {
+  display: inline-block;
+  transform-origin: left center;
+}
+#salesView[data-icons-compact="true"] .product .emoji {
+  transform: translateY(-1px) scale(.78);
+  margin-bottom: 4px;
+}
+
+/* Payment icons shrink and the checkout row becomes a little shorter. */
+#salesView[data-icons-compact="true"] .payment-icon {
+  transform: scale(.78);
+}
+#salesView .payment-method-card,
+#salesView > .payment-checkout-card {
+  transition:
+    min-height 300ms cubic-bezier(.22,1,.36,1),
+    padding 300ms cubic-bezier(.22,1,.36,1),
+    gap 300ms cubic-bezier(.22,1,.36,1),
+    margin-bottom 300ms cubic-bezier(.22,1,.36,1),
+    box-shadow .2s ease;
+}
+#salesView[data-icons-compact="true"] > .payment-checkout-card {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 6px;
+}
+#salesView[data-icons-compact="true"] .payment-methods {
+  gap: 5px;
+}
+#salesView[data-icons-compact="true"] .payment-method-card {
+  min-height: 34px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* Mildly tighten product cards without hiding content or changing their order. */
+#salesView .product {
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    padding 300ms cubic-bezier(.22,1,.36,1),
+    min-height 300ms cubic-bezier(.22,1,.36,1);
+}
+#salesView[data-icons-compact="true"] .product {
+  padding-top: 9px;
+  padding-bottom: 9px;
+  min-height: 92px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #salesView .product .emoji,
+  #salesView .product-category-tabs,
+  #salesView .product-category-tab,
+  #salesView .product-category-icon,
+  #salesView .payment-icon,
+  #salesView .payment-method-card,
+  #salesView > .payment-checkout-card,
+  #salesView .product {
+    transition: none !important;
+  }
+}
