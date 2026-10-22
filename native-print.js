@@ -408,6 +408,42 @@
 
 
 
+  // Reusable print entry point for the post-payment print dialog.
+  // It reads the already-saved transaction from IndexedDB and never creates a transaction.
+  async function printTransactionById(transactionId) {
+    if (!isCapacitorNative()) throw new Error('Cetak langsung hanya tersedia di APK Android Nongki.');
+    var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePrinter;
+    if (!plugin || typeof plugin.getPairedBluetoothPrinters !== 'function' || typeof plugin.printBluetoothReceipt !== 'function') {
+      throw new Error('Fitur Bluetooth tidak tersedia di APK ini. Perbarui APK Nongki terlebih dahulu.');
+    }
+    var result = await plugin.getPairedBluetoothPrinters();
+    var devices = result && Array.isArray(result.devices) ? result.devices : [];
+    if (!devices.length) throw new Error('Tidak ada printer terpasang. Pasangkan printer thermal melalui Pengaturan Bluetooth Android.');
+    var selected = await selectBluetoothPrinter(devices, false);
+    if (!selected) throw new Error('Pemilihan printer dibatalkan.');
+    var txs = await loadTransactions();
+    var tx = txs.find(function (item) {
+      return String(item.id || item.id_transaksi || '') === String(transactionId || '');
+    });
+    if (!tx) throw new Error('Transaksi tidak ditemukan di riwayat lokal.');
+    var widthInput = document.getElementById('thermalPrintWidth');
+    var copiesInput = document.getElementById('thermalPrintCopies');
+    var width = Number(widthInput && widthInput.value || localStorage.getItem('nongki_thermal_width')) === 80 ? 80 : 58;
+    var copies = Math.max(1, Math.min(2, Number(copiesInput && copiesInput.value || localStorage.getItem('nongki_thermal_copies')) || 1));
+    var receipt = Array.from({ length: copies }, function () { return buildBluetoothText(tx); }).join('\n');
+    var logoBase64 = await receiptLogoBase64();
+    await plugin.printBluetoothReceipt({
+      address: selected.address,
+      text: receipt,
+      logoBase64: logoBase64,
+      width: width
+    });
+    return { success: true, printerName: selected.name || selected.address, message: 'Struk berhasil dikirim ke printer ' + (selected.name || selected.address) + '.' };
+  }
+
+  window.NongkiNativePrint = window.NongkiNativePrint || {};
+  window.NongkiNativePrint.printTransactionById = printTransactionById;
+
   function addNativeFeatures() {
     addNativeButton();
     addChangePrinterButton();
