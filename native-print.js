@@ -235,6 +235,17 @@
       .bt-printer-check{font-size:18px;font-weight:700}.bt-printer-message{padding:14px 8px;color:#758078;font-size:13px;line-height:1.6}
       .bt-modal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid #e7ebe4;font-size:11px;color:#758078}
       .bt-secondary{padding:10px 16px;border:1px solid #dfe5dc;border-radius:10px;background:#fff;color:#173d2c;font-weight:700}
+      /* Fluid modal entrance for both Print > Cetak struk and Ganti Printer Bluetooth. */
+      .bt-modal{position:fixed;inset:0;z-index:10060;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;visibility:hidden;pointer-events:none;opacity:0;transition:opacity .22s ease,visibility 0s linear .24s}
+      .bt-modal.is-open{visibility:visible;pointer-events:auto;opacity:1;transition:opacity .22s ease}
+      .bt-modal-backdrop{position:absolute;inset:0;background:rgba(8,24,16,.68);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;transition:opacity .24s ease}
+      .bt-modal.is-open .bt-modal-backdrop{opacity:1}
+      .bt-modal-card{position:relative;z-index:1;width:min(100%,420px);max-height:min(78dvh,620px);overflow:auto;border:1px solid #e1e8df;border-radius:23px;background:#fffdf8;color:#23352c;box-shadow:0 20px 60px rgba(0,0,0,.28);transform:translateY(18px) scale(.96);opacity:0;transform-origin:center center;transition:transform .34s cubic-bezier(.2,.85,.25,1.12),opacity .22s ease}
+      .bt-modal.is-open .bt-modal-card{transform:translateY(0) scale(1);opacity:1}
+      .bt-printer-option{transform:translateY(8px);opacity:0;animation:btPrinterOptionIn .32s cubic-bezier(.22,1,.36,1) both}
+      .bt-printer-option:active{transform:scale(.985)}
+      @keyframes btPrinterOptionIn{to{transform:translateY(0);opacity:1}}
+      @media(prefers-reduced-motion:reduce){.bt-modal,.bt-modal-backdrop,.bt-modal-card,.bt-printer-option{transition:none!important;animation:none!important;transform:none!important}.bt-printer-option{opacity:1}}
     `;
     document.head.appendChild(style);
     var modal = document.createElement('div');
@@ -261,6 +272,7 @@
         var button = document.createElement('button');
         button.type = 'button';
         button.className = 'bt-printer-option';
+        button.style.animationDelay = Math.min(list.children.length * 45, 225) + 'ms';
         var icon = document.createElement('span');
         icon.className = 'bt-printer-icon';
         icon.textContent = '🖨️';

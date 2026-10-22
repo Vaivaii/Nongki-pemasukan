@@ -3245,9 +3245,19 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 .post-payment-print-primary:disabled{opacity:.55;cursor:wait}
 .post-payment-print-secondary{border:1px solid #dfe5dc;background:#fff;color:#365343}
 @media(max-height:650px){.post-payment-print-card{padding:20px 16px 16px}.post-payment-print-icon{width:44px;height:44px;margin-bottom:8px;font-size:23px}#postPaymentPrintTitle{font-size:20px}.post-payment-print-total{padding:9px 12px}}
+/* Animated print prompt after QRIS payment: backdrop fades and panel springs in. */
+#postPaymentPrintModal{opacity:0;transition:opacity .22s ease;overscroll-behavior:contain}
+#postPaymentPrintModal:not([hidden]){opacity:1;animation:postPaymentPrintBackdropIn .24s ease-out both}
+#postPaymentPrintModal .post-payment-print-card{opacity:0;transform:translateY(18px) scale(.96);transform-origin:center center}
+#postPaymentPrintModal:not([hidden]) .post-payment-print-card{animation:postPaymentPrintCardIn .36s cubic-bezier(.2,.85,.25,1.12) both}
+#postPaymentPrintModal .post-payment-print-icon{animation:postPaymentPrintIconIn .42s cubic-bezier(.22,1,.36,1) both}
+@keyframes postPaymentPrintBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes postPaymentPrintCardIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes postPaymentPrintIconIn{from{opacity:.5;transform:translateY(5px) scale(.82) rotate(-6deg)}to{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@media(prefers-reduced-motion:reduce){#postPaymentPrintModal,#postPaymentPrintModal .post-payment-print-card,#postPaymentPrintModal .post-payment-print-icon{animation:none!important;transition:none!important;transform:none!important;opacity:1!important}}
 </style>
 <script src="./thermal-print.js?v=thermal-live-v23-42px-buttons"></script>
-<script src="./native-print.js?v=native-capacitor-print-v13-payment-print-dialog"></script>
+<script src="./native-print.js?v=native-capacitor-print-v14-fluid-printer-dialog"></script>
 <script id="postPaymentPrintDialogLogic">
 (function(){
  'use strict';
