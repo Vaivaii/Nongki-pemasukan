@@ -1,10 +1,11 @@
-name: Build Nongki Android APK from ui-baru-v2
+name: Build Nongki Android APK from Dynamic Icons branch
 
 on:
   workflow_dispatch:
   push:
     branches:
       - android/ui-baru-v2-native-clean
+      - android/ui-dynamic-icons
     paths:
       - 'index.html'
       - 'manifest.json'
@@ -13,6 +14,8 @@ on:
       - 'icon-512.png'
       - 'thermal-print.js'
       - 'native-print.js'
+      - 'dynamic-icons.css'
+      - 'dynamic-icons.js'
       - 'native/**'
       - 'package.json'
       - 'capacitor.config.json'
@@ -47,12 +50,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p www
-          cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js native-print.js www/
+          cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js native-print.js dynamic-icons.css dynamic-icons.js www/
           mkdir -p www/assets
           cp assets/nongki-receipt-logo.png www/assets/
           test -s www/index.html
           test -s www/thermal-print.js
           test -s www/native-print.js
+          test -s www/dynamic-icons.css
+          test -s www/dynamic-icons.js
           echo "Bundled assets from current branch: $GITHUB_REF_NAME"
           ls -lh www/
       - name: Generate Android project
@@ -76,7 +81,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nongki-ui-redesign-liquid-glass-debug-apk
+          name: nongki-dynamic-icons-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
