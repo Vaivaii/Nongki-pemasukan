@@ -2348,11 +2348,7 @@ $('paymentQrisCard')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key=
 $('clearPaymentCart')?.addEventListener('click',()=>{if(paymentBusy)return;if(!cartCount())return;cancelAllLocalCartDrafts('Keranjang dikosongkan sebelum pembayaran');paymentCart.clear();refreshPaymentUI();renderHeader();renderGrid();renderRecent();renderHistory();toast('Keranjang dikosongkan. Item yang dibatalkan tercatat di riwayat lokal.');});
 
 document.addEventListener('click',e=>{
-/* Modal berada tepat sebelum 
-
-
-  <script src="./dynamic-icons.js?v=dynamic-icons-v1"></script>
-</body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
+/* Modal berada tepat sebelum </body>, setelah script; gunakan delegation agar kontrol tetap aktif. */
 const cashClose=e.target.closest('#closeCashModal');
 if(cashClose){closeCashModal();return;}
 if(e.target===$('cashPaymentModal')){closeCashModal();return;}
@@ -3308,5 +3304,6 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
  });
 })();
 </script>
+<script src="./dynamic-icons.js?v=dynamic-icons-v2"></script>
 </body>
 </html>
