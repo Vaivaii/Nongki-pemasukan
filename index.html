@@ -3687,6 +3687,25 @@ html[data-theme="dark"] #thermalPrintView .tp-settings textarea{
     transition:none!important;
   }
 }
+/* In dark mode the preview mat blends into the app; only the paper stays white. */
+html[data-theme="dark"] #thermalPrintView #thermalPrintPaperWrap{
+  background:#111713!important;
+  border:1px solid #35443a!important;
+  box-shadow:none!important;
+}
+/* The base navigation skin sets a darker direct color on .ico/.nav-label;
+   override those direct child colors as well so the active SVG stays visible. */
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active,
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .ico,
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .ico svg,
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .nav-label{
+  color:#d0f4da!important;
+}
+html[data-theme="dark"] #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .ico svg{
+  stroke:#d0f4da!important;
+  opacity:1!important;
+}
+
 </style>
 <script id="nongki-dark-mode-logic">
 (function(){
