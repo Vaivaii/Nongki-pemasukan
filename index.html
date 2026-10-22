@@ -2188,8 +2188,19 @@ function isCashPrintPromptEnabled(){
 function cartLines(){return Array.from(paymentCart.values()).map(x=>({...x}));}
 function cartTotal(){return cartLines().reduce((sum,x)=>sum+x.unitPrice*x.quantity,0);}
 function cartCount(){return cartLines().reduce((sum,x)=>sum+x.quantity,0);}
+let lastPaymentAnimationSignature=null;
 function refreshPaymentUI(){
  const count=cartCount(),total=cartTotal(),enabled=count>0;
+ const paymentAnimationSignature=count+':'+total;
+ if(lastPaymentAnimationSignature!==null&&paymentAnimationSignature!==lastPaymentAnimationSignature&&count>0){
+  const cards=[$('paymentCashCard'),$('paymentQrisCard')].filter(Boolean);
+  cards.forEach(card=>card.classList.remove('payment-updated'));
+  requestAnimationFrame(()=>{
+   cards.forEach(card=>card.classList.add('payment-updated'));
+   setTimeout(()=>cards.forEach(card=>card.classList.remove('payment-updated')),220);
+  });
+ }
+ lastPaymentAnimationSignature=paymentAnimationSignature;
  ['paymentCashCard','paymentQrisCard'].forEach(id=>{const el=$(id);if(el){el.setAttribute('aria-disabled',String(!enabled||paymentBusy));el.tabIndex=enabled&&!paymentBusy?0:-1;}});
  ['paymentCartCount','paymentCartCountQris'].forEach(id=>{const el=$(id);if(el)el.textContent=count?rupiah(total)+' · '+count+' item':'0 item';});
  if($('paymentCartTotal')){const totalEl=$('paymentCartTotal'),nextTotal=rupiah(total);if(totalEl.textContent!==nextTotal){totalEl.textContent=nextTotal;totalEl.classList.remove('total-bump');void totalEl.offsetWidth;totalEl.classList.add('total-bump');}}
@@ -3318,63 +3329,36 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 <!-- dynamic-icons.js intentionally not loaded: scroll shrinking applies to navbar only. -->
 
 <style id="fluid-animation-performance-overrides">
-/* Low-cost motion profile. Keep scroll shrink on the bottom navbar only.
-   The receipt-print dialogs' own entry animations are intentionally untouched. */
-:root {
-  --nongki-motion-ease: cubic-bezier(.2,.7,.2,1);
-}
+/* Preserve interaction feedback using short, low-cost animations. Shrink stays navbar-only. */
+:root { --nongki-motion-ease: cubic-bezier(.2,.7,.2,1); }
 
-/* Navbar: short transitions, no live backdrop blur or rubber-band stretching. */
+/* Navbar: compact pill smoothness plus subtle active-icon emphasis. */
 #bottomNavigation.tabs.bottom-nav-glass {
   background: rgba(255,255,255,.97) !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   scale: 1 1 !important;
-  transition:
-    width 180ms var(--nongki-motion-ease),
-    max-width 180ms var(--nongki-motion-ease),
-    height 180ms var(--nongki-motion-ease),
-    min-height 180ms var(--nongki-motion-ease),
-    max-height 180ms var(--nongki-motion-ease),
-    padding 180ms var(--nongki-motion-ease),
-    border-radius 180ms var(--nongki-motion-ease),
-    box-shadow 140ms ease-out,
-    background-color 140ms ease-out !important;
+  transition: width 180ms var(--nongki-motion-ease), max-width 180ms var(--nongki-motion-ease), height 180ms var(--nongki-motion-ease), min-height 180ms var(--nongki-motion-ease), max-height 180ms var(--nongki-motion-ease), padding 180ms var(--nongki-motion-ease), border-radius 180ms var(--nongki-motion-ease), box-shadow 140ms ease-out, background-color 140ms ease-out !important;
 }
 #bottomNavigation.tabs.bottom-nav-glass .nav-indicator {
   scale: 1 1 !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 1px 4px rgba(29,57,41,.05) !important;
-  transition:
-    transform 180ms var(--nongki-motion-ease),
-    top 160ms ease-out,
-    bottom 160ms ease-out !important;
+  transition: transform 180ms var(--nongki-motion-ease), top 160ms ease-out, bottom 160ms ease-out !important;
   will-change: transform;
 }
-#bottomNavigation.tabs.bottom-nav-glass.dragging {
-  scale: 1 1 !important;
+#bottomNavigation.tabs.bottom-nav-glass.dragging,
+#bottomNavigation.tabs.bottom-nav-glass.dragging .nav-indicator { scale: 1 1 !important; }
+#bottomNavigation.tabs.bottom-nav-glass.dragging .nav-indicator { transition: transform 0ms linear !important; }
+#bottomNavigation.tabs.bottom-nav-glass .nav-item { transition: color 130ms ease-out, padding 180ms var(--nongki-motion-ease), gap 180ms var(--nongki-motion-ease) !important; }
+#bottomNavigation.tabs.bottom-nav-glass .nav-item .ico {
+  transform: scale(1) !important; transform-origin: center center;
+  transition: transform 160ms var(--nongki-motion-ease) !important;
 }
-#bottomNavigation.tabs.bottom-nav-glass.dragging .nav-indicator {
-  scale: 1 1 !important;
-  transition: transform 0ms linear !important;
-}
-#bottomNavigation.tabs.bottom-nav-glass .nav-item {
-  transition: color 130ms ease-out, padding 180ms var(--nongki-motion-ease), gap 180ms var(--nongki-motion-ease) !important;
-}
-#bottomNavigation.tabs.bottom-nav-glass .nav-item .ico,
 #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .ico,
-#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-item .ico {
-  transform: none !important;
-  transition: none !important;
-}
-#bottomNavigation.tabs.bottom-nav-glass .nav-label {
-  display: block !important;
-  transition: opacity 110ms ease-out, max-height 170ms var(--nongki-motion-ease), transform 170ms var(--nongki-motion-ease) !important;
-}
-#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-label {
-  display: block !important;
-}
+#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-item.active .ico { transform: scale(1.1) !important; }
+#bottomNavigation.tabs.bottom-nav-glass .nav-label { display: block !important; transition: opacity 110ms ease-out, max-height 170ms var(--nongki-motion-ease), transform 170ms var(--nongki-motion-ease) !important; }
+#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-label { display: block !important; }
 
-/* Sales cards and product/category icons never change size with scroll. */
+/* Guard against stale compact attributes; no product/category/payment shrinking. */
 #salesView[data-icons-compact="true"] .product-category-tabs,
 #salesView[data-icons-compact="true"] .product-category-tab,
 #salesView[data-icons-compact="true"] .product-category-icon,
@@ -3384,106 +3368,110 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 #salesView[data-icons-compact="true"] .payment-method-card,
 #salesView[data-icons-compact="true"] .payment-icon,
 #salesView[data-icons-compact="true"] .payment-cart-count {
-  width: revert !important;
-  min-width: revert !important;
-  max-width: revert !important;
-  min-height: revert !important;
-  height: revert !important;
-  flex: revert !important;
-  padding: revert !important;
-  margin: revert !important;
-  gap: revert !important;
-  font-size: revert !important;
-  line-height: revert !important;
-  opacity: revert !important;
+  width: revert !important; min-width: revert !important; max-width: revert !important;
+  min-height: revert !important; height: revert !important; flex: revert !important;
+  padding: revert !important; margin: revert !important; gap: revert !important;
+  font-size: revert !important; line-height: revert !important; opacity: revert !important;
   transform: none !important;
 }
-#salesView .product-category-tab.icon-pop,
-#salesView .product-category-tab.icon-pop .product-category-icon,
-#salesView .product-group-selected.product-grid-entering .product,
-#salesView .product-group-selected .product.product-tap-pop {
-  animation: none !important;
-  animation-delay: 0ms !important;
-  will-change: auto !important;
+
+/* Bounce just the chosen category icon; keep the button itself still. */
+#salesView .product-category-tab.icon-pop { animation: none !important; }
+#salesView .product-category-tab.icon-pop .product-category-icon {
+  animation: nongkiCategoryBounce 280ms var(--nongki-motion-ease) both !important;
+  transform-origin: 50% 75%;
 }
 
-/* Remove staggered chart motion; charts stay responsive and render directly. */
-#reportsView.report-tab-entering .chart-box,
-#reportsView.report-tab-entering .report-card,
-#reportsView.report-data-updating #productChart,
-#reportsView.report-data-updating #dailyChart,
-#reportsView.report-data-updating #weeklyChart,
-#reportsView.report-data-updating #monthlyChart,
+/* Keep product entry/tap feedback without long spring curves or staggered delay. */
+#salesView .product-group-selected.product-grid-entering .product {
+  animation: nongkiProductFadeIn 170ms ease-out both !important;
+  animation-delay: 0ms !important; will-change: auto !important;
+}
+#salesView .product-group-selected .product.product-tap-pop {
+  animation: nongkiProductTap 170ms ease-out both !important;
+  animation-delay: 0ms !important; will-change: auto !important;
+}
+
+/* Restore the cancellation highlight on affected product and history row. */
+#salesView .product.cancelled-product-flash {
+  animation: nongkiProductCancelled 380ms ease-out both !important;
+  position: relative; z-index: 1; will-change: auto !important;
+}
+.history-row.cancelled-flash { animation: cancelCardImpact 380ms ease-out both !important; }
+.history-row.cancelled-flash .history-icon { animation: cancelIconPop 260ms ease-out both !important; }
+
+/* Fade reports in smoothly without the old cascading delay across charts. */
+#reportsView.report-tab-entering .chart-box {
+  animation: nongkiReportFadeIn 220ms ease-out both !important;
+  animation-delay: 0ms !important; will-change: auto !important;
+}
+#reportsView.report-tab-entering .report-card {
+  animation: nongkiReportCardIn 190ms ease-out both !important;
+  animation-delay: 0ms !important; will-change: auto !important;
+}
+/* Chart data bars update directly rather than all animating individually. */
 #reportsView.report-data-updating #productChart .bar-fill,
 #reportsView.report-data-updating #weeklyChart .bar-fill,
 #reportsView.report-data-updating #dailyChart .month-bar,
 #reportsView.report-data-updating #monthlyChart .month-bar {
-  animation: none !important;
-  animation-delay: 0ms !important;
-  will-change: auto !important;
+  animation: none !important; will-change: auto !important;
 }
 
-/* Faster, simple menu and modal-closing feedback; avoid spring overshoot. */
-#profileDropdown.menu-opening {
-  animation: nongkiMenuIn 150ms ease-out both !important;
-  transform-origin: bottom right !important;
+/* Payment cards keep quick press/hover feedback and pulse when cart contents change. */
+#salesView .payment-method-card {
+  transition: transform 140ms ease-out, box-shadow 140ms ease-out, filter 140ms ease-out, opacity 140ms ease-out !important;
 }
-#profileDropdown.menu-closing {
-  animation: nongkiMenuOut 110ms ease-in both !important;
-}
-#cashPaymentModal.modal-closing .cash-modal {
-  animation: nongkiDialogOut 150ms ease-in both !important;
-}
-#cashPaymentModal.modal-closing {
-  animation: nongkiFadeOut 150ms ease-in both !important;
-}
-.history-row.cancelled-flash,
-.history-row.cancelled-flash .history-icon,
-.product.cancelled-product-flash {
-  animation: none !important;
-  will-change: auto !important;
-}
-#salesView .payment-method-card,
-#salesView .payment-cart-count,
-#salesView .cart-summary>b,
-#clearPaymentCart {
-  transition-duration: 130ms !important;
-}
-.payment-cart-count.count-bump,
-.cart-summary>b.total-bump {
-  animation: nongkiCounterPulse 130ms ease-out both !important;
-}
-@keyframes nongkiMenuIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes nongkiMenuOut {
-  to { opacity: 0; transform: translateY(3px); }
-}
-@keyframes nongkiDialogOut {
-  to { opacity: 0; transform: translateY(10px); }
-}
-@keyframes nongkiFadeOut {
-  to { opacity: 0; }
-}
-@keyframes nongkiCounterPulse {
-  0% { transform: scale(1); }
-  55% { transform: scale(1.025); }
-  100% { transform: scale(1); }
-}
+#salesView .payment-method-card::after { transition: transform 180ms ease-out !important; }
+#salesView .payment-method-card:not([aria-disabled="true"]):active { transform: scale(.985) !important; }
+#salesView .payment-method-card:not([aria-disabled="true"]):active::after { transform: translateX(130%); }
+#salesView .payment-method-card.payment-updated { animation: nongkiPaymentUpdate 190ms ease-out both !important; }
+#salesView .payment-cart-count.count-bump,
+#salesView .cart-summary>b.total-bump { animation: nongkiCounterPulse 170ms ease-out both !important; }
 
-/* Battery-saver/accessibility settings: immediately disable nonessential motion. */
+/* Menu/modal feedback stays quick. Receipt-print dialog animations are unchanged. */
+#profileDropdown.menu-opening { animation: nongkiMenuIn 150ms ease-out both !important; transform-origin: bottom right !important; }
+#profileDropdown.menu-closing { animation: nongkiMenuOut 110ms ease-in both !important; }
+#cashPaymentModal.modal-closing .cash-modal { animation: nongkiDialogOut 150ms ease-in both !important; }
+#cashPaymentModal.modal-closing { animation: nongkiFadeOut 150ms ease-in both !important; }
+
+@keyframes nongkiCategoryBounce {
+  0% { transform: translateY(0) scale(1); }
+  42% { transform: translateY(-3px) scale(1.1); }
+  76% { transform: translateY(0) scale(.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes nongkiProductFadeIn { from { opacity: .72; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nongkiProductTap { 0% { transform: scale(1); } 45% { transform: scale(1.018); } 100% { transform: scale(1); } }
+@keyframes nongkiProductCancelled {
+  0% { background-color: #fffdfb; border-color: var(--line); transform: scale(1); }
+  38% { background-color: #ffe9e1; border-color: #e8a18f; transform: scale(1.012); }
+  100% { background-color: #fff; border-color: var(--line); transform: scale(1); }
+}
+@keyframes nongkiReportFadeIn { from { opacity: .55; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nongkiReportCardIn { from { opacity: .7; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nongkiPaymentUpdate { 0% { transform: scale(1); } 45% { transform: scale(1.012); } 100% { transform: scale(1); } }
+@keyframes nongkiMenuIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nongkiMenuOut { to { opacity: 0; transform: translateY(3px); } }
+@keyframes nongkiDialogOut { to { opacity: 0; transform: translateY(10px); } }
+@keyframes nongkiFadeOut { to { opacity: 0; } }
+@keyframes nongkiCounterPulse { 0% { transform: scale(1); } 45% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
 @media (prefers-reduced-motion: reduce) {
   #bottomNavigation.tabs.bottom-nav-glass,
   #bottomNavigation.tabs.bottom-nav-glass *,
-  #profileDropdown.menu-opening,
-  #profileDropdown.menu-closing,
-  #cashPaymentModal.modal-closing,
-  #cashPaymentModal.modal-closing .cash-modal,
-  .payment-cart-count.count-bump,
-  .cart-summary>b.total-bump {
-    animation: none !important;
-    transition: none !important;
+  #profileDropdown.menu-opening, #profileDropdown.menu-closing,
+  #cashPaymentModal.modal-closing, #cashPaymentModal.modal-closing .cash-modal,
+  #salesView .product-category-tab.icon-pop .product-category-icon,
+  #salesView .product-group-selected.product-grid-entering .product,
+  #salesView .product-group-selected .product.product-tap-pop,
+  #salesView .product.cancelled-product-flash,
+  .history-row.cancelled-flash, .history-row.cancelled-flash .history-icon,
+  #reportsView.report-tab-entering .chart-box,
+  #reportsView.report-tab-entering .report-card,
+  #salesView .payment-method-card, #salesView .payment-method-card::after,
+  #salesView .payment-method-card.payment-updated,
+  .payment-cart-count.count-bump, .cart-summary>b.total-bump {
+    animation: none !important; transition: none !important;
   }
 }
 </style>
