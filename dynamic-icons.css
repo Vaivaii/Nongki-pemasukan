@@ -1,16 +1,25 @@
-/* Nongki dynamic shrink — stable on scroll, with glyphs kept at full size.
-   UI-only: preserve all product, payment, cart, database, sync and login behavior. */
+/* Nongki compact controls and low-cost motion.
+   No transaction, payment, cart, login, data, sync, or print logic is changed. */
 :root {
-  --nongki-shrink-ease: cubic-bezier(.22,1,.36,1);
-  --nongki-shrink-duration: .36s;
+  --nongki-motion-fast: 140ms;
+  --nongki-motion-ui: 180ms;
+  --nongki-motion-ease: cubic-bezier(.2,.7,.2,1);
 }
+
+/* Category strip uses the full sales width. Compact chips share it evenly,
+   so the right-most category aligns with the QRIS card edge. */
 #salesView .product-category-tabs {
-  transition: padding-top var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 0;
+  padding-right: 0;
+  transition: padding var(--nongki-motion-ui) var(--nongki-motion-ease), margin-bottom var(--nongki-motion-ui) var(--nongki-motion-ease), gap var(--nongki-motion-ui) var(--nongki-motion-ease);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 #salesView .product-category-tab {
-  min-height: 42px;
   box-sizing: border-box;
-  transition: width var(--nongki-shrink-duration) var(--nongki-shrink-ease), min-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease), border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease), background-color .22s ease, color .22s ease, border-color .22s ease;
+  transition: width var(--nongki-motion-ui) var(--nongki-motion-ease), min-width var(--nongki-motion-ui) var(--nongki-motion-ease), max-width var(--nongki-motion-ui) var(--nongki-motion-ease), flex-basis var(--nongki-motion-ui) var(--nongki-motion-ease), padding var(--nongki-motion-ui) var(--nongki-motion-ease), gap var(--nongki-motion-ui) var(--nongki-motion-ease), border-radius var(--nongki-motion-ui) var(--nongki-motion-ease), background-color var(--nongki-motion-fast) ease-out, color var(--nongki-motion-fast) ease-out, border-color var(--nongki-motion-fast) ease-out;
 }
 #salesView .product-category-icon {
   display: inline-block;
@@ -28,17 +37,54 @@
   font-size: 10px;
   line-height: 1.15;
   transform: none;
-  transition: opacity .2s ease, max-height var(--nongki-shrink-duration) var(--nongki-shrink-ease), font-size var(--nongki-shrink-duration) var(--nongki-shrink-ease), line-height var(--nongki-shrink-duration) var(--nongki-shrink-ease);
+  transition: opacity var(--nongki-motion-fast) ease-out, max-height var(--nongki-motion-ui) var(--nongki-motion-ease);
 }
-/* Product-card emoji stays at its normal size in both scroll states. */
-#salesView .product .emoji { transform: none !important; transition: none !important; }
-/* Payment controls keep full icon size and stable height. */
+#salesView .product .emoji {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Compact category row: equal flex widths fill the exact width of the payment row. */
+#salesView[data-icons-compact="true"] .product-category-tabs {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+#salesView[data-icons-compact="true"] .product-category-tab {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 0 !important;
+  min-height: 42px;
+  padding: 6px 3px;
+  gap: 0;
+  border-radius: 10px;
+}
+#salesView[data-icons-compact="true"] .product-category-icon {
+  font-size: 18px;
+  transform: none !important;
+}
+#salesView[data-icons-compact="true"] .product-category-name {
+  max-height: 0;
+  opacity: 0;
+  font-size: 0;
+  line-height: 0;
+}
+
+/* Payment row narrows slightly but keeps each icon left-aligned, never centered. */
 #salesView .payment-checkout-card,
 #salesView .payment-methods,
 #salesView .payment-method-card {
-  transition: padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), gap var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin-bottom var(--nongki-shrink-duration) var(--nongki-shrink-ease), border-radius var(--nongki-shrink-duration) var(--nongki-shrink-ease), box-shadow .22s ease;
+  transition: padding var(--nongki-motion-ui) var(--nongki-motion-ease), gap var(--nongki-motion-ui) var(--nongki-motion-ease), margin-bottom var(--nongki-motion-ui) var(--nongki-motion-ease), border-radius var(--nongki-motion-ui) var(--nongki-motion-ease), box-shadow var(--nongki-motion-fast) ease-out;
 }
-#salesView .payment-method-card { box-sizing: border-box; }
+#salesView>.payment-checkout-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+#salesView .payment-method-card {
+  box-sizing: border-box;
+}
 #salesView .payment-icon {
   display: inline-block;
   flex: 0 0 auto;
@@ -52,49 +98,46 @@
   opacity: 1;
   overflow: hidden;
   transform: none;
-  transition: max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), flex-basis var(--nongki-shrink-duration) var(--nongki-shrink-ease), opacity .2s ease;
+  transition: max-width var(--nongki-motion-ui) var(--nongki-motion-ease), flex-basis var(--nongki-motion-ui) var(--nongki-motion-ease), opacity var(--nongki-motion-fast) ease-out;
 }
 #salesView .payment-cart-count {
   max-width: 110px;
   opacity: 1;
   overflow: hidden;
-  transition: max-width var(--nongki-shrink-duration) var(--nongki-shrink-ease), padding var(--nongki-shrink-duration) var(--nongki-shrink-ease), margin var(--nongki-shrink-duration) var(--nongki-shrink-ease), opacity .2s ease;
+  transition: max-width var(--nongki-motion-ui) var(--nongki-motion-ease), padding var(--nongki-motion-ui) var(--nongki-motion-ease), margin var(--nongki-motion-ui) var(--nongki-motion-ease), opacity var(--nongki-motion-fast) ease-out;
 }
-/* Hide labels, narrow category chips slightly, and do not shorten the glyphs. */
-#salesView[data-icons-compact="true"] .product-category-tabs {
-  padding-top: 4px;
-  padding-bottom: 4px;
-  margin-bottom: 4px;
-  gap: 5px;
+#salesView[data-icons-compact="true"] > .payment-checkout-card {
+  padding: 6px 7px;
+  margin-bottom: 6px;
 }
-#salesView[data-icons-compact="true"] .product-category-tab {
-  width: 54px;
-  min-width: 54px;
-  max-width: 54px;
-  flex: 0 0 54px;
-  min-height: 42px;
-  padding: 6px 4px;
-  gap: 0;
-  border-radius: 10px;
-}
-#salesView[data-icons-compact="true"] .product-category-icon { font-size: 18px; transform: none !important; }
-#salesView[data-icons-compact="true"] .product-category-name { max-height: 0; opacity: 0; font-size: 0; line-height: 0; }
-/* Payment buttons remain 40px tall; inset them by only a few pixels horizontally. */
-#salesView[data-icons-compact="true"] > .payment-checkout-card { padding: 6px 7px; margin-bottom: 6px; }
 #salesView[data-icons-compact="true"] .payment-methods { gap: 7px; }
 #salesView[data-icons-compact="true"] .payment-method-card {
   width: calc(100% - 4px);
   height: 40px;
   min-height: 40px;
   justify-self: center;
-  padding: 6px 5px;
+  padding: 6px 9px;
   gap: 0;
-  justify-content: center;
+  justify-content: flex-start !important;
   border-radius: 9px;
 }
-#salesView[data-icons-compact="true"] .payment-icon { font-size: 18px; transform: none !important; }
-#salesView[data-icons-compact="true"] .payment-method-card > span:nth-child(2) { max-width: 0; flex: 0 1 0; opacity: 0; }
-#salesView[data-icons-compact="true"] .payment-cart-count { max-width: 0; margin: 0; padding: 0; font-size: 0; opacity: 0; }
+#salesView[data-icons-compact="true"] .payment-icon {
+  font-size: 18px;
+  transform: none !important;
+}
+#salesView[data-icons-compact="true"] .payment-method-card > span:nth-child(2) {
+  max-width: 0;
+  flex: 0 1 0;
+  opacity: 0;
+}
+#salesView[data-icons-compact="true"] .payment-cart-count {
+  max-width: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 0;
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   #salesView .product-category-tabs,
   #salesView .product-category-tab,
@@ -103,5 +146,7 @@
   #salesView .payment-methods,
   #salesView .payment-method-card,
   #salesView .payment-method-card > span:nth-child(2),
-  #salesView .payment-cart-count { transition: none !important; }
+  #salesView .payment-cart-count {
+    transition: none !important;
+  }
 }
