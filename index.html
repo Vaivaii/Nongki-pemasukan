@@ -3355,8 +3355,37 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 #bottomNavigation.tabs.bottom-nav-glass .nav-item.active .ico,
 #bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-item.active .ico { transform: scale(1.1) !important; }
-#bottomNavigation.tabs.bottom-nav-glass .nav-label { display: block !important; transition: opacity 110ms ease-out, max-height 170ms var(--nongki-motion-ease), transform 170ms var(--nongki-motion-ease) !important; }
-#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-label { display: block !important; }
+/* Keep navbar labels in the render tree so their fade never snaps via display:none. */
+#bottomNavigation.tabs.bottom-nav-glass .nav-label {
+  display: block !important;
+  opacity: 1 !important;
+  max-height: 1.2em !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  transform: translateY(0);
+  will-change: opacity, transform;
+  transition:
+    opacity 160ms ease-out,
+    max-height 180ms var(--nongki-motion-ease),
+    font-size 150ms var(--nongki-motion-ease),
+    line-height 150ms var(--nongki-motion-ease),
+    transform 180ms var(--nongki-motion-ease) !important;
+}
+#bottomNavigation.tabs.bottom-nav-glass.collapsed .nav-label {
+  display: block !important;
+  opacity: 0 !important;
+  max-height: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  transform: translateY(-2px);
+  pointer-events: none !important;
+  will-change: opacity, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  #bottomNavigation.tabs.bottom-nav-glass .nav-label {
+    will-change: auto;
+  }
+}
 
 /* Guard against stale compact attributes; no product/category/payment shrinking. */
 #salesView[data-icons-compact="true"] .product-category-tabs,
