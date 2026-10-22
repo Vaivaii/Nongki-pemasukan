@@ -1,14 +1,12 @@
-name: Build Nongki Android APK from UI redesign
+name: Build Nongki Android APK from ui-baru-v2
 
 on:
   workflow_dispatch:
   push:
     branches:
       - android/ui-baru-v2-native-clean
-      - android/ui-redesign-next
     paths:
       - 'index.html'
-      - 'liquid-glass-global.css'
       - 'manifest.json'
       - 'service-worker.js'
       - 'icon-192.png'
@@ -49,14 +47,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p www
-          cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js native-print.js liquid-glass-global.css www/
+          cp index.html manifest.json service-worker.js icon-192.png icon-512.png thermal-print.js native-print.js www/
           mkdir -p www/assets
           cp assets/nongki-receipt-logo.png www/assets/
           test -s www/index.html
           test -s www/thermal-print.js
           test -s www/native-print.js
           echo "Bundled assets from current branch: $GITHUB_REF_NAME"
-          test -s www/liquid-glass-global.css
           ls -lh www/
       - name: Generate Android project
         run: npx cap add android
