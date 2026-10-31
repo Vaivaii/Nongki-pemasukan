@@ -3228,6 +3228,18 @@ document.addEventListener('input',e=>{
  });
  renderProductGridResults();
 });
+// Keep the search input focused when tapping any control in the search panel.
+ // On Android WebView, the default pointer focus would blur the input and dismiss
+ // the soft keyboard before the product-selection click handler runs.
+ document.addEventListener('pointerdown',e=>{
+  if(!document.body.classList.contains('product-search-focus'))return;
+  const control=e.target?.closest?.('#productSearchFocusLayer button');
+  if(!control)return;
+  const input=$('productSearchFocusInput');
+  if(!input||!input.isConnected)return;
+  e.preventDefault();
+ },true);
+
 document.addEventListener('click',e=>{
  const historyClear=e.target.closest('[data-search-history-clear]');
  if(historyClear){
