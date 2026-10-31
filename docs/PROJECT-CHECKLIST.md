@@ -31,7 +31,8 @@ Base branch: `feature/product-search`
   - This handoff checklist and change record.
 
 ### Verification still required
-- [ ] Confirm GitHub Actions Android APK build succeeds for this branch.
+- [ ] Confirm GitHub Actions Android APK build succeeds for this branch. Run #285 / ID `41164373780`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41164373780 (currently compiling APK).
+- [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully.
 - [ ] Install the newly built APK on Android and test focus mode with SwiftKey/Gboard.
 - [ ] Confirm search input moves above the keyboard and stays visible.
 - [ ] Confirm the blur backdrop covers the header, payment cards, category tabs, and bottom navigation.
