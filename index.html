@@ -2900,6 +2900,9 @@ function closeProductSearchFocus(options={}){
  if(options.blur!==false&&input)input.blur();
  requestAnimationFrame(()=>{if(main)main.scrollTop=productSearchPreviousMainScrollTop;});
 }
+document.addEventListener('pointerdown',e=>{
+ if(e.target?.id==='productSearchInput')openProductSearchFocus();
+},true);
 document.addEventListener('focusin',e=>{
  if(e.target?.id==='productSearchInput')openProductSearchFocus();
 });
