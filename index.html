@@ -2854,7 +2854,11 @@ function productSearchRectTransform(fromRect,toRect){
 }
 function animateProductSearchBar(bar,fromRect,toRect,reverse=false){
  if(!bar||!fromRect||!toRect||typeof bar.animate!=='function'||!productSearchBarMotionAllowed())return null;
- const transformed=productSearchRectTransform(fromRect,toRect);
+ // The overlay bar is already at its expanded position when closing.
+ // Its final transform must be the dashboard position measured relative to the overlay.
+ const transformed=reverse
+  ?productSearchRectTransform(toRect,fromRect)
+  :productSearchRectTransform(fromRect,toRect);
  const identity='translate3d(0,0,0) scale(1,1)';
  const frames=reverse
   ?[{transformOrigin:'top left',transform:identity},{transformOrigin:'top left',transform:transformed}]
@@ -2955,6 +2959,9 @@ function closeProductSearchFocus(options={}){
   if(productSearchFocusLayer){productSearchFocusLayer.remove();productSearchFocusLayer=null;}
   if(productSearchFocusBackdrop){productSearchFocusBackdrop.remove();productSearchFocusBackdrop=null;}
   document.body.classList.remove('product-search-focus');
+  // The results node was moved into the overlay. It was hidden while focusMode
+  // was active, so render the dashboard category again after leaving that mode.
+  renderProductGridResults();
   document.documentElement.style.removeProperty('--product-search-vv-top');
   document.documentElement.style.removeProperty('--product-search-vv-height');
   if(sourceBar&&productSearchOriginalBarStyle){
