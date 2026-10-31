@@ -1422,6 +1422,8 @@ body.product-search-focus #staffSyncFab{display:none!important;visibility:hidden
   box-shadow:0 12px 34px rgba(0,0,0,.16)!important;
 }
 #productSearchFocusLayer #productGridResults .product-group{margin-bottom:12px}
+#productSearchFocusLayer #productGridResults .product-search-group-title{margin:2px 2px 10px;color:#24563e;font-size:13px;font-weight:800;letter-spacing:.2px}
+html[data-theme="dark"] #productSearchFocusLayer #productGridResults .product-search-group-title{color:#d5e0d8}
 #productSearchFocusLayer #productGridResults .product-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 #productSearchFocusLayer #productGridResults .product{box-shadow:0 3px 12px rgba(23,61,44,.08)}
 html[data-theme="dark"] .product-search-focus-backdrop{
@@ -2457,7 +2459,7 @@ async function cancelTx(id){
      const legacyId=t.productId??t.product_id??t.idProduk??t.id_produk;
      if(legacyId!=null)productIds.add(String(legacyId));
      const productNames=new Set([t.name,...(Array.isArray(t.items)?t.items.map(item=>item?.name):[])].filter(Boolean).map(name=>String(name).trim().toLowerCase()));
-     document.querySelectorAll('#salesView .product[data-sell]').forEach(card=>{
+     salesProductCards().forEach(card=>{
        const name=card.querySelector('.name')?.textContent?.trim().toLowerCase()||'';
        if(!productIds.has(String(card.dataset.sell))&&!productNames.has(name))return;
        card.classList.remove('cancelled-product-flash');void card.offsetWidth;card.classList.add('cancelled-product-flash');
@@ -2547,7 +2549,7 @@ $('undoBtn').addEventListener('click',()=>{
    }
    // Beri animasi hanya pada kartu produk yang dibatalkan secara lokal,
    // sebelum pembayaran dan sinkronisasi server dilakukan.
-   const canceledCard=[...document.querySelectorAll('#salesView .product[data-sell]')].find(card=>String(card.dataset.sell)===String(last.productId));
+   const canceledCard=[...salesProductCards()].find(card=>String(card.dataset.sell)===String(last.productId));
    if(canceledCard){
     // Hapus animasi ketukan produk yang masih aktif/menempel agar tidak menimpa
     // animasi pembatalan pada seluruh kartu.
