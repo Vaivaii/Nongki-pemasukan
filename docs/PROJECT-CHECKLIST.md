@@ -10,6 +10,10 @@ Base branch: `feature/product-search`
 ### Implemented
 - [x] Preserve the existing product-search logic, live filtering, category grouping, clear button, and product-card click behavior.
 - [x] When the search input receives focus, activate a dedicated focused-search mode.
+- [x] Portal the search bar, result count, and results list directly under `body` so they cannot be trapped behind the sales screen's stacking context.
+- [x] Hide the bottom navigation and staff sync floating control during focused search.
+- [x] Use a dark, dimmed blur backdrop instead of the earlier bright/white tint.
+- [x] Keep product badges and cancel/tap feedback selectors working for cards temporarily moved into the search portal.
 - [x] Move the search field to a fixed position near the top of the visible screen using a smooth entrance animation.
 - [x] Blur and dim the underlying sales screen with a translucent backdrop.
 - [x] Keep the search result area directly below the field and independently scrollable.
@@ -31,8 +35,10 @@ Base branch: `feature/product-search`
   - This handoff checklist and change record.
 
 ### Verification still required
-- [ ] Confirm GitHub Actions Android APK build succeeds for this branch. Run #285 / ID `41164373780`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41164373780 (currently compiling APK).
-- [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully.
+- [x] Initial APK build #285 / ID `41164373780` succeeded, but it contains the first focus implementation and is superseded; do not use that APK for retesting.
+- [ ] Confirm corrected GitHub Actions Android APK build succeeds. Run #287 / ID `41164895245`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41164895245 (status: in_progress).
+- [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully after the portal correction.
+- [x] Static checks confirm the portal, dark backdrop, bottom-nav hiding, and portal-aware product-card selectors are present; no old sales-view-only product-card selector remains.
 - [ ] Install the newly built APK on Android and test focus mode with SwiftKey/Gboard.
 - [ ] Confirm search input moves above the keyboard and stays visible.
 - [ ] Confirm the blur backdrop covers the header, payment cards, category tabs, and bottom navigation.
@@ -70,11 +76,14 @@ Base branch: `feature/product-search`
 ### 31 October 2026 — Focused product-search overlay
 - Created branch `feature/search-focus-overlay` from `feature/product-search`.
 - Implemented a Google-style focus treatment for product search in `index.html`.
+- Screenshot feedback exposed that the first implementation left search UI inside the sales page stacking context; it was corrected by portaling the search controls/results to a body-level overlay.
+- The corrected overlay now hides the bottom navigation and uses a darker blurred backdrop.
 - Added viewport-aware sizing so the results list can fit in the visible area above the Android keyboard.
 - Added Android APK workflow support for this branch.
-- Code commit: `5d43f49f4713f23062194a99a9b879afda3c184d`
+- Code commit (initial): `5d43f49f4713f23062194a99a9b879afda3c184d`
+- Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`
 - Workflow commit: `a87a561d1beb2f67d63634a4529f38e888e64c71`
-- Device verification and APK build are pending; do not mark the task complete until those checks pass.
+- Corrected APK build and real-device verification are pending; do not mark the task complete until those checks pass.
 
 ## Handoff note for a new chat
 Continue from branch `feature/search-focus-overlay`, not from `main` or an Android native branch. Read this file first. The current task is focused-search overlay; the implementation is committed but still needs a successful APK build and real-device regression testing. Keep all protected project boundaries above.
