@@ -11,6 +11,7 @@ Base branch: `feature/product-search`
 - [x] Preserve the existing product-search logic, live filtering, category grouping, clear button, and product-card click behavior.
 - [x] When the search input receives focus, activate a dedicated focused-search mode.
 - [x] Portal the search bar, result count, and results list directly under `body` so they cannot be trapped behind the sales screen's stacking context.
+- [x] Activate the portal on pointer-down before the native Android keyboard takes focus, with focus-in as a fallback.
 - [x] Hide the bottom navigation and staff sync floating control during focused search.
 - [x] Use a dark, dimmed blur backdrop instead of the earlier bright/white tint.
 - [x] Keep product badges and cancel/tap feedback selectors working for cards temporarily moved into the search portal.
@@ -36,7 +37,8 @@ Base branch: `feature/product-search`
 
 ### Verification still required
 - [x] Initial APK build #285 / ID `41164373780` succeeded, but it contains the first focus implementation and is superseded; do not use that APK for retesting.
-- [ ] Confirm corrected GitHub Actions Android APK build succeeds. Run #287 / ID `41164895245`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41164895245 (status: in_progress).
+- [x] Corrected portal APK build #287 / ID `41164895245` succeeded.
+- [ ] Confirm latest Android APK build succeeds, including pre-focus pointer handling. Run #288 / ID `41165069061`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41165069061 (queued).
 - [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully after the portal correction.
 - [x] Static checks confirm the portal, dark backdrop, bottom-nav hiding, and portal-aware product-card selectors are present; no old sales-view-only product-card selector remains.
 - [ ] Install the newly built APK on Android and test focus mode with SwiftKey/Gboard.
@@ -81,7 +83,7 @@ Base branch: `feature/product-search`
 - Added viewport-aware sizing so the results list can fit in the visible area above the Android keyboard.
 - Added Android APK workflow support for this branch.
 - Code commit (initial): `5d43f49f4713f23062194a99a9b879afda3c184d`
-- Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`
+- Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`, `c7335fedc38021d7ecbfd561c65c5b2e16e8f27a`
 - Workflow commit: `a87a561d1beb2f67d63634a4529f38e888e64c71`
 - Corrected APK build and real-device verification are pending; do not mark the task complete until those checks pass.
 
