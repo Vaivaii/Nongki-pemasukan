@@ -7,6 +7,7 @@ on:
       - android/ui-baru-v2-native-clean
       - android/ui-dynamic-icons
       - feature/product-search
+      - feature/search-focus-overlay
     paths:
       - 'index.html'
       - 'manifest.json'
