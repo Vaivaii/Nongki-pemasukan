@@ -1467,11 +1467,6 @@ html[data-theme="dark"] #productSearchFocusLayer .product-search-quick-icon{back
 html[data-theme="dark"] #productSearchFocusLayer .product-search-cart-badge{background:#3d7657;color:#fff}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-quick-meta,
 html[data-theme="dark"] #productSearchFocusLayer .product-search-discovery-empty{color:#aab8ae}
-@media(prefers-reduced-motion:no-preference){
-  #productSearchFocusLayer #productSearchFocusResults:not([hidden]){animation:productSearchResultsIn .12s ease-out both}
-  @keyframes productSearchResultsIn{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-}
-#productSearchFocusLayer #productSearchFocusResults{transition:opacity .14s ease,transform .14s ease}
 body.product-search-focus:not(.product-search-focus-ready) #productSearchFocusLayer #productSearchFocusResults{opacity:0!important;transform:translateY(4px)!important;visibility:hidden!important}
 body.product-search-focus.product-search-focus-ready #productSearchFocusLayer #productSearchFocusResults{opacity:1;transform:translateY(0);visibility:visible}
 </style>
@@ -2967,6 +2962,34 @@ function animateProductSearchBar(bar,fromRect,toRect,reverse=false){
   :[{transformOrigin:'top left',transform:transformed},{transformOrigin:'top left',transform:identity}];
  return bar.animate(frames,{duration:PRODUCT_SEARCH_BAR_MOTION_MS,easing:'cubic-bezier(.22,.9,.25,1)',fill:'both'});
 }
+function revealProductSearchContent(){
+ const layer=productSearchFocusLayer;
+ const panel=$('productSearchFocusResults');
+ if(!layer||!panel)return;
+ document.body.classList.add('product-search-focus-ready');
+ if(!productSearchBarMotionAllowed()||typeof panel.animate!=='function')return;
+
+ const animations=[];
+ const addAnimation=(element,frames,options)=>{
+  if(!element||typeof element.animate!=='function')return;
+  const animation=element.animate(frames,{fill:'both',...options});
+  animations.push(animation);
+  animation.finished.then(()=>{try{animation.cancel();}catch(_){}},()=>{});
+ };
+ // First reveal the result surface as a whole, then bring in discovery groups
+ // with a small stagger so the history and quick-access sections feel connected.
+ addAnimation(panel,[
+  {opacity:0,transform:'translate3d(0,9px,0) scale(.988)'},
+  {opacity:1,transform:'translate3d(0,0,0) scale(1)'}
+ ],{duration:270,easing:'cubic-bezier(.2,.8,.2,1)'});
+ const sections=Array.from(panel.querySelectorAll('.product-search-discovery-section'));
+ sections.forEach((section,index)=>{
+  addAnimation(section,[
+   {opacity:0,transform:'translate3d(0,12px,0) scale(.99)'},
+   {opacity:1,transform:'translate3d(0,0,0) scale(1)'}
+  ],{duration:320,delay:index*65,easing:'cubic-bezier(.16,1,.3,1)'});
+ });
+}
 function syncProductSearchViewport(){
  const viewport=window.visualViewport;
  const top=viewport?Math.max(0,Number(viewport.offsetTop)||0):0;
@@ -3029,9 +3052,7 @@ function openProductSearchFocus(){
   if(!productSearchFocusLayer)return;
   if(openingAnimation){try{openingAnimation.cancel();}catch(_){}}
   syncProductSearchViewport();
-  requestAnimationFrame(()=>{
-   if(productSearchFocusLayer)document.body.classList.add('product-search-focus-ready');
-  });
+  requestAnimationFrame(revealProductSearchContent);
  };
  if(openingAnimation)openingAnimation.finished.then(revealSearchResults,revealSearchResults);
  else revealSearchResults();
