@@ -1393,7 +1393,6 @@ body.product-search-focus #staffSyncFab{display:none!important;visibility:hidden
   margin:0 auto!important;
 }
 
-#productSearchFocusLayer .product-search-input::placeholder{color:#737d76!important;opacity:1}
 #productSearchFocusLayer .product-search-input::-webkit-search-cancel-button{-webkit-appearance:none;display:none!important}
 #productSearchFocusLayer .product-search-clear{display:none!important}
 #productSearchFocusLayer .product-search-meta{display:none!important}
@@ -1434,12 +1433,7 @@ html[data-theme="dark"] .product-search-focus-backdrop{
   -webkit-backdrop-filter:blur(12px) brightness(.5) saturate(.7);
   backdrop-filter:blur(12px) brightness(.5) saturate(.7);
 }
-html[data-theme="dark"] #productSearchFocusLayer .product-search-bar{
-  background:#202a23!important;border-color:#435347!important;
-}
-html[data-theme="dark"] #productSearchFocusLayer .product-search-icon,
-html[data-theme="dark"] #productSearchFocusLayer .product-search-input{color:#e5eee7!important}
-html[data-theme="dark"] #productSearchFocusLayer .product-search-input::placeholder{color:#aab8ae!important}
+html[data-theme="dark"] #productSearchFocusLayer .product-search-icon{color:#a3b1a7!important}
 html[data-theme="dark"] #productSearchFocusLayer #productGridResults{background:rgba(27,36,30,.98)!important;border-color:#435347!important}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-result{color:#e5eee7!important;border-bottom-color:#39463d!important}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-result:active{background:#35443a!important}
@@ -3031,6 +3025,7 @@ function isNongkiEditableElement(element){
  return element.isContentEditable===true;
 }
 function isNongkiSoftKeyboardVisible(){
+ if(!isNongkiEditableElement(document.activeElement))return false;
  const viewport=window.visualViewport;
  if(viewport){
   const layoutHeight=window.innerHeight||document.documentElement.clientHeight||viewport.height;
@@ -3043,9 +3038,9 @@ function isNongkiSoftKeyboardVisible(){
 }
 function installNongkiNativeBackListener(){
  const capacitor=window.Capacitor;
- if(!capacitor||capacitor.getPlatform?.()!=='android'||typeof capacitor.registerPlugin!=='function')return;
+ if(!capacitor||capacitor.getPlatform?.()!=='android')return;
  try{
-  const app=capacitor.Plugins?.App||capacitor.registerPlugin('App');
+  const app=capacitor.Plugins?.App;
   if(!app||typeof app.addListener!=='function'||typeof app.exitApp!=='function')return;
   app.addListener('backButton',()=>{
    // Android's IME should dismiss first. This guard also covers devices that
