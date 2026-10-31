@@ -1372,7 +1372,7 @@ html[data-theme="dark"] #salesView .product-search-clear,html[data-theme="dark"]
   background:rgba(5,13,9,.5);
   -webkit-backdrop-filter:blur(12px) brightness(.58) saturate(.76);
   backdrop-filter:blur(12px) brightness(.58) saturate(.76);
-  opacity:0;transition:opacity .24s ease-out;
+  opacity:0;transition:opacity .16s ease-out;
   touch-action:pan-y;
 }
 #productSearchFocusLayer{
@@ -1380,7 +1380,7 @@ html[data-theme="dark"] #salesView .product-search-clear,html[data-theme="dark"]
   width:100%;height:100%;height:100dvh;pointer-events:none;
 }
 #productSearchFocusLayer .product-search-bar,
-#productSearchFocusLayer #productGridResults{pointer-events:auto}
+#productSearchFocusLayer #productSearchFocusResults{pointer-events:auto}
 body.product-search-focus{overscroll-behavior:none}
 body.product-search-focus main{overflow:hidden!important;overscroll-behavior:none}
 body.product-search-focus #bottomNavigation,
@@ -1396,7 +1396,7 @@ body.product-search-focus #staffSyncFab{display:none!important;visibility:hidden
 #productSearchFocusLayer .product-search-input::-webkit-search-cancel-button{-webkit-appearance:none;display:none!important}
 #productSearchFocusLayer .product-search-clear{display:none!important}
 #productSearchFocusLayer .product-search-meta{display:none!important}
-#productSearchFocusLayer #productGridResults{
+#productSearchFocusLayer #productSearchFocusResults{
   position:absolute!important;z-index:2!important;
   top:calc(var(--product-search-vv-top,0px) + env(safe-area-inset-top,0px) + 74px)!important;
   left:16px!important;right:16px!important;
@@ -1409,7 +1409,7 @@ body.product-search-focus #staffSyncFab{display:none!important;visibility:hidden
   border-radius:19px!important;background:rgba(255,255,255,.98)!important;
   box-shadow:0 12px 34px rgba(0,0,0,.18)!important;
 }
-#productSearchFocusLayer #productGridResults[hidden]{display:none!important}
+#productSearchFocusLayer #productSearchFocusResults[hidden]{display:none!important}
 #productSearchFocusLayer .product-search-result{
   display:flex!important;align-items:center!important;gap:13px!important;
   width:100%!important;min-height:58px!important;padding:12px 17px!important;
@@ -1434,13 +1434,13 @@ html[data-theme="dark"] .product-search-focus-backdrop{
   backdrop-filter:blur(12px) brightness(.5) saturate(.7);
 }
 html[data-theme="dark"] #productSearchFocusLayer .product-search-icon{color:#a3b1a7!important}
-html[data-theme="dark"] #productSearchFocusLayer #productGridResults{background:rgba(27,36,30,.98)!important;border-color:#435347!important}
+html[data-theme="dark"] #productSearchFocusLayer #productSearchFocusResults{background:rgba(27,36,30,.98)!important;border-color:#435347!important}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-result{color:#e5eee7!important;border-bottom-color:#39463d!important}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-result:active{background:#35443a!important}
 html[data-theme="dark"] #productSearchFocusLayer .product-search-empty{color:#aab8ae!important}
 @media(prefers-reduced-motion:no-preference){
-  #productSearchFocusLayer #productGridResults:not([hidden]){animation:productSearchResultsIn .18s ease-out both}
-  @keyframes productSearchResultsIn{from{opacity:.65;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  #productSearchFocusLayer #productSearchFocusResults:not([hidden]){animation:productSearchResultsIn .12s ease-out both}
+  @keyframes productSearchResultsIn{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 }
 </style>
 </head>
@@ -1750,11 +1750,11 @@ function productCardMarkup(p,counts){
  return '<button class="product" data-sell="'+esc(String(p.id))+'"><span class="sold-badge'+(sold===0?' zero':'')+'" aria-label="Terjual hari ini">'+sold+'</span><div><div class="emoji">'+esc(p.icon||'🥤')+'</div><div class="name">'+esc(p.name)+'</div></div><div><div class="price">'+rupiah(p.price)+'</div><div class="hint">Ketuk untuk catat</div></div></button>';
 }
 function renderProductGridResults(){
- const target=$('productGridResults');if(!target)return;
+ const focusMode=document.body.classList.contains('product-search-focus');
+ const target=focusMode?$('productSearchFocusResults'):$('productGridResults');if(!target)return;
  const active=data.products.filter(p=>p.active!==false);
  const query=String(productSearchQuery||'').trim().toLocaleLowerCase('id');
  const meta=$('productSearchMeta');
- const focusMode=document.body.classList.contains('product-search-focus');
  if(focusMode&&!query){
   target.innerHTML='';
   target.hidden=true;
@@ -2838,10 +2838,9 @@ document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
 let productSearchPreviousMainScrollTop=0;
 let productSearchFocusBackdrop=null;
 let productSearchFocusLayer=null;
-let productSearchFocusRestorePoints=[];
 let productSearchOriginalBarStyle=null;
 let productSearchCloseInProgress=false;
-const PRODUCT_SEARCH_BAR_MOTION_MS=360;
+const PRODUCT_SEARCH_BAR_MOTION_MS=230;
 function productSearchBarMotionAllowed(){
  return typeof window.matchMedia!=='function'||!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -2883,9 +2882,7 @@ function openProductSearchFocus(){
  const main=document.querySelector('main');
  productSearchPreviousMainScrollTop=main?main.scrollTop:0;
  const sourceBar=salesView.querySelector('.product-search-bar');
- const searchMeta=$('productSearchMeta');
- const searchResults=$('productGridResults');
- if(!sourceBar||!searchMeta||!searchResults)return;
+ if(!sourceBar)return;
  const sourceBarRect=sourceBar.getBoundingClientRect();
 
  productSearchFocusBackdrop=document.createElement('div');
@@ -2897,8 +2894,8 @@ function openProductSearchFocus(){
  productSearchFocusLayer.setAttribute('role','region');
  productSearchFocusLayer.setAttribute('aria-label','Pencarian produk');
 
- // Keep the tapped source input in place. Moving a focused Android input during
- // pointerdown can cancel the first tap, so the portal gets its own synced input.
+ // Only the search bar is mirrored into the overlay. Dashboard product cards
+ // remain mounted in #productGridResults and stay visible underneath the veil.
  const portalBar=sourceBar.cloneNode(true);
  const portalInput=portalBar.querySelector('input');
  if(!portalInput)return;
@@ -2906,6 +2903,11 @@ function openProductSearchFocus(){
  portalInput.value=productSearchQuery||sourceInput.value||'';
  portalInput.removeAttribute('name');
  portalBar.querySelector('#clearProductSearch')?.remove();
+
+ const portalResults=document.createElement('div');
+ portalResults.id='productSearchFocusResults';
+ portalResults.hidden=true;
+
  productSearchOriginalBarStyle={opacity:sourceBar.style.opacity,pointerEvents:sourceBar.style.pointerEvents};
  sourceBar.style.opacity='0';
  sourceBar.style.pointerEvents='none';
@@ -2913,18 +2915,11 @@ function openProductSearchFocus(){
  document.body.appendChild(productSearchFocusBackdrop);
  document.body.appendChild(productSearchFocusLayer);
  productSearchFocusLayer.appendChild(portalBar);
- productSearchFocusRestorePoints=[];
- [searchMeta,searchResults].forEach((node,index)=>{
-  const parent=node.parentNode;
-  const marker=document.createComment('product-search-focus-return-'+index);
-  const nextSibling=node.nextSibling;
-  parent.insertBefore(marker,node);
-  productSearchFocusRestorePoints.push({node,parent,marker,nextSibling});
-  productSearchFocusLayer.appendChild(node);
- });
+ productSearchFocusLayer.appendChild(portalResults);
  document.body.classList.add('product-search-focus');
- renderProductGridResults();
  syncProductSearchViewport();
+ renderProductGridResults();
+
  const portalBarRect=portalBar.getBoundingClientRect();
  const openingAnimation=animateProductSearchBar(portalBar,sourceBarRect,portalBarRect,false);
  if(openingAnimation)openingAnimation.finished.then(()=>openingAnimation.cancel(),()=>{});
@@ -2939,18 +2934,24 @@ function closeProductSearchFocus(options={}){
  const sourceInput=$('productSearchInput');
  const focusedInput=$('productSearchFocusInput');
  const portalBar=productSearchFocusLayer?.querySelector('.product-search-bar');
+ const portalResults=$('productSearchFocusResults');
  const main=document.querySelector('main');
  if(focusedInput&&focusedInput===document.activeElement)focusedInput.blur();
- productSearchFocusRestorePoints.forEach(({node,parent,marker,nextSibling})=>{
-  if(marker?.parentNode){marker.parentNode.insertBefore(node,marker);marker.remove();}
-  else if(parent?.isConnected)parent.insertBefore(node,nextSibling?.parentNode===parent?nextSibling:null);
- });
- productSearchFocusRestorePoints=[];
- const sourceBar=document.querySelector('#salesView .product-search-bar');
+
+ // Clear only the transient overlay suggestions. The dashboard product-card DOM
+ // is never moved, emptied, or re-rendered when search opens or closes.
+ if(portalResults){portalResults.innerHTML='';portalResults.hidden=true;}
  if(sourceInput)sourceInput.value='';
  productSearchQuery='';productSearchCategory='';
  const clearButton=$('clearProductSearch');if(clearButton)clearButton.hidden=true;
- renderProductGridResults();
+ const meta=$('productSearchMeta');if(meta)meta.textContent='';
+ document.querySelectorAll('#salesView .product-category-tab').forEach(tab=>{
+  const selected=tab.dataset.productCategory===activeProductCategory;
+  tab.classList.toggle('active',selected);
+  tab.setAttribute('aria-pressed',String(selected));
+ });
+
+ const sourceBar=document.querySelector('#salesView .product-search-bar');
  const portalBarRect=portalBar?.getBoundingClientRect();
  const sourceBarRect=sourceBar?.getBoundingClientRect();
  const closingAnimation=options.animate===false?null:animateProductSearchBar(portalBar,portalBarRect,sourceBarRect,true);
@@ -2959,9 +2960,6 @@ function closeProductSearchFocus(options={}){
   if(productSearchFocusLayer){productSearchFocusLayer.remove();productSearchFocusLayer=null;}
   if(productSearchFocusBackdrop){productSearchFocusBackdrop.remove();productSearchFocusBackdrop=null;}
   document.body.classList.remove('product-search-focus');
-  // The results node was moved into the overlay. It was hidden while focusMode
-  // was active, so render the dashboard category again after leaving that mode.
-  renderProductGridResults();
   document.documentElement.style.removeProperty('--product-search-vv-top');
   document.documentElement.style.removeProperty('--product-search-vv-height');
   if(sourceBar&&productSearchOriginalBarStyle){
@@ -2974,7 +2972,7 @@ function closeProductSearchFocus(options={}){
  };
  if(closingAnimation){
   if(productSearchFocusBackdrop){
-   try{productSearchFocusBackdrop.animate([{opacity:1},{opacity:0}],{duration:230,easing:'ease-out',fill:'forwards'});}catch(_){productSearchFocusBackdrop.style.opacity='0';}
+   try{productSearchFocusBackdrop.animate([{opacity:1},{opacity:0}],{duration:145,easing:'ease-out',fill:'forwards'});}catch(_){productSearchFocusBackdrop.style.opacity='0';}
   }
   closingAnimation.finished.then(finishClose,finishClose);
  }else{
