@@ -2860,6 +2860,7 @@ let productSearchPreviousMainScrollTop=0;
 let productSearchFocusBackdrop=null;
 let productSearchFocusLayer=null;
 let productSearchFocusRestorePoints=[];
+let productSearchOriginalBarStyle=null;
 function syncProductSearchViewport(){
  const viewport=window.visualViewport;
  const top=viewport?Math.max(0,Number(viewport.offsetTop)||0):0;
@@ -2871,17 +2872,16 @@ function salesProductCards(){
  return Array.from(document.querySelectorAll('#salesView .product[data-sell], #productSearchFocusLayer .product[data-sell]'));
 }
 function openProductSearchFocus(){
- const input=$('productSearchInput');
+ const sourceInput=$('productSearchInput');
  const salesView=$('salesView');
- if(!input||!salesView?.classList.contains('active'))return;
+ if(!sourceInput||!salesView?.classList.contains('active'))return;
  if(document.body.classList.contains('product-search-focus')){syncProductSearchViewport();return;}
  const main=document.querySelector('main');
  productSearchPreviousMainScrollTop=main?main.scrollTop:0;
-
- const searchBar=salesView.querySelector('.product-search-bar');
+ const sourceBar=salesView.querySelector('.product-search-bar');
  const searchMeta=$('productSearchMeta');
  const searchResults=$('productGridResults');
- if(!searchBar||!searchMeta||!searchResults)return;
+ if(!sourceBar||!searchMeta||!searchResults)return;
 
  productSearchFocusBackdrop=document.createElement('div');
  productSearchFocusBackdrop.className='product-search-focus-backdrop';
@@ -2892,10 +2892,24 @@ function openProductSearchFocus(){
  productSearchFocusLayer.setAttribute('role','region');
  productSearchFocusLayer.setAttribute('aria-label','Pencarian produk');
 
+ // Keep the tapped source input in place. Moving a focused Android input during
+ // pointerdown can cancel the first tap, so the portal gets its own synced input.
+ const portalBar=sourceBar.cloneNode(true);
+ const portalInput=portalBar.querySelector('input');
+ if(!portalInput)return;
+ portalInput.id='productSearchFocusInput';
+ portalInput.value=productSearchQuery||sourceInput.value||'';
+ portalInput.removeAttribute('name');
+ portalBar.querySelector('#clearProductSearch')?.remove();
+ productSearchOriginalBarStyle={opacity:sourceBar.style.opacity,pointerEvents:sourceBar.style.pointerEvents};
+ sourceBar.style.opacity='0';
+ sourceBar.style.pointerEvents='none';
+
  document.body.appendChild(productSearchFocusBackdrop);
  document.body.appendChild(productSearchFocusLayer);
+ productSearchFocusLayer.appendChild(portalBar);
  productSearchFocusRestorePoints=[];
- [searchBar,searchMeta,searchResults].forEach((node,index)=>{
+ [searchMeta,searchResults].forEach((node,index)=>{
   const parent=node.parentNode;
   const marker=document.createComment('product-search-focus-return-'+index);
   const nextSibling=node.nextSibling;
@@ -2903,43 +2917,42 @@ function openProductSearchFocus(){
   productSearchFocusRestorePoints.push({node,parent,marker,nextSibling});
   productSearchFocusLayer.appendChild(node);
  });
-
  document.body.classList.add('product-search-focus');
  renderProductGridResults();
  syncProductSearchViewport();
- requestAnimationFrame(()=>{
-  syncProductSearchViewport();
-  if(document.activeElement!==input)input.focus({preventScroll:true});
- });
+ // Transfer focus immediately to the portal copy so the first tap opens the keyboard.
+ try{portalInput.focus({preventScroll:true});}catch(_){portalInput.focus();}
+ requestAnimationFrame(syncProductSearchViewport);
 }
 function closeProductSearchFocus(options={}){
  if(!document.body.classList.contains('product-search-focus'))return;
- const input=$('productSearchInput');
+ const sourceInput=$('productSearchInput');
+ const focusedInput=$('productSearchFocusInput');
  const main=document.querySelector('main');
  productSearchFocusRestorePoints.forEach(({node,parent,marker,nextSibling})=>{
-  if(marker?.parentNode){
-   marker.parentNode.insertBefore(node,marker);
-   marker.remove();
-  }else if(parent?.isConnected){
-   parent.insertBefore(node,nextSibling?.parentNode===parent?nextSibling:null);
-  }
+  if(marker?.parentNode){marker.parentNode.insertBefore(node,marker);marker.remove();}
+  else if(parent?.isConnected)parent.insertBefore(node,nextSibling?.parentNode===parent?nextSibling:null);
  });
  productSearchFocusRestorePoints=[];
  if(productSearchFocusLayer){productSearchFocusLayer.remove();productSearchFocusLayer=null;}
  if(productSearchFocusBackdrop){productSearchFocusBackdrop.remove();productSearchFocusBackdrop=null;}
+ const sourceBar=document.querySelector('#salesView .product-search-bar');
+ if(sourceBar&&productSearchOriginalBarStyle){
+  sourceBar.style.opacity=productSearchOriginalBarStyle.opacity;
+  sourceBar.style.pointerEvents=productSearchOriginalBarStyle.pointerEvents;
+ }
+ productSearchOriginalBarStyle=null;
  document.body.classList.remove('product-search-focus');
  document.documentElement.style.removeProperty('--product-search-vv-top');
  document.documentElement.style.removeProperty('--product-search-vv-height');
- if(input)input.value='';
+ if(focusedInput&&focusedInput===document.activeElement)focusedInput.blur();
+ if(sourceInput)sourceInput.value='';
  productSearchQuery='';productSearchCategory='';
  const clearButton=$('clearProductSearch');if(clearButton)clearButton.hidden=true;
- if(options.blur!==false&&input)input.blur();
+ if(options.blur!==false&&document.activeElement?.id==='productSearchInput')document.activeElement.blur();
  renderProductGridResults();
  requestAnimationFrame(()=>{if(main)main.scrollTop=productSearchPreviousMainScrollTop;});
 }
-document.addEventListener('pointerdown',e=>{
- if(e.target?.id==='productSearchInput')openProductSearchFocus();
-},true);
 document.addEventListener('focusin',e=>{
  if(e.target?.id==='productSearchInput')openProductSearchFocus();
 });
@@ -2948,6 +2961,48 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();closeProductSearchFocus();
  }
 });
+
+let nongkiBackSentinelReady=false;
+let nongkiBackHandling=false;
+function pushNongkiBackSentinel(){
+ try{
+  history.pushState({...(history.state||{}),__nongkiBackSentinel:true},'',location.href);
+  nongkiBackSentinelReady=true;
+ }catch(error){console.warn('Navigasi Back belum dapat dipasang:',error);}
+}
+function handleNongkiAndroidBack(){
+ if(nongkiBackHandling)return;
+ nongkiBackHandling=true;
+ let handled=false;
+ const cashModal=$('cashPaymentModal');
+ const profileDropdown=$('profileDropdown');
+ const activeView=document.querySelector('.view.active')?.id||'salesView';
+ if(document.body.classList.contains('product-search-focus')){
+  closeProductSearchFocus();handled=true;
+ }else if(cashModal&&!cashModal.hidden){
+  closeCashModal();handled=true;
+ }else if(profileDropdown&&!profileDropdown.hidden){
+  profileDropdown.hidden=true;
+  $('profileAvatarBtn')?.setAttribute('aria-expanded','false');
+  handled=true;
+ }else if(activeView!=='salesView'){
+  showView('salesView');
+  const main=document.querySelector('main');if(main)main.scrollTop=0;
+  handled=true;
+ }
+ if(handled)pushNongkiBackSentinel();
+ nongkiBackHandling=false;
+}
+window.addEventListener('popstate',()=>{
+ nongkiBackSentinelReady=false;
+ handleNongkiAndroidBack();
+});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pushNongkiBackSentinel,{once:true});
+else pushNongkiBackSentinel();
+// If the user changes tabs after consuming the home sentinel, arm one Back step again.
+document.addEventListener('click',e=>{
+ if(e.target?.closest('#bottomNavigation [data-view]')&&!nongkiBackSentinelReady)pushNongkiBackSentinel();
+},true);
 window.addEventListener('resize',()=>{if(document.body.classList.contains('product-search-focus'))syncProductSearchViewport();},{passive:true});
 if(window.visualViewport){
  window.visualViewport.addEventListener('resize',()=>{if(document.body.classList.contains('product-search-focus'))syncProductSearchViewport();},{passive:true});
@@ -2955,8 +3010,9 @@ if(window.visualViewport){
 }
 
 document.addEventListener('input',e=>{
- if(e.target?.id!=='productSearchInput')return;
+ if(e.target?.id!=='productSearchInput'&&e.target?.id!=='productSearchFocusInput')return;
  productSearchQuery=e.target.value;
+ const originalInput=$('productSearchInput');if(originalInput)originalInput.value=productSearchQuery;
  productSearchCategory='';
  const queryActive=!!String(productSearchQuery||'').trim();
  const clearButton=$('clearProductSearch');if(clearButton)clearButton.hidden=!productSearchQuery;
