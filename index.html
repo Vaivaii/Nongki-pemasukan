@@ -2990,7 +2990,8 @@ function handleNongkiAndroidBack(){
   const main=document.querySelector('main');if(main)main.scrollTop=0;
   handled=true;
  }
- if(handled)pushNongkiBackSentinel();
+ // Do not push another history entry here: after returning to Catat, the
+ // next hardware Back is allowed to leave the application.
  nongkiBackHandling=false;
 }
 window.addEventListener('popstate',()=>{
