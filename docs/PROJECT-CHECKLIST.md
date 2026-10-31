@@ -5,6 +5,59 @@ Repository: `Vaivaii/Nongki-pemasukan`
 Active working branch: `feature/search-focus-overlay`  
 Base branch: `feature/product-search`
 
+## LATEST HANDOFF — Focused Search / POS Quick Entry (31 October 2026)
+
+> This section is the current source of truth for the focused-search implementation. Earlier notes below describe the initial prototype and are historical; where they conflict, follow this latest handoff.
+
+**Current branch:** `feature/search-focus-overlay`  
+**Latest code commit:** `2a40f6b8c52c91d4a7fd90adf2df16265a69ce76`  
+**Latest APK workflow:** [Run #41177509932](https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41177509932) — **success**  
+**Current test status:** Waiting for user real-device stability testing. Do not mark the search task fully verified until the user reports the test result.
+
+### Implemented in the latest search flow
+- [x] Search bar expands from its dashboard position and returns to the same position.
+- [x] Dashboard product cards remain mounted; opening/closing search does not rebuild the product-card grid.
+- [x] Search suggestions use a separate overlay results container.
+- [x] Search history stores the selected product's actual name, not the partial typed query.
+- [x] Search history is stored locally (maximum 6 unique recent product names) and can be cleared.
+- [x] Quick access shows up to 6 top-selling products for the day, with a fallback to active products when there are no sales yet.
+- [x] Selecting a product from live results or quick access adds it through the existing `record(productId)` / `addCartProduct` flow and keeps the search overlay open for repeated selection.
+- [x] Cart badges beside search-result/quick-access product names reflect the current unpaid `paymentCart` quantity only, not accumulated daily sales.
+- [x] Cart badges update after each added item and reset after successful payment or clearing the cart.
+- [x] Search-history and quick-access content enters after the search-bar animation, using a panel fade and staggered section motion.
+- [x] Android keyboard stays available when a product is selected; pointer focus transfer to result buttons is prevented so the search input retains focus. Keyboard should dismiss with Android Back.
+- [x] Search UI includes Dark Mode styling and respects reduced-motion settings.
+- [x] Latest APK build for commit `2a40f6b8` completed successfully.
+
+### User device-test checklist — pending
+- [ ] Open search from Catat dashboard; confirm the bar moves smoothly and dashboard cards remain visible underneath without flicker.
+- [ ] Confirm history and quick-access sections appear smoothly after the bar movement, without a sudden jump or flash.
+- [ ] Type a partial query (for example, `K`) and select a product; confirm history stores the full selected product name.
+- [ ] Select the same product repeatedly; confirm the cart badge increments (1, 2, 3…) and the overlay remains open.
+- [ ] Select different products consecutively; confirm the keyboard remains visible and the input can be used immediately for the next search.
+- [ ] Press Android Back once; confirm the keyboard hides while the search overlay remains open.
+- [ ] Press Android Back again; confirm search returns to the dashboard and the search bar animates back down.
+- [ ] Confirm dashboard product cards are still present immediately after leaving search, without tapping a category.
+- [ ] Confirm cart badges clear after successful Tunai payment and after successful QRIS payment.
+- [ ] Confirm cart badges clear when the explicit “Kosongkan Keranjang” action is used.
+- [ ] Confirm a failed/unsuccessful payment does not clear the cart quantity badges.
+- [ ] Repeat key checks in Dark Mode and with the device keyboard used in normal operation.
+
+### Regression boundaries
+- [x] Changes remain isolated to `feature/search-focus-overlay`.
+- [x] `main` and Android native branches remain untouched.
+- [x] Apps Script `Code.gs` remains untouched.
+- [x] Existing transaction save/cancel, login/session, Owner (Suami), Owner (Istri), Pegawai, payment, sync, and thermal-print code paths were not intentionally changed by this search UI work.
+- [ ] After user testing, run a final transaction save/cancel and Tunai/QRIS regression test before considering the work stable.
+
+### Latest commits
+- Search history, persistent selection, cart badges: `98e46d31`
+- Fluid history/quick-access entrance animation: `ea0bd4ce`
+- Keep Android keyboard open when selecting results: `2a40f6b8`
+
+### Handoff instruction
+Pause further UI changes while the user tests the current APK. Treat the latest build as a test candidate, not as proven stable. Continue only from `feature/search-focus-overlay`, first record the user's test findings in this checklist, then make narrowly scoped corrections. Preserve all project boundaries above.
+
 ## Active task — Google-style focused product search and Android Back navigation
 
 ### Implemented
