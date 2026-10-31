@@ -6,6 +6,7 @@ on:
     branches:
       - android/ui-baru-v2-native-clean
       - android/ui-dynamic-icons
+      - feature/product-search
     paths:
       - 'index.html'
       - 'manifest.json'
