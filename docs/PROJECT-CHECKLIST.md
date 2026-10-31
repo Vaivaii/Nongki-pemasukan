@@ -5,18 +5,20 @@ Repository: `Vaivaii/Nongki-pemasukan`
 Active working branch: `feature/search-focus-overlay`  
 Base branch: `feature/product-search`
 
-## Active task — Google-style focused product search
+## Active task — Google-style focused product search and Android Back navigation
 
 ### Implemented
 - [x] Preserve the existing product-search logic, live filtering, category grouping, clear button, and product-card click behavior.
 - [x] When the search input receives focus, activate a dedicated focused-search mode.
 - [x] Portal the search bar, result count, and results list directly under `body` so they cannot be trapped behind the sales screen's stacking context.
-- [x] Activate the portal on pointer-down before the native Android keyboard takes focus, with focus-in as a fallback.
+- [x] Avoid moving the source input during `pointerdown`; build a focus-only cloned input in the body-level portal after the original input receives focus.
+- [x] Transfer focus immediately to the portal input while syncing its value with the source search input, so a normal first tap can open Android's keyboard.
 - [x] Hide the bottom navigation and staff sync floating control during focused search.
 - [x] Keep the focused search bar minimal: one rounded field with a magnifying-glass icon and the placeholder `Cari produk`.
 - [x] Show no product results/cards while the focused search field is empty.
 - [x] Render matches as plain text rows containing only the product icon and product name (no tile cards, price, sold-count badge, or quantity badge).
 - [x] Tap a matching row to call the existing `record(productId)` action, then close search and return to the normal sales screen.
+- [x] Add a WebView history sentinel for Android Back: close search first, close the cash modal/profile dropdown when open, or return from another view to the main Catat dashboard before app exit.
 - [x] Use a dark, dimmed blur backdrop instead of the earlier bright/white tint.
 - [x] Keep product badges and cancel/tap feedback selectors working for cards temporarily moved into the search portal.
 - [x] Move the search field to a fixed position near the top of the visible screen using a smooth entrance animation.
@@ -56,6 +58,8 @@ Base branch: `feature/product-search`
 - [ ] Confirm result scrolling works while the keyboard is open and does not scroll the page underneath.
 - [ ] Confirm tapping the backdrop closes focus mode and restores the previous page scroll position.
 - [ ] Confirm keyboard Backspace/Delete updates and clears suggestions correctly.
+- [ ] Confirm a single tap on the original search field immediately opens the cloned focused input and keyboard without long-press.
+- [ ] Confirm Android hardware Back closes search first; from another tab it returns to Catat; Back on Catat can then exit the app.
 - [ ] Confirm selecting a product still adds it to the local cart exactly as before.
 - [ ] Repeat the visual checks in Dark Mode.
 - [ ] Run a regression check for transaction save/cancel and payment flows before treating the APK as final.
@@ -93,10 +97,13 @@ Base branch: `feature/product-search`
 - Reworked search to a compact icon + `Cari produk` field. Focused search is empty until the user types; results are plain icon/name rows with no product card, price, or badges.
 - Selecting a result reuses the existing `record(productId)` cart path and closes search.
 - Added viewport-aware sizing so the results list can fit in the visible area above the Android keyboard.
+- Added a cloned focused input so the touch-target input does not get reparented during pointerdown.
+- Added Android Back history handling to close focused search/transient UI or navigate back to Catat before exit.
 - Added Android APK workflow support for this branch.
 - Code commit (initial): `5d43f49f4713f23062194a99a9b879afda3c184d`
 - Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`, `c7335fedc38021d7ecbfd561c65c5b2e16e8f27a`.
 - Simple-search commits: `c413ff5d8157b785bc8f54e1d6ec1629ec0b0804`, `78584cc6640fc0d634c9d976deea696f1cef59e6`, `333f0d2557e0a0011c396c86c73a9c884e3eaa2f`.
+- Latest interaction/navigation fix: `5959492c99d6e5d69a799933daa2309df831ec4f`.
 - Workflow commit: `a87a561d1beb2f67d63634a4529f38e888e64c71`
 - Corrected APK build and real-device verification are pending; do not mark the task complete until those checks pass.
 
