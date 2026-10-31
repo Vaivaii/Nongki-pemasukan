@@ -2904,6 +2904,7 @@ function openProductSearchFocus(){
  });
 
  document.body.classList.add('product-search-focus');
+ renderProductGridResults();
  syncProductSearchViewport();
  requestAnimationFrame(()=>{
   syncProductSearchViewport();
