@@ -1782,7 +1782,7 @@ function readProductSearchHistory(){
   const seen=new Set();
   return stored.filter(item=>{
    if(typeof item!=='string')return false;
-   const value=item.trim().replace(/\\s+/g,' ');
+   const value=item.trim().replace(/\s+/g,' ');
    const key=value.toLocaleLowerCase('id');
    if(!value||seen.has(key))return false;
    seen.add(key);return true;
@@ -1790,7 +1790,7 @@ function readProductSearchHistory(){
  }catch(_){return [];}
 }
 function rememberProductSearchQuery(value){
- const query=String(value||'').trim().replace(/\\s+/g,' ');
+ const query=String(value||'').trim().replace(/\s+/g,' ');
  if(!query)return;
  const history=readProductSearchHistory().filter(item=>item.toLocaleLowerCase('id')!==query.toLocaleLowerCase('id'));
  history.unshift(query);
