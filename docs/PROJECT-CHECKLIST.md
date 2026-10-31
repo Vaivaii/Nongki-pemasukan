@@ -47,11 +47,15 @@ Base branch: `feature/product-search`
 - [x] Corrected portal APK build #287 / ID `41164895245` succeeded.
 - [x] Build #288 / ID `41165069061` succeeded for the prior portal version.
 - [x] Build #290 / ID `41166076311` built the simple search list before the last small input decoration tweak.
-- [ ] Confirm final simple-search APK build succeeds. Run #291 / ID `41166145410`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41166145410 (latest build including hidden native clear decoration).
+- [x] Build #291 / ID `41166145410` succeeded for the simple-search version before the first-tap/back-navigation correction.
+- [ ] Confirm APK build with one-tap focus and Android Back behavior succeeds. Run #292 / ID `41166892503`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41166892503 (currently compiling APK).
 - [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully after the portal correction.
 - [x] Static checks confirm the portal, dark backdrop, bottom-nav hiding, and portal-aware product-card selectors are present; no old sales-view-only product-card selector remains.
 - [x] Static checks confirm empty focused search hides the results region, search rows contain only icon/name, no badge or price is rendered in the focused results, and a tap calls the pre-existing `record(productId)` action.
 - [x] All 5 inline JavaScript blocks pass syntax parsing after the simple-search change.
+- [x] All 5 inline JavaScript blocks also pass syntax parsing after the one-tap focus and Android Back correction.
+- [x] Static checks confirm the original tapped input is no longer moved; a portal clone receives focus and both inputs sync.
+- [x] Static checks confirm the Back sentinel can close search/cash modal/profile menu and return non-home tabs to Catat.
 - [ ] Install the newly built APK on Android and test focus mode with SwiftKey/Gboard.
 - [ ] Confirm search input moves above the keyboard and stays visible.
 - [ ] Confirm the blur backdrop covers the header, payment cards, category tabs, and bottom navigation.
@@ -104,6 +108,7 @@ Base branch: `feature/product-search`
 - Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`, `c7335fedc38021d7ecbfd561c65c5b2e16e8f27a`.
 - Simple-search commits: `c413ff5d8157b785bc8f54e1d6ec1629ec0b0804`, `78584cc6640fc0d634c9d976deea696f1cef59e6`, `333f0d2557e0a0011c396c86c73a9c884e3eaa2f`.
 - Latest interaction/navigation fix: `5959492c99d6e5d69a799933daa2309df831ec4f`.
+- Checklist commit for this update: pending.
 - Workflow commit: `a87a561d1beb2f67d63634a4529f38e888e64c71`
 - Corrected APK build and real-device verification are pending; do not mark the task complete until those checks pass.
 
