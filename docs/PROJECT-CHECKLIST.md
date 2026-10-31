@@ -24,7 +24,7 @@ Base branch: `feature/product-search`
 - [x] Keep the search result area directly below the field and independently scrollable.
 - [x] Read Android/browser `visualViewport` dimensions so the results area ends above the on-screen keyboard.
 - [x] Preserve the sales-page scroll position and restore it when the backdrop is tapped or Escape closes focused-search mode.
-- [x] Keep the clear (×) button working without closing focused-search mode.
+- [x] Keep the focused field visually minimal: hide the separate clear button and native search-cancel decoration; users can edit/erase text with the keyboard.
 - [x] Add dark-mode styling for the backdrop and results surface.
 - [x] Add the focused-search branch to the Android APK workflow trigger.
 - [x] Record this implementation in this project checklist.
@@ -33,7 +33,8 @@ Base branch: `feature/product-search`
 - `index.html`
   - Added `product-search-focus-overlay-styles`.
   - Added viewport-aware focused-search open/close behavior.
-  - Did not replace the search matching/grouping logic or product-selection handler.
+  - Focused mode shows no items until the user types; matches become simple icon/name rows with no price or badge.
+  - Tapping a result reuses `record(productId)` to add it to the existing local cart.
 - `.github/workflows/android-apk.yml`
   - Added `feature/search-focus-overlay` to the push branch allowlist so this branch can build a debug APK.
 - `docs/PROJECT-CHECKLIST.md`
@@ -43,7 +44,8 @@ Base branch: `feature/product-search`
 - [x] Initial APK build #285 / ID `41164373780` succeeded, but it contains the first focus implementation and is superseded; do not use that APK for retesting.
 - [x] Corrected portal APK build #287 / ID `41164895245` succeeded.
 - [x] Build #288 / ID `41165069061` succeeded for the prior portal version.
-- [ ] Confirm final simple-search APK build succeeds. Run #290 / ID `41166076311`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41166076311 (currently building). Build #289 was triggered by the immediately preceding search UI commit and is superseded by #290.
+- [x] Build #290 / ID `41166076311` built the simple search list before the last small input decoration tweak.
+- [ ] Confirm final simple-search APK build succeeds. Run #291 / ID `41166145410`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41166145410 (latest build including hidden native clear decoration).
 - [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully after the portal correction.
 - [x] Static checks confirm the portal, dark backdrop, bottom-nav hiding, and portal-aware product-card selectors are present; no old sales-view-only product-card selector remains.
 - [x] Static checks confirm empty focused search hides the results region, search rows contain only icon/name, no badge or price is rendered in the focused results, and a tap calls the pre-existing `record(productId)` action.
@@ -53,7 +55,7 @@ Base branch: `feature/product-search`
 - [ ] Confirm the blur backdrop covers the header, payment cards, category tabs, and bottom navigation.
 - [ ] Confirm result scrolling works while the keyboard is open and does not scroll the page underneath.
 - [ ] Confirm tapping the backdrop closes focus mode and restores the previous page scroll position.
-- [ ] Confirm the clear (×) button clears the query but keeps the search field focused.
+- [ ] Confirm keyboard Backspace/Delete updates and clears suggestions correctly.
 - [ ] Confirm selecting a product still adds it to the local cart exactly as before.
 - [ ] Repeat the visual checks in Dark Mode.
 - [ ] Run a regression check for transaction save/cancel and payment flows before treating the APK as final.
@@ -63,9 +65,10 @@ Base branch: `feature/product-search`
 - [x] Live filtering searches product names and categories.
 - [x] Results are grouped by product category.
 - [x] Category tabs can narrow search results.
-- [x] Clear button resets the query.
+- [x] Editing or deleting the typed query refreshes the matches; no separate X button is displayed in the focused search mode.
 - [x] Product result cards preserve the existing click action and sold-count badge.
 - [x] Search input is not rebuilt for each keystroke, preserving mobile keyboard focus.
+- [x] Native search input cancel decoration is hidden so the field remains icon + text only.
 
 ## Protected project boundaries — must remain unchanged
 - [ ] Never modify Apps Script `Code.gs` unless explicitly instructed.
@@ -93,7 +96,7 @@ Base branch: `feature/product-search`
 - Added Android APK workflow support for this branch.
 - Code commit (initial): `5d43f49f4713f23062194a99a9b879afda3c184d`
 - Corrective commits: `80932b5852c286edeb006e7d9c104ff1befd61b9`, `0c163461496856ba5d9dcee622a24c636da146a4`, `c7335fedc38021d7ecbfd561c65c5b2e16e8f27a`.
-- Simple-search commits: `c413ff5d8157b785bc8f54e1d6ec1629ec0b0804`, `78584cc6640fc0d634c9d976deea696f1cef59e6`.
+- Simple-search commits: `c413ff5d8157b785bc8f54e1d6ec1629ec0b0804`, `78584cc6640fc0d634c9d976deea696f1cef59e6`, `333f0d2557e0a0011c396c86c73a9c884e3eaa2f`.
 - Workflow commit: `a87a561d1beb2f67d63634a4529f38e888e64c71`
 - Corrected APK build and real-device verification are pending; do not mark the task complete until those checks pass.
 
