@@ -49,7 +49,7 @@ Base branch: `feature/product-search`
 - [x] Build #290 / ID `41166076311` built the simple search list before the last small input decoration tweak.
 - [x] Build #291 / ID `41166145410` succeeded for the simple-search version before the first-tap/back-navigation correction.
 - [x] Build #292 / ID `41166892503` succeeded with cloned-input one-tap focus and Android Back handling.
-- [ ] Confirm latest APK build with final Back-stack behavior succeeds; follow the newest run for commit `f24d9cb9bb82fe0a84632d45597e2c06e79deb86`.
+- [ ] Confirm latest APK build with final Back-stack behavior succeeds. Run #293 / ID `41167032912`: https://github.com/Vaivaii/Nongki-pemasukan/actions/runs/41167032912 (status: in progress; compiling APK).
 - [x] JavaScript syntax check: all 5 inline script blocks in `index.html` parse successfully after the portal correction.
 - [x] Static checks confirm the portal, dark backdrop, bottom-nav hiding, and portal-aware product-card selectors are present; no old sales-view-only product-card selector remains.
 - [x] Static checks confirm empty focused search hides the results region, search rows contain only icon/name, no badge or price is rendered in the focused results, and a tap calls the pre-existing `record(productId)` action.
