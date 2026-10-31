@@ -1363,6 +1363,70 @@ html[data-theme="dark"] #salesView .product-search-input{color:#e5eee7}
 html[data-theme="dark"] #salesView .product-search-input::placeholder{color:#a3b1a7}
 html[data-theme="dark"] #salesView .product-search-clear{background:#35443a;color:#e5eee7}
 </style>
+
+<style id="product-search-focus-overlay-styles">
+/* Search focus mode: isolate the search UI above a blurred sales screen. */
+.product-search-focus-backdrop{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(247,245,239,.46);
+  -webkit-backdrop-filter:blur(10px) saturate(.82);
+  backdrop-filter:blur(10px) saturate(.82);
+  touch-action:pan-y;
+}
+body.product-search-focus{overscroll-behavior:none}
+body.product-search-focus main{overflow:hidden!important;overscroll-behavior:none}
+body.product-search-focus #salesView .product-search-bar{
+  position:fixed!important;
+  z-index:62!important;
+  top:calc(var(--product-search-vv-top,0px) + env(safe-area-inset-top,0px) + 12px)!important;
+  left:12px!important;right:12px!important;
+  width:auto!important;max-width:656px!important;
+  min-height:54px!important;margin:0 auto!important;
+  padding:0 13px!important;border-radius:18px!important;
+  box-shadow:0 8px 26px rgba(20,48,34,.16)!important;
+}
+body.product-search-focus #salesView .product-search-input{
+  height:50px!important;font-size:16px!important;
+}
+body.product-search-focus #salesView .product-search-clear{
+  width:32px!important;height:32px!important;flex-basis:32px!important;
+}
+body.product-search-focus #salesView .product-search-meta{
+  position:fixed!important;z-index:62!important;
+  top:calc(var(--product-search-vv-top,0px) + env(safe-area-inset-top,0px) + 72px)!important;
+  left:18px!important;right:18px!important;
+  max-width:644px!important;margin:0 auto!important;
+  min-height:16px!important;padding:0 2px!important;
+}
+body.product-search-focus #salesView #productGridResults{
+  position:fixed!important;z-index:61!important;
+  top:calc(var(--product-search-vv-top,0px) + env(safe-area-inset-top,0px) + 94px)!important;
+  left:12px!important;right:12px!important;
+  width:auto!important;max-width:656px!important;margin:0 auto!important;
+  bottom:calc(100dvh - (var(--product-search-vv-top,0px) + var(--product-search-vv-height,100dvh)) + 10px)!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch;
+  padding:8px 3px 18px!important;
+  border-radius:16px!important;
+  background:rgba(247,245,239,.88);
+}
+body.product-search-focus #salesView #productGridResults .product-group{margin-bottom:12px}
+body.product-search-focus #salesView #productGridResults .product-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.product-search-focus #salesView #productGridResults .product{box-shadow:0 3px 12px rgba(23,61,44,.08)}
+html[data-theme="dark"] .product-search-focus-backdrop{background:rgba(7,14,10,.58)}
+html[data-theme="dark"] body.product-search-focus #salesView #productGridResults{background:rgba(18,27,22,.94)}
+html[data-theme="dark"] body.product-search-focus #salesView .product-search-bar{box-shadow:0 8px 26px rgba(0,0,0,.34)!important}
+@media(min-width:520px){
+  body.product-search-focus #salesView #productGridResults .product-group-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:no-preference){
+  body.product-search-focus #salesView .product-search-bar{animation:productSearchFloatIn .18s ease-out both}
+  body.product-search-focus #salesView #productGridResults{animation:productSearchResultsIn .2s ease-out both}
+  @keyframes productSearchFloatIn{from{opacity:.75;transform:translateY(-7px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes productSearchResultsIn{from{opacity:.65;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+}
+</style>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
@@ -2740,6 +2804,58 @@ if($('loginUserId'))$('loginUserId').value='owner';
 if($('loginPin')){$('loginPin').disabled=false;$('loginPin').hidden=false;}
 const loginPinLabel=document.querySelector('label[for="loginPin"]');if(loginPinLabel)loginPinLabel.hidden=false;
 document.querySelectorAll('[data-user-toggle]').forEach(()=>{});
+let productSearchPreviousMainScrollTop=0;
+let productSearchFocusBackdrop=null;
+function syncProductSearchViewport(){
+ const viewport=window.visualViewport;
+ const top=viewport?Math.max(0,Number(viewport.offsetTop)||0):0;
+ const height=viewport?Math.max(1,Number(viewport.height)||window.innerHeight):window.innerHeight;
+ document.documentElement.style.setProperty('--product-search-vv-top',top+'px');
+ document.documentElement.style.setProperty('--product-search-vv-height',height+'px');
+}
+function openProductSearchFocus(){
+ const input=$('productSearchInput');
+ const salesView=$('salesView');
+ if(!input||!salesView?.classList.contains('active'))return;
+ if(document.body.classList.contains('product-search-focus')){syncProductSearchViewport();return;}
+ const main=document.querySelector('main');
+ productSearchPreviousMainScrollTop=main?main.scrollTop:0;
+ document.body.classList.add('product-search-focus');
+ syncProductSearchViewport();
+ if(!productSearchFocusBackdrop){
+  productSearchFocusBackdrop=document.createElement('div');
+  productSearchFocusBackdrop.className='product-search-focus-backdrop';
+  productSearchFocusBackdrop.setAttribute('aria-hidden','true');
+  productSearchFocusBackdrop.addEventListener('click',()=>closeProductSearchFocus());
+  document.body.appendChild(productSearchFocusBackdrop);
+ }
+ requestAnimationFrame(syncProductSearchViewport);
+}
+function closeProductSearchFocus(options={}){
+ if(!document.body.classList.contains('product-search-focus'))return;
+ document.body.classList.remove('product-search-focus');
+ if(productSearchFocusBackdrop){productSearchFocusBackdrop.remove();productSearchFocusBackdrop=null;}
+ const active=document.activeElement;
+ if(options.blur!==false&&active?.id==='productSearchInput')active.blur();
+ document.documentElement.style.removeProperty('--product-search-vv-top');
+ document.documentElement.style.removeProperty('--product-search-vv-height');
+ const main=document.querySelector('main');
+ requestAnimationFrame(()=>{if(main)main.scrollTop=productSearchPreviousMainScrollTop;});
+}
+document.addEventListener('focusin',e=>{
+ if(e.target?.id==='productSearchInput')openProductSearchFocus();
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&document.body.classList.contains('product-search-focus')){
+  e.preventDefault();closeProductSearchFocus();
+ }
+});
+window.addEventListener('resize',()=>{if(document.body.classList.contains('product-search-focus'))syncProductSearchViewport();},{passive:true});
+if(window.visualViewport){
+ window.visualViewport.addEventListener('resize',()=>{if(document.body.classList.contains('product-search-focus'))syncProductSearchViewport();},{passive:true});
+ window.visualViewport.addEventListener('scroll',()=>{if(document.body.classList.contains('product-search-focus'))syncProductSearchViewport();},{passive:true});
+}
+
 document.addEventListener('input',e=>{
  if(e.target?.id!=='productSearchInput')return;
  productSearchQuery=e.target.value;
